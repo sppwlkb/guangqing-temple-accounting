@@ -1,0 +1,42 @@
+{
+  "name": "廣清宮快速記帳軟體",
+  "short_name": "廣清宮記帳",
+  "description": "專為宮廟設計的財務管理系統",
+  "start_url": "./index-enhanced.html",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#667eea",
+  "orientation": "portrait",
+  "prefer_related_applications": false,
+  "scope": "./",
+  "lang": "zh-TW",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "business"],
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "features": [
+    "收支記錄管理",
+    "智能提醒功能",
+    "財務報表分析",
+    "離線使用支援"
+  ]
+}
