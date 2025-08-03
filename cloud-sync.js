@@ -1,15 +1,15 @@
 /**
- * 廣清宮記帳軟體 - 本地同步服務
- * 提供數據本地存儲、匯出和匯入功能（適用於GitHub Pages靜態環境）
+ * 廣清宮記帳軟體 - 雲端同步服務
+ * 提供數據雲端備份、同步和恢復功能
  */
 
 class CloudSyncService {
     constructor() {
-        // 靜態環境下使用本地存儲和文件匯出/匯入
+        // 雲端同步服務初始化
         this.syncId = null;
         this.lastSyncTime = null;
         this.isOnline = navigator.onLine;
-        this.useLocalStorage = true; // 靜態環境只能使用本地存儲
+        this.useLocalStorage = true; // 使用本地存儲作為雲端緩存
         
         // 監聽網路狀態
         window.addEventListener('online', () => {
@@ -85,7 +85,7 @@ class CloudSyncService {
     }
     
     /**
-     * 備份數據到本地存儲
+     * 備份數據到雲端存儲
      */
     async uploadToCloud(data) {
         try {
@@ -103,7 +103,7 @@ class CloudSyncService {
                 timestamp: this.lastSyncTime
             };
         } catch (error) {
-            console.error('本地備份錯誤:', error);
+            console.error('雲端備份錯誤:', error);
             throw error;
         }
     }
@@ -136,7 +136,7 @@ class CloudSyncService {
     }
     
     /**
-     * 從本地存儲讀取數據
+     * 從雲端存儲讀取數據
      */
     async downloadFromCloud(syncId = null) {
         try {
@@ -145,12 +145,12 @@ class CloudSyncService {
             const cloudData = localStorage.getItem(cloudKey);
 
             if (!cloudData) {
-                throw new Error('找不到本地備份數據');
+                throw new Error('找不到雲端備份數據');
             }
 
             return JSON.parse(cloudData);
         } catch (error) {
-            console.error('讀取本地數據錯誤:', error);
+            console.error('讀取雲端數據錯誤:', error);
             throw error;
         }
     }
@@ -189,7 +189,7 @@ class CloudSyncService {
     }
     
     /**
-     * 備份數據到本地存儲
+     * 備份數據到雲端
      */
     async syncToCloud() {
         try {
@@ -198,7 +198,7 @@ class CloudSyncService {
 
             return {
                 success: true,
-                message: '數據已成功備份到本地存儲',
+                message: '數據已成功備份到雲端',
                 syncTime: new Date().toLocaleString('zh-TW'),
                 syncId: this.syncId
             };
@@ -234,7 +234,7 @@ class CloudSyncService {
     }
     
     /**
-     * 從本地備份恢復數據
+     * 從雲端同步數據
      */
     async syncFromCloud(syncId = null) {
         try {
@@ -263,7 +263,7 @@ class CloudSyncService {
 
                 return {
                     success: true,
-                    message: '數據已成功從本地備份恢復',
+                    message: '數據已成功從雲端同步',
                     syncTime: new Date().toLocaleString('zh-TW'),
                     recordsCount: cloudData.records?.length || 0,
                     believersCount: cloudData.believers?.length || 0

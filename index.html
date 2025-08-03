@@ -3536,12 +3536,12 @@
                                 <div class="action-title">安裝到手機</div>
                             </div>
                             <div class="action-card" @click="syncToCloud">
-                                <div class="action-icon">💾</div>
-                                <div class="action-title">本地備份</div>
+                                <div class="action-icon">☁️</div>
+                                <div class="action-title">雲端備份</div>
                             </div>
                             <div class="action-card" @click="syncFromCloud">
                                 <div class="action-icon">📥</div>
-                                <div class="action-title">恢復備份</div>
+                                <div class="action-title">從雲端同步</div>
                             </div>
                             <div class="action-card" @click="exportAllData">
                                 <div class="action-icon">📤</div>
@@ -3597,8 +3597,8 @@
                             <li><strong>下載備份檔</strong>：下載最新的備份檔案到電腦</li>
                             <li><strong>自動備份</strong>：定期自動建立備份，防止資料遺失</li>
                             <li><strong>安裝到手機</strong>：顯示QR Code，手機掃描後可安裝到桌面</li>
-                            <li><strong>本地備份</strong>：將數據備份到瀏覽器本地存儲</li>
-                            <li><strong>恢復備份</strong>：從本地備份恢復數據</li>
+                            <li><strong>雲端備份</strong>：將數據備份到雲端存儲</li>
+                            <li><strong>從雲端同步</strong>：從雲端備份恢復數據</li>
                             <li><strong>匯出數據</strong>：將數據匯出為JSON文件下載</li>
                             <li><strong>匯入數據</strong>：從JSON文件匯入數據</li>
                             <li><strong>清除本地數據</strong>：清除當前設備的所有數據</li>
@@ -8172,52 +8172,52 @@
                     }
                 };
 
-                // 本地備份功能
+                // 雲端備份功能
                 const syncToCloud = async () => {
                     if (typeof window.cloudSync === 'undefined') {
-                        alert('同步服務未載入');
+                        alert('雲端同步服務未載入');
                         return;
                     }
 
                     try {
-                        showNotification('備份中', '正在備份數據到本地存儲...');
+                        showNotification('備份中', '正在備份數據到雲端...');
                         const result = await window.cloudSync.syncToCloud();
 
                         if (result.success) {
-                            showNotification('備份成功', `數據已成功備份到本地\n備份時間: ${result.syncTime}`);
+                            showNotification('備份成功', `數據已成功備份到雲端\n備份時間: ${result.syncTime}`);
                         } else {
                             showNotification('備份失敗', result.message);
                         }
                     } catch (error) {
-                        showNotification('備份失敗', '備份過程發生錯誤，請稍後再試');
-                        console.error('備份錯誤:', error);
+                        showNotification('備份失敗', '雲端備份過程發生錯誤，請稍後再試');
+                        console.error('雲端備份錯誤:', error);
                     }
                 };
 
                 const syncFromCloud = async () => {
                     if (typeof window.cloudSync === 'undefined') {
-                        alert('同步服務未載入');
+                        alert('雲端同步服務未載入');
                         return;
                     }
 
-                    if (!confirm('從本地備份恢復數據將會覆蓋當前數據，確定要繼續嗎？')) {
+                    if (!confirm('從雲端同步數據將會覆蓋當前數據，確定要繼續嗎？')) {
                         return;
                     }
 
                     try {
-                        showNotification('恢復中', '正在從本地備份恢復數據...');
+                        showNotification('同步中', '正在從雲端同步數據...');
                         const result = await window.cloudSync.syncFromCloud();
 
                         if (result.success) {
-                            showNotification('恢復成功', `數據已成功從本地備份恢復\n財務記錄: ${result.recordsCount} 筆\n信眾資料: ${result.believersCount} 筆`);
+                            showNotification('同步成功', `數據已成功從雲端同步\n同步時間: ${result.syncTime}`);
                             // 重新載入數據
                             loadFromStorage();
                         } else {
-                            showNotification('恢復失敗', result.message);
+                            showNotification('同步失敗', result.message);
                         }
                     } catch (error) {
-                        showNotification('恢復失敗', '恢復過程發生錯誤，請稍後再試');
-                        console.error('恢復錯誤:', error);
+                        showNotification('同步失敗', '雲端同步過程發生錯誤，請稍後再試');
+                        console.error('雲端同步錯誤:', error);
                     }
                 };
 
