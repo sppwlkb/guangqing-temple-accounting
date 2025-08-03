@@ -1,0 +1,392 @@
+{
+  "version": "1.0",
+  "timestamp": "2024-08-02T10:00:00.000Z",
+  "data": {
+    "records": [
+      {
+        "id": 1,
+        "type": "income",
+        "category": "香油錢",
+        "amount": 300,
+        "date": "2023-01-05",
+        "description": "香油錢 - 王大明",
+        "donor": "王大明",
+        "createdAt": "2023-01-05T10:00:00.000Z"
+      },
+      {
+        "id": 2,
+        "type": "income",
+        "category": "點燈費",
+        "amount": 500,
+        "date": "2023-01-08",
+        "description": "點燈費 - 李小華",
+        "donor": "李小華",
+        "createdAt": "2023-01-08T10:00:00.000Z"
+      },
+      {
+        "id": 3,
+        "type": "income",
+        "category": "安太歲",
+        "amount": 800,
+        "date": "2023-01-15",
+        "description": "安太歲 - 陳美玲",
+        "donor": "陳美玲",
+        "createdAt": "2023-01-15T10:00:00.000Z"
+      },
+      {
+        "id": 4,
+        "type": "expense",
+        "category": "水電費",
+        "amount": 3500,
+        "date": "2023-01-20",
+        "description": "水電費 - 1月份",
+        "donor": "",
+        "createdAt": "2023-01-20T10:00:00.000Z"
+      },
+      {
+        "id": 5,
+        "type": "income",
+        "category": "法會功德金",
+        "amount": 1200,
+        "date": "2023-02-03",
+        "description": "法會功德金 - 張志強",
+        "donor": "張志強",
+        "createdAt": "2023-02-03T10:00:00.000Z"
+      },
+      {
+        "id": 6,
+        "type": "income",
+        "category": "建廟基金",
+        "amount": 3000,
+        "date": "2023-02-10",
+        "description": "建廟基金 - 林淑芬",
+        "donor": "林淑芬",
+        "createdAt": "2023-02-10T10:00:00.000Z"
+      },
+      {
+        "id": 7,
+        "type": "expense",
+        "category": "祭品採購",
+        "amount": 1800,
+        "date": "2023-02-15",
+        "description": "祭品採購 - 2月份",
+        "donor": "",
+        "createdAt": "2023-02-15T10:00:00.000Z"
+      },
+      {
+        "id": 8,
+        "type": "income",
+        "category": "香油錢",
+        "amount": 450,
+        "date": "2023-03-05",
+        "description": "香油錢 - 黃建國",
+        "donor": "黃建國",
+        "createdAt": "2023-03-05T10:00:00.000Z"
+      },
+      {
+        "id": 9,
+        "type": "income",
+        "category": "慈善捐款",
+        "amount": 2000,
+        "date": "2023-03-12",
+        "description": "慈善捐款 - 吳雅婷",
+        "donor": "吳雅婷",
+        "createdAt": "2023-03-12T10:00:00.000Z"
+      },
+      {
+        "id": 10,
+        "type": "expense",
+        "category": "維修費用",
+        "amount": 4500,
+        "date": "2023-03-18",
+        "description": "維修費用 - 3月份",
+        "donor": "",
+        "createdAt": "2023-03-18T10:00:00.000Z"
+      },
+      {
+        "id": 11,
+        "type": "income",
+        "category": "點燈費",
+        "amount": 350,
+        "date": "2023-04-02",
+        "description": "點燈費 - 劉俊傑",
+        "donor": "劉俊傑",
+        "createdAt": "2023-04-02T10:00:00.000Z"
+      },
+      {
+        "id": 12,
+        "type": "income",
+        "category": "祈福金",
+        "amount": 600,
+        "date": "2023-04-08",
+        "description": "祈福金 - 蔡佳蓉",
+        "donor": "蔡佳蓉",
+        "createdAt": "2023-04-08T10:00:00.000Z"
+      },
+      {
+        "id": 13,
+        "type": "expense",
+        "category": "人事費用",
+        "amount": 8000,
+        "date": "2023-04-15",
+        "description": "人事費用 - 4月份",
+        "donor": "",
+        "createdAt": "2023-04-15T10:00:00.000Z"
+      },
+      {
+        "id": 14,
+        "type": "income",
+        "category": "節慶捐款",
+        "amount": 1500,
+        "date": "2023-05-01",
+        "description": "節慶捐款 - 鄭文龍",
+        "donor": "鄭文龍",
+        "createdAt": "2023-05-01T10:00:00.000Z"
+      },
+      {
+        "id": 15,
+        "type": "income",
+        "category": "香油錢",
+        "amount": 280,
+        "date": "2023-05-10",
+        "description": "香油錢 - 謝淑惠",
+        "donor": "謝淑惠",
+        "createdAt": "2023-05-10T10:00:00.000Z"
+      },
+      {
+        "id": 16,
+        "type": "expense",
+        "category": "法會用品",
+        "amount": 2200,
+        "date": "2023-05-20",
+        "description": "法會用品 - 5月份",
+        "donor": "",
+        "createdAt": "2023-05-20T10:00:00.000Z"
+      },
+      {
+        "id": 17,
+        "type": "income",
+        "category": "安太歲",
+        "amount": 900,
+        "date": "2023-06-05",
+        "description": "安太歲 - 許志豪",
+        "donor": "許志豪",
+        "createdAt": "2023-06-05T10:00:00.000Z"
+      },
+      {
+        "id": 18,
+        "type": "income",
+        "category": "法會功德金",
+        "amount": 1800,
+        "date": "2023-06-15",
+        "description": "法會功德金 - 楊麗娟",
+        "donor": "楊麗娟",
+        "createdAt": "2023-06-15T10:00:00.000Z"
+      },
+      {
+        "id": 19,
+        "type": "expense",
+        "category": "設備採購",
+        "amount": 6000,
+        "date": "2023-06-25",
+        "description": "設備採購 - 6月份",
+        "donor": "",
+        "createdAt": "2023-06-25T10:00:00.000Z"
+      },
+      {
+        "id": 20,
+        "type": "income",
+        "category": "建廟基金",
+        "amount": 5000,
+        "date": "2023-07-08",
+        "description": "建廟基金 - 洪明德",
+        "donor": "洪明德",
+        "createdAt": "2023-07-08T10:00:00.000Z"
+      },
+      {
+        "id": 21,
+        "type": "income",
+        "category": "香油錢",
+        "amount": 320,
+        "date": "2024-01-05",
+        "description": "香油錢 - 周雅雯",
+        "donor": "周雅雯",
+        "createdAt": "2024-01-05T10:00:00.000Z"
+      },
+      {
+        "id": 22,
+        "type": "income",
+        "category": "點燈費",
+        "amount": 480,
+        "date": "2024-01-12",
+        "description": "點燈費 - 朱建華",
+        "donor": "朱建華",
+        "createdAt": "2024-01-12T10:00:00.000Z"
+      },
+      {
+        "id": 23,
+        "type": "expense",
+        "category": "水電費",
+        "amount": 3800,
+        "date": "2024-01-20",
+        "description": "水電費 - 1月份",
+        "donor": "",
+        "createdAt": "2024-01-20T10:00:00.000Z"
+      },
+      {
+        "id": 24,
+        "type": "income",
+        "category": "慈善捐款",
+        "amount": 2500,
+        "date": "2024-02-03",
+        "description": "慈善捐款 - 何美珠",
+        "donor": "何美珠",
+        "createdAt": "2024-02-03T10:00:00.000Z"
+      },
+      {
+        "id": 25,
+        "type": "income",
+        "category": "安太歲",
+        "amount": 750,
+        "date": "2024-02-10",
+        "description": "安太歲 - 呂志明",
+        "donor": "呂志明",
+        "createdAt": "2024-02-10T10:00:00.000Z"
+      },
+      {
+        "id": 26,
+        "type": "expense",
+        "category": "祭品採購",
+        "amount": 2000,
+        "date": "2024-02-18",
+        "description": "祭品採購 - 2月份",
+        "donor": "",
+        "createdAt": "2024-02-18T10:00:00.000Z"
+      },
+      {
+        "id": 27,
+        "type": "income",
+        "category": "特殊法會",
+        "amount": 3500,
+        "date": "2024-03-05",
+        "description": "特殊法會 - 蘇雅琪",
+        "donor": "蘇雅琪",
+        "createdAt": "2024-03-05T10:00:00.000Z"
+      },
+      {
+        "id": 28,
+        "type": "income",
+        "category": "香油錢",
+        "amount": 400,
+        "date": "2024-03-15",
+        "description": "香油錢 - 馬文傑",
+        "donor": "馬文傑",
+        "createdAt": "2024-03-15T10:00:00.000Z"
+      },
+      {
+        "id": 29,
+        "type": "expense",
+        "category": "維修費用",
+        "amount": 5200,
+        "date": "2024-03-25",
+        "description": "維修費用 - 3月份",
+        "donor": "",
+        "createdAt": "2024-03-25T10:00:00.000Z"
+      },
+      {
+        "id": 30,
+        "type": "income",
+        "category": "其他捐款",
+        "amount": 1200,
+        "date": "2024-04-08",
+        "description": "其他捐款 - 高淑玲",
+        "donor": "高淑玲",
+        "createdAt": "2024-04-08T10:00:00.000Z"
+      }
+    ],
+    "believers": [
+      {
+        "name": "王大明",
+        "birthday": "1975-03-15",
+        "phone": "0912345678",
+        "email": "wangdaming@email.com",
+        "address": "台北市中正區某某路123號",
+        "totalDonation": 300,
+        "donationCount": 1,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      },
+      {
+        "name": "李小華",
+        "birthday": "1980-07-22",
+        "phone": "0923456789",
+        "email": "lixiaohua@email.com",
+        "address": "台北市大同區某某路456號",
+        "totalDonation": 500,
+        "donationCount": 1,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      },
+      {
+        "name": "陳美玲",
+        "birthday": "1972-11-08",
+        "phone": "0934567890",
+        "email": "chenmeiling@email.com",
+        "address": "台北市中山區某某路789號",
+        "totalDonation": 800,
+        "donationCount": 1,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      },
+      {
+        "name": "張志強",
+        "birthday": "1968-05-12",
+        "phone": "0945678901",
+        "email": "zhangzhiqiang@email.com",
+        "address": "台北市松山區某某路101號",
+        "totalDonation": 1200,
+        "donationCount": 1,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      },
+      {
+        "name": "林淑芬",
+        "birthday": "1985-09-30",
+        "phone": "0956789012",
+        "email": "linshufen@email.com",
+        "address": "台北市大安區某某路202號",
+        "totalDonation": 3000,
+        "donationCount": 1,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      }
+    ],
+    "reminders": [
+      {
+        "id": 1,
+        "title": "準備春節法會用品",
+        "description": "準備春節法會用品的詳細說明和注意事項",
+        "dueDate": "2024-12-15",
+        "repeat": "yearly",
+        "advanceDays": 7,
+        "completed": false,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      },
+      {
+        "id": 2,
+        "title": "檢查消防設備",
+        "description": "檢查消防設備的詳細說明和注意事項",
+        "dueDate": "2024-09-01",
+        "repeat": "monthly",
+        "advanceDays": 3,
+        "completed": false,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      },
+      {
+        "id": 3,
+        "title": "更新信眾資料",
+        "description": "更新信眾資料的詳細說明和注意事項",
+        "dueDate": "2024-08-15",
+        "repeat": "none",
+        "advanceDays": 5,
+        "completed": false,
+        "createdAt": "2024-08-02T10:00:00.000Z"
+      }
+    ]
+  }
+}

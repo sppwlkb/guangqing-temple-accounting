@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Pages 修復測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #667eea;
+            background-color: #f8f9fa;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .warning {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        button {
+            background-color: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #5a6fd8;
+        }
+        #test-results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>廣清宮記帳軟體 - GitHub Pages 修復測試</h1>
+    
+    <div class="test-card">
+        <h2 class="test-title">🔧 修復項目檢查</h2>
+        <div id="manifest-test" class="test-item">
+            <strong>Manifest 圖標修復：</strong> <span id="manifest-status">檢查中...</span>
+        </div>
+        <div id="sync-service-test" class="test-item">
+            <strong>同步服務載入：</strong> <span id="sync-status">檢查中...</span>
+        </div>
+        <div id="local-storage-test" class="test-item">
+            <strong>本地存儲功能：</strong> <span id="storage-status">檢查中...</span>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2 class="test-title">🧪 功能測試</h2>
+        <button onclick="testLocalBackup()">測試本地備份</button>
+        <button onclick="testExportData()">測試數據匯出</button>
+        <button onclick="testImportData()">測試數據匯入</button>
+        <button onclick="testManifest()">測試 PWA Manifest</button>
+        
+        <div id="test-results"></div>
+    </div>
+
+    <div class="test-card">
+        <h2 class="test-title">📊 控制台錯誤檢查</h2>
+        <div id="console-errors" class="test-item">
+            <strong>JavaScript 錯誤：</strong> <span id="error-count">0</span> 個
+        </div>
+        <div id="network-errors" class="test-item">
+            <strong>網路錯誤：</strong> <span id="network-error-count">0</span> 個
+        </div>
+    </div>
+
+    <!-- 載入雲端同步服務 -->
+    <script src="cloud-sync.js"></script>
+    
+    <script>
+        let errorCount = 0;
+        let networkErrorCount = 0;
+
+        // 監聽 JavaScript 錯誤
+        window.addEventListener('error', (e) => {
+            errorCount++;
+            document.getElementById('error-count').textContent = errorCount;
+            console.error('JavaScript Error:', e.error);
+        });
+
+        // 監聽未處理的 Promise 拒絕
+        window.addEventListener('unhandledrejection', (e) => {
+            errorCount++;
+            document.getElementById('error-count').textContent = errorCount;
+            console.error('Unhandled Promise Rejection:', e.reason);
+        });
+
+        // 檢查修復項目
+        function checkFixedItems() {
+            // 檢查 Manifest
+            fetch('./manifest.json')
+                .then(response => response.json())
+                .then(manifest => {
+                    const manifestStatus = document.getElementById('manifest-status');
+                    if (manifest.icons && manifest.icons[0].src === 'icon.svg') {
+                        manifestStatus.textContent = '✅ 已修復 (使用 SVG 圖標)';
+                        manifestStatus.parentElement.classList.add('success');
+                    } else {
+                        manifestStatus.textContent = '❌ 未修復';
+                        manifestStatus.parentElement.classList.add('error');
+                    }
+                })
+                .catch(error => {
+                    networkErrorCount++;
+                    document.getElementById('network-error-count').textContent = networkErrorCount;
+                    document.getElementById('manifest-status').textContent = '❌ 載入失敗';
+                    document.getElementById('manifest-test').classList.add('error');
+                });
+
+            // 檢查同步服務
+            const syncStatus = document.getElementById('sync-status');
+            if (typeof window.cloudSync !== 'undefined') {
+                syncStatus.textContent = '✅ 已載入';
+                syncStatus.parentElement.classList.add('success');
+            } else {
+                syncStatus.textContent = '❌ 未載入';
+                syncStatus.parentElement.classList.add('error');
+            }
+
+            // 檢查本地存儲
+            const storageStatus = document.getElementById('storage-status');
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                storageStatus.textContent = '✅ 正常';
+                storageStatus.parentElement.classList.add('success');
+            } catch (error) {
+                storageStatus.textContent = '❌ 不可用';
+                storageStatus.parentElement.classList.add('error');
+            }
+        }
+
+        // 測試函數
+        function addTestResult(message, success = true) {
+            const results = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-item ${success ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        async function testLocalBackup() {
+            try {
+                if (typeof window.cloudSync === 'undefined') {
+                    addTestResult('同步服務未載入', false);
+                    return;
+                }
+                
+                const result = await window.cloudSync.syncToCloud();
+                if (result.success) {
+                    addTestResult('本地備份測試成功');
+                } else {
+                    addTestResult(`本地備份測試失敗: ${result.message}`, false);
+                }
+            } catch (error) {
+                addTestResult(`本地備份測試錯誤: ${error.message}`, false);
+            }
+        }
+
+        async function testExportData() {
+            try {
+                if (typeof window.cloudSync === 'undefined') {
+                    addTestResult('同步服務未載入', false);
+                    return;
+                }
+                
+                const result = await window.cloudSync.exportData();
+                if (result.success) {
+                    addTestResult('數據匯出測試成功');
+                } else {
+                    addTestResult(`數據匯出測試失敗: ${result.message}`, false);
+                }
+            } catch (error) {
+                addTestResult(`數據匯出測試錯誤: ${error.message}`, false);
+            }
+        }
+
+        function testImportData() {
+            addTestResult('數據匯入功能需要用戶選擇文件，請在主應用中測試', true);
+        }
+
+        function testManifest() {
+            if ('serviceWorker' in navigator) {
+                addTestResult('Service Worker 支援正常');
+            } else {
+                addTestResult('Service Worker 不支援', false);
+            }
+            
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                addTestResult('PWA 模式運行中');
+            } else {
+                addTestResult('瀏覽器模式運行中（正常）');
+            }
+        }
+
+        // 頁面載入完成後執行檢查
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(checkFixedItems, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>廣清宮記帳軟體 - 初始設置</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .setup-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .setup-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .setup-title {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .setup-subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            width: 100%;
+            transition: width 0.3s;
+        }
+        
+        .step-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+        }
+        
+        .success-message {
+            text-align: center;
+            padding: 20px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            color: #155724;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .setup-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1 class="setup-title">🏛️ 歡迎使用廣清宮記帳軟體</h1>
+            <p class="setup-subtitle">請先設置您的宮廟基本資料</p>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        
+        <div class="step-indicator">
+            設置宮廟基本資料
+        </div>
+        
+        <form id="setupForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">宮廟名稱 *</label>
+                    <input type="text" id="templeName" class="form-input" placeholder="例如：廣清宮" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">統一編號</label>
+                    <input type="text" id="taxId" class="form-input" placeholder="例如：12345678">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">聯絡電話</label>
+                    <input type="tel" id="phone" class="form-input" placeholder="例如：(02) 1234-5678">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">傳真號碼</label>
+                    <input type="tel" id="fax" class="form-input" placeholder="例如：(02) 1234-5679">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">宮廟地址</label>
+                <textarea id="address" class="form-textarea" placeholder="例如：台北市中正區..." rows="2"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">負責人</label>
+                    <input type="text" id="manager" class="form-input" placeholder="例如：王主委">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="email" class="form-input" placeholder="例如：info@temple.org.tw">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">宮廟簡介</label>
+                <textarea id="description" class="form-textarea" placeholder="宮廟歷史、主祀神明等簡介..." rows="3"></textarea>
+            </div>
+            
+            <button type="submit" class="btn">完成設置並進入系統</button>
+            <button type="button" class="btn btn-secondary" onclick="skipSetup()">跳過設置，稍後再填</button>
+        </form>
+        
+        <div id="successMessage" class="success-message" style="display: none;">
+            <h3>🎉 設置完成！</h3>
+            <p>您的宮廟基本資料已保存，正在跳轉到主系統...</p>
+        </div>
+    </div>
+
+    <script>
+        // 檢查是否已經設置過
+        window.addEventListener('load', () => {
+            const existingData = localStorage.getItem('temple-info');
+            if (existingData) {
+                // 如果已經有數據，直接跳轉
+                window.location.href = './index-enhanced.html';
+                return;
+            }
+            
+            // 預填一些示例數據
+            document.getElementById('templeName').value = '廣清宮';
+            document.getElementById('taxId').value = '12345678';
+            document.getElementById('phone').value = '(02) 1234-5678';
+            document.getElementById('fax').value = '(02) 1234-5679';
+            document.getElementById('address').value = '台灣省...';
+            document.getElementById('manager').value = '主委';
+            document.getElementById('email').value = 'info@temple.org.tw';
+            document.getElementById('description').value = '廣清宮歷史悠久，主祀...';
+        });
+
+        document.getElementById('setupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // 收集表單數據
+            const templeInfo = {
+                name: document.getElementById('templeName').value || '廣清宮',
+                taxId: document.getElementById('taxId').value || '12345678',
+                phone: document.getElementById('phone').value || '(02) 1234-5678',
+                fax: document.getElementById('fax').value || '(02) 1234-5679',
+                address: document.getElementById('address').value || '台灣省...',
+                manager: document.getElementById('manager').value || '主委',
+                email: document.getElementById('email').value || 'info@temple.org.tw',
+                description: document.getElementById('description').value || '廣清宮歷史悠久，主祀...'
+            };
+            
+            // 保存到本地存儲
+            localStorage.setItem('temple-info', JSON.stringify(templeInfo));
+            
+            // 設置初始化標記
+            localStorage.setItem('temple-setup-completed', 'true');
+            
+            // 顯示成功消息
+            document.getElementById('setupForm').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'block';
+            
+            // 3秒後跳轉到主系統
+            setTimeout(() => {
+                window.location.href = './index-enhanced.html';
+            }, 3000);
+        });
+        
+        function skipSetup() {
+            // 設置默認數據
+            const defaultTempleInfo = {
+                name: '廣清宮',
+                taxId: '12345678',
+                phone: '(02) 1234-5678',
+                fax: '(02) 1234-5679',
+                address: '台灣省...',
+                manager: '主委',
+                email: 'info@temple.org.tw',
+                description: '廣清宮歷史悠久，主祀...'
+            };
+            
+            localStorage.setItem('temple-info', JSON.stringify(defaultTempleInfo));
+            localStorage.setItem('temple-setup-completed', 'true');
+            
+            // 直接跳轉
+            window.location.href = './index-enhanced.html';
+        }
+    </script>
+</body>
+</html>
