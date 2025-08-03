@@ -3536,24 +3536,32 @@
                                 <div class="action-title">安裝到手機</div>
                             </div>
                             <div class="action-card" @click="syncToCloud">
-                                <div class="action-icon">☁️</div>
-                                <div class="action-title">同步到雲端</div>
+                                <div class="action-icon">💾</div>
+                                <div class="action-title">本地備份</div>
                             </div>
                             <div class="action-card" @click="syncFromCloud">
                                 <div class="action-icon">📥</div>
-                                <div class="action-title">從雲端同步</div>
+                                <div class="action-title">恢復備份</div>
+                            </div>
+                            <div class="action-card" @click="exportAllData">
+                                <div class="action-icon">📤</div>
+                                <div class="action-title">匯出數據</div>
+                            </div>
+                            <div class="action-card" @click="importData">
+                                <div class="action-icon">📂</div>
+                                <div class="action-title">匯入數據</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 雲端同步狀態 -->
+                    <!-- 數據同步狀態 -->
                     <div class="content-card">
-                        <div class="card-title">☁️ 雲端同步狀態</div>
+                        <div class="card-title">💾 數據同步狀態</div>
                         <div id="sync-status" style="color: #606266; font-size: 14px; line-height: 1.8;">
                             <div>🌐 網路狀態: <span id="network-status">檢查中...</span></div>
                             <div>🆔 同步ID: <span id="sync-id">載入中...</span></div>
-                            <div>⏰ 最後同步: <span id="last-sync">從未同步</span></div>
-                            <div>📊 雲端數據: <span id="cloud-data-status">檢查中...</span></div>
+                            <div>⏰ 最後備份: <span id="last-sync">從未備份</span></div>
+                            <div>📊 本地數據: <span id="cloud-data-status">檢查中...</span></div>
                         </div>
                     </div>
 
@@ -3566,9 +3574,11 @@
                             <li><strong>下載備份檔</strong>：下載最新的備份檔案到電腦</li>
                             <li><strong>自動備份</strong>：定期自動建立備份，防止資料遺失</li>
                             <li><strong>安裝到手機</strong>：顯示QR Code，手機掃描後可安裝到桌面</li>
-                            <li><strong>同步到雲端</strong>：將本地數據上傳到雲端存儲</li>
-                            <li><strong>從雲端同步</strong>：從雲端下載最新數據到本地</li>
-                            <li><strong>重要提醒</strong>：建議定期同步數據，確保多設備數據一致</li>
+                            <li><strong>本地備份</strong>：將數據備份到瀏覽器本地存儲</li>
+                            <li><strong>恢復備份</strong>：從本地備份恢復數據</li>
+                            <li><strong>匯出數據</strong>：將數據匯出為JSON文件下載</li>
+                            <li><strong>匯入數據</strong>：從JSON文件匯入數據</li>
+                            <li><strong>重要提醒</strong>：建議定期匯出數據文件，確保數據安全</li>
                         </ul>
                     </div>
                 </div>
@@ -8137,52 +8147,102 @@
                     }
                 };
 
-                // 雲端同步功能
+                // 本地備份功能
                 const syncToCloud = async () => {
                     if (typeof window.cloudSync === 'undefined') {
-                        alert('雲端同步服務未載入');
+                        alert('同步服務未載入');
                         return;
                     }
 
                     try {
-                        showNotification('同步中', '正在上傳數據到雲端...');
+                        showNotification('備份中', '正在備份數據到本地存儲...');
                         const result = await window.cloudSync.syncToCloud();
 
                         if (result.success) {
-                            showNotification('同步成功', `數據已成功同步到雲端\n同步時間: ${result.syncTime}`);
+                            showNotification('備份成功', `數據已成功備份到本地\n備份時間: ${result.syncTime}`);
                         } else {
-                            showNotification('同步失敗', result.message);
+                            showNotification('備份失敗', result.message);
                         }
                     } catch (error) {
-                        showNotification('同步失敗', '網路連線錯誤，請稍後再試');
-                        console.error('同步錯誤:', error);
+                        showNotification('備份失敗', '備份過程發生錯誤，請稍後再試');
+                        console.error('備份錯誤:', error);
                     }
                 };
 
                 const syncFromCloud = async () => {
                     if (typeof window.cloudSync === 'undefined') {
-                        alert('雲端同步服務未載入');
+                        alert('同步服務未載入');
                         return;
                     }
 
-                    if (!confirm('從雲端同步數據將會覆蓋本地數據，確定要繼續嗎？')) {
+                    if (!confirm('從本地備份恢復數據將會覆蓋當前數據，確定要繼續嗎？')) {
                         return;
                     }
 
                     try {
-                        showNotification('同步中', '正在從雲端下載數據...');
+                        showNotification('恢復中', '正在從本地備份恢復數據...');
                         const result = await window.cloudSync.syncFromCloud();
 
                         if (result.success) {
-                            showNotification('同步成功', `數據已成功從雲端同步\n財務記錄: ${result.recordsCount} 筆\n信眾資料: ${result.believersCount} 筆`);
+                            showNotification('恢復成功', `數據已成功從本地備份恢復\n財務記錄: ${result.recordsCount} 筆\n信眾資料: ${result.believersCount} 筆`);
                             // 重新載入數據
                             loadFromStorage();
                         } else {
-                            showNotification('同步失敗', result.message);
+                            showNotification('恢復失敗', result.message);
                         }
                     } catch (error) {
-                        showNotification('同步失敗', '網路連線錯誤，請稍後再試');
-                        console.error('同步錯誤:', error);
+                        showNotification('恢復失敗', '恢復過程發生錯誤，請稍後再試');
+                        console.error('恢復錯誤:', error);
+                    }
+                };
+
+                // 匯出數據功能
+                const exportAllData = async () => {
+                    if (typeof window.cloudSync === 'undefined') {
+                        alert('同步服務未載入');
+                        return;
+                    }
+
+                    try {
+                        showNotification('匯出中', '正在準備數據文件...');
+                        const result = await window.cloudSync.exportData();
+
+                        if (result.success) {
+                            showNotification('匯出成功', '數據文件已下載到您的電腦');
+                        } else {
+                            showNotification('匯出失敗', result.message);
+                        }
+                    } catch (error) {
+                        showNotification('匯出失敗', '匯出過程發生錯誤，請稍後再試');
+                        console.error('匯出錯誤:', error);
+                    }
+                };
+
+                // 匯入數據功能
+                const importData = async () => {
+                    if (typeof window.cloudSync === 'undefined') {
+                        alert('同步服務未載入');
+                        return;
+                    }
+
+                    if (!confirm('匯入數據將會覆蓋當前所有數據，確定要繼續嗎？\n請確保您已經備份了重要數據。')) {
+                        return;
+                    }
+
+                    try {
+                        showNotification('匯入中', '請選擇要匯入的數據文件...');
+                        const result = await window.cloudSync.importData();
+
+                        if (result.success) {
+                            showNotification('匯入成功', `數據已成功匯入\n財務記錄: ${result.recordsCount} 筆\n信眾資料: ${result.believersCount} 筆`);
+                            // 重新載入數據
+                            loadFromStorage();
+                        } else {
+                            showNotification('匯入失敗', result.message);
+                        }
+                    } catch (error) {
+                        showNotification('匯入失敗', '匯入過程發生錯誤，請稍後再試');
+                        console.error('匯入錯誤:', error);
                     }
                 };
                 
@@ -8218,7 +8278,7 @@
                         }
 
                         if (cloudDataStatus) {
-                            cloudDataStatus.textContent = status.hasCloudData ? '✅ 已設定' : '❌ 未設定';
+                            cloudDataStatus.textContent = status.hasCloudData ? '✅ 有備份' : '❌ 無備份';
                             cloudDataStatus.style.color = status.hasCloudData ? '#4CAF50' : '#f44336';
                         }
                     }
@@ -8310,6 +8370,8 @@
                     installApp,
                     syncToCloud,
                     syncFromCloud,
+                    exportAllData,
+                    importData,
                     // 信眾管理相關
                     showBelieverModal,
                     believers,
