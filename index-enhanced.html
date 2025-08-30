@@ -5539,12 +5539,12 @@
                 // 類別定義
                 const defaultIncomeCategories = [
                     '香油錢', '點光明燈', '屬名紅包', '未屬名紅包', 
-                    '祝壽', '看風水', '停車費', '感謝神尊', '其他'
+                    '祝壽', '看風水', '停車費', '感謝神尊'
                 ];
                 
                 const defaultExpenseCategories = [
                     '人員薪水', '房租', '水電費', '雜項開支', 
-                    '參訪金', '修繕費', '管理費', '其他'
+                    '參訪金', '修繕費', '管理費'
                 ];
 
                 // 自定義類別存儲
@@ -5553,11 +5553,11 @@
 
                 // 合併預設和自定義類別
                 const incomeCategories = computed(() => {
-                    return [...defaultIncomeCategories, ...customIncomeCategories.value.map(cat => cat.name)];
+                    return [...defaultIncomeCategories, ...customIncomeCategories.value.map(cat => cat.name), '其他'];
                 });
                 
                 const expenseCategories = computed(() => {
-                    return [...defaultExpenseCategories, ...customExpenseCategories.value.map(cat => cat.name)];
+                    return [...defaultExpenseCategories, ...customExpenseCategories.value.map(cat => cat.name), '其他'];
                 });
 
                 // 類別管理相關變數
@@ -5579,12 +5579,14 @@
                     if (currentCategoryType.value === 'income') {
                         return [
                             ...defaultIncomeCategories.map(name => ({ name, color: '#409EFF', isDefault: true })),
-                            ...customIncomeCategories.value
+                            ...customIncomeCategories.value,
+                            { name: '其他', color: '#909399', isDefault: true }
                         ];
                     } else {
                         return [
                             ...defaultExpenseCategories.map(name => ({ name, color: '#409EFF', isDefault: true })),
-                            ...customExpenseCategories.value
+                            ...customExpenseCategories.value,
+                            { name: '其他', color: '#909399', isDefault: true }
                         ];
                     }
                 });
