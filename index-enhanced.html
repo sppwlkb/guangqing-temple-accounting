@@ -5520,7 +5520,7 @@
                 
                 // 計算屬性
                 const currentCategories = computed(() => {
-                    return form.value.type === 'income' ? incomeCategories : expenseCategories;
+                    return form.value.type === 'income' ? incomeCategories.value : expenseCategories.value;
                 });
                 
                 const modalTitle = computed(() => {
