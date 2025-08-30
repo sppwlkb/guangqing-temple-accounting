@@ -2550,9 +2550,17 @@
 
         .category-item.dragging {
             opacity: 0.5;
-            transform: rotate(5deg);
+            transform: rotate(2deg) scale(1.05);
             z-index: 1000;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            border-color: #409EFF;
+        }
+
+        .category-item.drag-over {
+            border-color: #67C23A;
+            background-color: #f0f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(103, 194, 58, 0.2);
         }
 
         .category-item[draggable="true"]:not([style*="cursor: default"]) {
@@ -4201,12 +4209,14 @@
                                 v-for="(category, index) in currentCategoryList" 
                                 :key="category.name + '-' + index"
                                 class="category-item"
-                                :class="{ 'dragging': draggedIndex === index }"
-                                draggable="true"
+                                :class="{ 'dragging': draggedIndex === index, 'drag-over': dragOverIndex === index }"
+                                :draggable="!isDefaultCategory(category.name)"
                                 @dragstart="onDragStart($event, index)"
                                 @dragend="onDragEnd"
-                                @dragover.prevent="onDragOver($event, index)"
-                                @drop.prevent="onDrop($event, index)"
+                                @dragover="onDragOver($event, index)"
+                                @dragenter="onDragEnter($event, index)"
+                                @dragleave="onDragLeave"
+                                @drop="onDrop($event, index)"
                                 :style="{ cursor: isDefaultCategory(category.name) ? 'default' : 'grab' }"
                             >
                                 <div class="category-info">
@@ -6094,27 +6104,55 @@
                     const category = currentCategoryList.value[index];
                     if (isDefaultCategory(category.name)) {
                         event.preventDefault();
-                        return;
+                        return false;
                     }
+                    
                     draggedIndex.value = index;
                     event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/html', event.target);
+                    event.dataTransfer.setData('text/plain', index.toString());
+                    
+                    // 添加拖拽樣式
+                    event.target.classList.add('dragging');
                 };
 
-                const onDragEnd = () => {
+                const onDragEnd = (event) => {
+                    // 移除拖拽樣式
+                    event.target.classList.remove('dragging');
                     draggedIndex.value = null;
                     dragOverIndex.value = null;
                 };
 
                 const onDragOver = (event, index) => {
+                    event.preventDefault();
                     const category = currentCategoryList.value[index];
-                    if (isDefaultCategory(category.name)) {
-                        return;
+                    
+                    // 允許拖拽到自定義類別上
+                    if (!isDefaultCategory(category.name)) {
+                        event.dataTransfer.dropEffect = 'move';
+                        dragOverIndex.value = index;
                     }
-                    dragOverIndex.value = index;
+                };
+
+                const onDragEnter = (event, index) => {
+                    event.preventDefault();
+                    const category = currentCategoryList.value[index];
+                    if (!isDefaultCategory(category.name)) {
+                        event.target.closest('.category-item').classList.add('drag-over');
+                    }
+                };
+
+                const onDragLeave = (event) => {
+                    event.target.closest('.category-item').classList.remove('drag-over');
                 };
 
                 const onDrop = (event, dropIndex) => {
+                    event.preventDefault();
+                    
+                    // 移除所有拖拽樣式
+                    document.querySelectorAll('.category-item').forEach(item => {
+                        item.classList.remove('drag-over');
+                    });
+
                     if (draggedIndex.value === null || draggedIndex.value === dropIndex) {
                         return;
                     }
@@ -6140,7 +6178,7 @@
                     const draggedCustomIndex = draggedIndex.value - defaultLength;
                     const dropCustomIndex = dropIndex - defaultLength;
 
-                    if (draggedCustomIndex >= 0 && dropCustomIndex >= 0) {
+                    if (draggedCustomIndex >= 0 && dropCustomIndex >= 0 && draggedCustomIndex !== dropCustomIndex) {
                         // 移動類別
                         const draggedItem = customCategories.splice(draggedCustomIndex, 1)[0];
                         customCategories.splice(dropCustomIndex, 0, draggedItem);
@@ -9061,6 +9099,8 @@
                     onDragStart,
                     onDragEnd,
                     onDragOver,
+                    onDragEnter,
+                    onDragLeave,
                     onDrop,
                     saveRecord,
                     saveReminder,
