@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=./index-enhanced.html">
     <title>廣清宮快速記帳軟體</title>
     
     <!-- PWA支援 -->
@@ -2462,7 +2463,20 @@
     </style>
 </head>
 <body>
-    <div id="app">
+    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h2>正在跳轉到最新版本...</h2>
+        <p>如果沒有自動跳轉，請點擊下方連結：</p>
+        <a href="./index-enhanced.html" style="color: #409EFF; text-decoration: none; font-size: 18px;">
+            🏛️ 廣清宮快速記帳軟體（含自定義類別功能）
+        </a>
+        <script>
+            // 確保重定向
+            setTimeout(() => {
+                window.location.href = './index-enhanced.html';
+            }, 2000);
+        </script>
+    </div>
+    <div id="app" style="display: none;">
         <div class="app-container">
             <!-- 頂部標題 -->
             <div class="app-header">
