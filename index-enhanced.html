@@ -2459,6 +2459,155 @@
                 padding-bottom: env(safe-area-inset-bottom);
             }
         }
+
+        /* 類別管理相關樣式 */
+        .category-select-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .category-select-container .form-select {
+            flex: 1;
+        }
+
+        .category-select-container .btn {
+            white-space: nowrap;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .category-manager-modal {
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .category-manager-content {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .add-category-form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .add-category-form h4 {
+            margin: 0 0 16px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .existing-categories h4 {
+            margin: 0 0 16px 0;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .category-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .category-item:hover {
+            border-color: #409EFF;
+            box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+        }
+
+        .category-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .category-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .category-details {
+            flex: 1;
+        }
+
+        .category-name {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .category-description {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .category-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .modal-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #e9ecef;
+            text-align: right;
+        }
+
+        @media (max-width: 768px) {
+            .category-select-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .form-row {
+                flex-direction: column;
+            }
+
+            .category-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .category-actions {
+                align-self: flex-end;
+            }
+        }
     </style>
 </head>
 <body>
@@ -3808,12 +3957,17 @@
                     
                     <div class="form-group">
                         <label class="form-label">類別</label>
-                        <select v-model="form.category" class="form-select" required>
-                            <option value="">請選擇類別</option>
-                            <option v-for="category in currentCategories" :key="category" :value="category">
-                                {{ category }}
-                            </option>
-                        </select>
+                        <div class="category-select-container">
+                            <select v-model="form.category" class="form-select" required>
+                                <option value="">請選擇類別</option>
+                                <option v-for="category in currentCategories" :key="category" :value="category">
+                                    {{ category }}
+                                </option>
+                            </select>
+                            <button type="button" class="btn btn-outline btn-sm" @click="showCategoryManager">
+                                <i class="icon">⚙️</i> 管理類別
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="form-group">
@@ -3945,6 +4099,92 @@
         <div v-if="showNotificationPopup" class="notification-popup">
             <div class="notification-title">{{ currentNotification.title }}</div>
             <div class="notification-message">{{ currentNotification.message }}</div>
+        </div>
+
+        <!-- 類別管理對話框 -->
+        <div v-if="showCategoryManagerModal" class="modal" @click.self="closeCategoryManagerModal">
+            <div class="modal-content category-manager-modal">
+                <div class="modal-header">
+                    <div class="modal-title">管理{{ currentCategoryType === 'income' ? '收入' : '支出' }}類別</div>
+                    <button class="close-btn" @click="closeCategoryManagerModal">&times;</button>
+                </div>
+
+                <div class="category-manager-content">
+                    <!-- 新增類別表單 -->
+                    <div class="add-category-form">
+                        <h4>新增類別</h4>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">類別名稱</label>
+                                <input 
+                                    v-model="newCategory.name" 
+                                    type="text" 
+                                    class="form-input" 
+                                    placeholder="請輸入類別名稱"
+                                    maxlength="20"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">顏色</label>
+                                <input 
+                                    v-model="newCategory.color" 
+                                    type="color" 
+                                    class="form-input color-picker"
+                                >
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">描述（選填）</label>
+                            <input 
+                                v-model="newCategory.description" 
+                                type="text" 
+                                class="form-input" 
+                                placeholder="請輸入類別描述"
+                                maxlength="50"
+                            >
+                        </div>
+                        <button type="button" class="btn btn-primary" @click="addCustomCategory">
+                            新增類別
+                        </button>
+                    </div>
+
+                    <!-- 現有類別列表 -->
+                    <div class="existing-categories">
+                        <h4>現有類別</h4>
+                        <div class="category-list">
+                            <div 
+                                v-for="(category, index) in currentCategoryList" 
+                                :key="index"
+                                class="category-item"
+                            >
+                                <div class="category-info">
+                                    <div class="category-color" :style="{ backgroundColor: category.color || '#409EFF' }"></div>
+                                    <div class="category-details">
+                                        <div class="category-name">{{ category.name }}</div>
+                                        <div v-if="category.description" class="category-description">{{ category.description }}</div>
+                                    </div>
+                                </div>
+                                <div class="category-actions">
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-danger btn-sm" 
+                                        @click="deleteCustomCategory(index)"
+                                        :disabled="isDefaultCategory(category.name)"
+                                    >
+                                        刪除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="closeCategoryManagerModal">
+                        關閉
+                    </button>
+                </div>
+            </div>
         </div>
 
         <!-- 信眾資料對話框 -->
@@ -5231,15 +5471,52 @@
                 });
 
                 // 類別定義
-                const incomeCategories = [
+                const defaultIncomeCategories = [
                     '香油錢', '點光明燈', '屬名紅包', '未屬名紅包', 
                     '祝壽', '看風水', '停車費', '感謝神尊', '其他'
                 ];
                 
-                const expenseCategories = [
+                const defaultExpenseCategories = [
                     '人員薪水', '房租', '水電費', '雜項開支', 
                     '參訪金', '修繕費', '管理費', '其他'
                 ];
+
+                // 自定義類別存儲
+                const customIncomeCategories = ref([]);
+                const customExpenseCategories = ref([]);
+
+                // 合併預設和自定義類別
+                const incomeCategories = computed(() => {
+                    return [...defaultIncomeCategories, ...customIncomeCategories.value.map(cat => cat.name)];
+                });
+                
+                const expenseCategories = computed(() => {
+                    return [...defaultExpenseCategories, ...customExpenseCategories.value.map(cat => cat.name)];
+                });
+
+                // 類別管理相關變數
+                const showCategoryManagerModal = ref(false);
+                const currentCategoryType = ref('income');
+                const newCategory = ref({
+                    name: '',
+                    color: '#409EFF',
+                    description: ''
+                });
+
+                // 當前類別列表（用於管理對話框）
+                const currentCategoryList = computed(() => {
+                    if (currentCategoryType.value === 'income') {
+                        return [
+                            ...defaultIncomeCategories.map(name => ({ name, color: '#409EFF', isDefault: true })),
+                            ...customIncomeCategories.value
+                        ];
+                    } else {
+                        return [
+                            ...defaultExpenseCategories.map(name => ({ name, color: '#409EFF', isDefault: true })),
+                            ...customExpenseCategories.value
+                        ];
+                    }
+                });
                 
                 // 計算屬性
                 const currentCategories = computed(() => {
@@ -5618,7 +5895,136 @@
                     };
                 };
                 
+                // 類別管理方法
+                const showCategoryManager = () => {
+                    currentCategoryType.value = form.value.type;
+                    showCategoryManagerModal.value = true;
+                };
+
+                const closeCategoryManagerModal = () => {
+                    showCategoryManagerModal.value = false;
+                    newCategory.value = {
+                        name: '',
+                        color: '#409EFF',
+                        description: ''
+                    };
+                };
+
+                const addCustomCategory = () => {
+                    if (!newCategory.value.name.trim()) {
+                        alert('請輸入類別名稱');
+                        return;
+                    }
+
+                    // 檢查類別名稱是否已存在
+                    const existingCategories = currentCategoryType.value === 'income' 
+                        ? incomeCategories.value 
+                        : expenseCategories.value;
+                    
+                    if (existingCategories.includes(newCategory.value.name)) {
+                        alert('此類別名稱已存在');
+                        return;
+                    }
+
+                    const categoryToAdd = {
+                        name: newCategory.value.name.trim(),
+                        color: newCategory.value.color,
+                        description: newCategory.value.description.trim(),
+                        createdAt: new Date().toISOString()
+                    };
+
+                    if (currentCategoryType.value === 'income') {
+                        customIncomeCategories.value.push(categoryToAdd);
+                    } else {
+                        customExpenseCategories.value.push(categoryToAdd);
+                    }
+
+                    // 保存到本地存儲
+                    saveCustomCategoriesToStorage();
+
+                    // 重置表單
+                    newCategory.value = {
+                        name: '',
+                        color: '#409EFF',
+                        description: ''
+                    };
+
+                    showNotification('類別已新增', '自定義類別已成功新增');
+                };
+
+                const deleteCustomCategory = (index) => {
+                    const category = currentCategoryList.value[index];
+                    
+                    if (category.isDefault) {
+                        alert('預設類別無法刪除');
+                        return;
+                    }
+
+                    // 檢查是否有記錄使用此類別
+                    const hasRecords = records.value.some(record => 
+                        record.category === category.name
+                    );
+
+                    if (hasRecords) {
+                        if (!confirm('此類別仍有記錄使用中，刪除後相關記錄的類別將顯示為「其他」。確定要刪除嗎？')) {
+                            return;
+                        }
+
+                        // 將使用此類別的記錄改為「其他」
+                        records.value.forEach(record => {
+                            if (record.category === category.name) {
+                                record.category = '其他';
+                            }
+                        });
+                        saveToStorage();
+                    }
+
+                    // 從自定義類別中刪除
+                    if (currentCategoryType.value === 'income') {
+                        customIncomeCategories.value.splice(index - defaultIncomeCategories.length, 1);
+                    } else {
+                        customExpenseCategories.value.splice(index - defaultExpenseCategories.length, 1);
+                    }
+
+                    saveCustomCategoriesToStorage();
+                    showNotification('類別已刪除', '自定義類別已成功刪除');
+                };
+
+                const isDefaultCategory = (categoryName) => {
+                    if (currentCategoryType.value === 'income') {
+                        return defaultIncomeCategories.includes(categoryName);
+                    } else {
+                        return defaultExpenseCategories.includes(categoryName);
+                    }
+                };
+
+                const saveCustomCategoriesToStorage = () => {
+                    try {
+                        localStorage.setItem('custom-income-categories', JSON.stringify(customIncomeCategories.value));
+                        localStorage.setItem('custom-expense-categories', JSON.stringify(customExpenseCategories.value));
+                    } catch (error) {
+                        console.error('保存自定義類別失敗:', error);
+                    }
+                };
+
+                const loadCustomCategoriesFromStorage = () => {
+                    try {
+                        const savedIncomeCategories = localStorage.getItem('custom-income-categories');
+                        const savedExpenseCategories = localStorage.getItem('custom-expense-categories');
+                        
+                        if (savedIncomeCategories) {
+                            customIncomeCategories.value = JSON.parse(savedIncomeCategories);
+                        }
+                        if (savedExpenseCategories) {
+                            customExpenseCategories.value = JSON.parse(savedExpenseCategories);
+                        }
+                    } catch (error) {
+                        console.error('載入自定義類別失敗:', error);
+                    }
+                };
+
                 const updateCategories = () => {
+                    // 當類型改變時，清空當前選擇的類別
                     form.value.category = '';
                 };
                 
@@ -8439,6 +8845,7 @@
 
                 onMounted(() => {
                     loadFromStorage();
+                    loadCustomCategoriesFromStorage();
 
                     // 註冊 Service Worker
                     if ('serviceWorker' in navigator) {
@@ -8510,6 +8917,16 @@
                     openAddModal,
                     closeAddModal,
                     updateCategories,
+                    // 類別管理相關
+                    showCategoryManagerModal,
+                    currentCategoryType,
+                    newCategory,
+                    currentCategoryList,
+                    showCategoryManager,
+                    closeCategoryManagerModal,
+                    addCustomCategory,
+                    deleteCustomCategory,
+                    isDefaultCategory,
                     saveRecord,
                     saveReminder,
                     closeReminderModal,
