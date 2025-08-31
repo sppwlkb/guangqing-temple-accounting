@@ -6,12 +6,12 @@
 // Firebase 配置
 const firebaseConfig = {
     // 注意：這些是示例配置，實際使用時請替換為您的 Firebase 專案配置
-    apiKey: "your-api-key",
+    apiKey: "ap0dZIvLckVvv4Q7bH9D_wivoQ0tNEbMg1cUUbwqpkc",
     authDomain: "guangqing-temple-accounting.firebaseapp.com",
     databaseURL: "https://guangqing-temple-accounting-default-rtdb.firebaseio.com",
     projectId: "guangqing-temple-accounting",
     storageBucket: "guangqing-temple-accounting.appspot.com",
-    messagingSenderId: "123456789",
+    messagingSenderId: "149239503393",
     appId: "1:123456789:web:abcdefghijklmnop"
 };
 
