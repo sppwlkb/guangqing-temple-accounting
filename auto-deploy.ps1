@@ -91,5 +91,5 @@ Write-Host "🎉 自動部署流程已啟動！" -ForegroundColor Green
 Write-Host ""
 
 if (-not $SkipConfirmation) {
-    Read-Host "按任意鍵繼續"
+    Read-Host "Press any key to continue"
 } 

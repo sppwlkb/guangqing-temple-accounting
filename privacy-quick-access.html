@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>廣清宮記帳軟體 - 個資保護中心</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #8b4513, #d4af37);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-left: 5px solid #d4af37;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .card-icon {
+            font-size: 32px;
+            margin-right: 15px;
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #8b4513;
+            margin: 0;
+        }
+        .card-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #d4af37;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #b8941f;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .status-bar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        .status-good { background-color: #28a745; }
+        .status-warning { background-color: #ffc107; }
+        .status-danger { background-color: #dc3545; }
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .quick-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ 個人資料保護中心</h1>
+            <p>Personal Data Protection Center</p>
+            <p>符合台灣個人資料保護法規範的完整解決方案</p>
+        </div>
+
+        <!-- 狀態總覽 -->
+        <div class="status-bar">
+            <h3 style="margin-top: 0; color: #8b4513;">📊 保護狀態總覽</h3>
+            <div id="status-overview">
+                <div class="status-item">
+                    <span><span class="status-indicator status-good"></span>系統正在載入...</span>
+                    <span>請稍候</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能卡片 -->
+        <div class="grid">
+            <!-- 隱私政策與同意書 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">📋</span>
+                    <h3 class="card-title">隱私政策與同意書</h3>
+                </div>
+                <div class="card-description">
+                    查看完整的隱私權保護政策，管理個人資料處理同意書，了解您的權利與我們的義務。
+                </div>
+                <a href="privacy-policy.html" class="btn">查看隱私政策</a>
+            </div>
+
+            <!-- 管理員儀表板 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🎛️</span>
+                    <h3 class="card-title">管理員儀表板</h3>
+                </div>
+                <div class="card-description">
+                    完整的個資保護管理工具，包含審計日誌、存取控制、合規監控等功能。
+                </div>
+                <a href="privacy-dashboard.html" class="btn">進入儀表板</a>
+            </div>
+
+            <!-- 資料權利行使 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">⚖️</span>
+                    <h3 class="card-title">資料權利行使</h3>
+                </div>
+                <div class="card-description">
+                    行使您的個人資料權利，包括查詢、更正、刪除、停止處理等法定權利。
+                </div>
+                <button class="btn" onclick="exerciseDataRights()">行使權利</button>
+            </div>
+
+            <!-- 安全設定 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🔐</span>
+                    <h3 class="card-title">安全設定</h3>
+                </div>
+                <div class="card-description">
+                    管理資料加密、存取權限、審計設定等安全相關配置。
+                </div>
+                <button class="btn" onclick="openSecuritySettings()">安全設定</button>
+            </div>
+
+            <!-- 合規檢查 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">✅</span>
+                    <h3 class="card-title">合規檢查</h3>
+                </div>
+                <div class="card-description">
+                    執行個資保護法合規檢查，產生合規報告，確保符合法規要求。
+                </div>
+                <button class="btn" onclick="runComplianceCheck()">執行檢查</button>
+            </div>
+
+            <!-- 資料清理 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-icon">🗑️</span>
+                    <h3 class="card-title">資料清理</h3>
+                </div>
+                <div class="card-description">
+                    自動清理過期個人資料，管理資料保存期限，確保資料最小化原則。
+                </div>
+                <button class="btn btn-secondary" onclick="manageDataCleanup()">管理清理</button>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="status-bar">
+            <h3 style="margin-top: 0; color: #8b4513;">⚡ 快速操作</h3>
+            <div class="quick-actions">
+                <button class="btn" onclick="exportPrivacyReport()">📄 匯出個資報告</button>
+                <button class="btn" onclick="viewAuditLogs()">🔍 查看審計日誌</button>
+                <button class="btn btn-secondary" onclick="contactDPO()">📞 聯絡個資窗口</button>
+                <button class="btn btn-secondary" onclick="viewHelp()">❓ 說明文件</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入個資保護系統 -->
+    <script src="privacy-protection.js"></script>
+    <script src="access-control.js"></script>
+    
+    <script>
+        // 頁面載入完成後初始化
+        window.addEventListener('load', function() {
+            setTimeout(updateStatusOverview, 1000); // 等待系統初始化
+        });
+
+        // 更新狀態總覽
+        function updateStatusOverview() {
+            try {
+                const privacyReport = window.privacyManager.getPrivacyReport();
+                const accessReport = window.accessControl.getAccessControlReport();
+                
+                const statusElement = document.getElementById('status-overview');
+                statusElement.innerHTML = `
+                    <div class="status-item">
+                        <span>
+                            <span class="status-indicator ${privacyReport.encryptionEnabled ? 'status-good' : 'status-danger'}"></span>
+                            資料加密
+                        </span>
+                        <span>${privacyReport.encryptionEnabled ? '已啟用' : '未啟用'}</span>
+                    </div>
+                    <div class="status-item">
+                        <span>
+                            <span class="status-indicator status-good"></span>
+                            個人資料記錄
+                        </span>
+                        <span>${privacyReport.totalPersonalDataRecords} 筆</span>
+                    </div>
+                    <div class="status-item">
+                        <span>
+                            <span class="status-indicator ${privacyReport.activeConsents > 0 ? 'status-good' : 'status-warning'}"></span>
+                            有效同意書
+                        </span>
+                        <span>${privacyReport.activeConsents} / ${privacyReport.totalConsents}</span>
+                    </div>
+                    <div class="status-item">
+                        <span>
+                            <span class="status-indicator ${privacyReport.complianceStatus.compliant ? 'status-good' : 'status-warning'}"></span>
+                            合規狀態
+                        </span>
+                        <span>${privacyReport.complianceStatus.score}%</span>
+                    </div>
+                    <div class="status-item">
+                        <span>
+                            <span class="status-indicator ${accessReport.securityLevel.level === 'high' ? 'status-good' : 'status-warning'}"></span>
+                            安全等級
+                        </span>
+                        <span>${accessReport.securityLevel.level.toUpperCase()}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('更新狀態總覽失敗:', error);
+                document.getElementById('status-overview').innerHTML = `
+                    <div class="status-item">
+                        <span><span class="status-indicator status-warning"></span>系統初始化中</span>
+                        <span>請稍候片刻</span>
+                    </div>
+                `;
+            }
+        }
+
+        // 行使資料權利
+        function exerciseDataRights() {
+            const rights = [
+                '🔍 查詢或請求閱覽個人資料',
+                '📄 請求製給複製本', 
+                '✏️ 請求補充或更正資料',
+                '🛑 請求停止蒐集、處理或利用',
+                '🗑️ 請求刪除個人資料'
+            ];
+            
+            let message = '根據個人資料保護法，您享有以下權利：\n\n';
+            rights.forEach(right => {
+                message += right + '\n';
+            });
+            message += '\n如需行使權利，請聯絡個資保護窗口：\n';
+            message += '負責人：李佳芬 (管理部)\n';
+            message += '服務時間：週一至週日 08:00-17:00';
+            
+            alert(message);
+        }
+
+        // 開啟安全設定
+        function openSecuritySettings() {
+            if (!window.privacyManager) {
+                alert('個資保護系統尚未載入，請稍後再試');
+                return;
+            }
+            
+            const report = window.privacyManager.getPrivacyReport();
+            let message = '🔐 當前安全設定狀態：\n\n';
+            message += `資料加密：${report.encryptionEnabled ? '✅ 已啟用' : '❌ 未啟用'}\n`;
+            message += `審計日誌：${report.auditLogEntries > 0 ? '✅ 運作中' : '❌ 未運作'}\n`;
+            message += `資料保存期限：${report.dataRetentionPeriod}\n`;
+            message += `合規評分：${report.complianceStatus.score}%\n\n`;
+            
+            if (!report.complianceStatus.compliant) {
+                message += '⚠️ 發現的問題：\n';
+                report.complianceStatus.issues.forEach(issue => {
+                    message += `• ${issue}\n`;
+                });
+            }
+            
+            alert(message);
+        }
+
+        // 執行合規檢查
+        function runComplianceCheck() {
+            if (!window.privacyManager || !window.accessControl) {
+                alert('系統尚未完全載入，請稍後再試');
+                return;
+            }
+            
+            const privacyReport = window.privacyManager.getPrivacyReport();
+            const accessReport = window.accessControl.getAccessControlReport();
+            
+            let message = '📋 個資保護法合規檢查結果：\n\n';
+            
+            // 個資保護合規檢查
+            message += '🛡️ 個資保護：\n';
+            message += `• 合規評分：${privacyReport.complianceStatus.score}%\n`;
+            message += `• 資料加密：${privacyReport.encryptionEnabled ? '✅' : '❌'}\n`;
+            message += `• 同意書管理：${privacyReport.totalConsents > 0 ? '✅' : '❌'}\n`;
+            message += `• 審計日誌：${privacyReport.auditLogEntries > 0 ? '✅' : '❌'}\n\n`;
+            
+            // 存取控制合規檢查
+            message += '👥 存取控制：\n';
+            message += `• 安全等級：${accessReport.securityLevel.level.toUpperCase()}\n`;
+            message += `• 使用者管理：${accessReport.totalUsers > 0 ? '✅' : '❌'}\n`;
+            message += `• 存取記錄：${accessReport.totalAccessLogs > 0 ? '✅' : '❌'}\n\n`;
+            
+            // 總體評估
+            const overallScore = Math.round((privacyReport.complianceStatus.score + accessReport.securityLevel.score) / 2);
+            message += `📊 總體合規評分：${overallScore}%\n`;
+            
+            if (overallScore >= 80) {
+                message += '✅ 合規狀態良好';
+            } else if (overallScore >= 60) {
+                message += '⚠️ 合規狀態需改善';
+            } else {
+                message += '❌ 合規狀態不佳，需立即改善';
+            }
+            
+            alert(message);
+        }
+
+        // 管理資料清理
+        function manageDataCleanup() {
+            if (!window.privacyManager) {
+                alert('個資保護系統尚未載入');
+                return;
+            }
+            
+            if (confirm('確定要執行資料清理檢查嗎？這將檢查並清理過期的個人資料。')) {
+                const result = window.privacyManager.cleanupExpiredData();
+                alert(`🗑️ 資料清理完成！\n\n清理結果：\n• 刪除記錄：${result.deletedRecords} 筆\n• 刪除信眾資料：${result.deletedBelievers} 筆\n\n資料保存期限：5年`);
+                updateStatusOverview(); // 更新狀態
+            }
+        }
+
+        // 匯出個資報告
+        function exportPrivacyReport() {
+            if (!window.privacyManager) {
+                alert('個資保護系統尚未載入');
+                return;
+            }
+            
+            const report = window.privacyManager.getPrivacyReport();
+            const inventory = window.privacyManager.exportDataInventory();
+            
+            const fullReport = {
+                exportTime: new Date().toISOString(),
+                exportBy: '個資保護中心',
+                privacyReport: report,
+                dataInventory: inventory
+            };
+            
+            const blob = new Blob([JSON.stringify(fullReport, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `廣清宮個資保護報告_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('📄 個資保護報告已匯出');
+        }
+
+        // 查看審計日誌
+        function viewAuditLogs() {
+            window.open('privacy-dashboard.html', '_blank');
+        }
+
+        // 聯絡個資窗口
+        function contactDPO() {
+            const message = `📞 廣清宮個人資料保護聯絡窗口：
+
+👤 負責人：李佳芬 (管理部)
+📱 電話：(請填入實際電話)
+📧 電子郵件：(請填入聯絡信箱)
+📍 地址：(請填入宮廟實際地址)
+🕐 服務時間：週一至週日 08:00-17:00
+
+如有個人資料相關問題或需要行使資料權利，請透過上述方式聯絡我們。`;
+            
+            alert(message);
+        }
+
+        // 查看說明文件
+        function viewHelp() {
+            const helpText = `❓ 個資保護系統說明
+
+🛡️ 系統功能：
+• 資料加密保護
+• 存取權限控制
+• 審計日誌記錄
+• 同意書管理
+• 合規狀態監控
+
+⚖️ 您的權利：
+• 查詢個人資料
+• 請求更正資料
+• 請求刪除資料
+• 撤回處理同意
+
+📋 合規依據：
+• 台灣個人資料保護法
+• 相關法規命令
+• 主管機關指引
+
+如需更多協助，請聯絡個資保護窗口。`;
+            
+            alert(helpText);
+        }
+    </script>
+</body>
+</html> 
