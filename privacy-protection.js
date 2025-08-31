@@ -379,11 +379,36 @@ class PrivacyProtectionManager {
     }
 
     /**
+     * 更新聯絡資訊（支援多宮廟）
+     */
+    updateContactInfo(contactConfig) {
+        this.contactInfo = {
+            dpoName: contactConfig.dpoName || '個資保護負責人',
+            dpoPhone: contactConfig.dpoPhone || '聯絡電話',
+            dpoEmail: contactConfig.dpoEmail || '聯絡信箱',
+            templeName: contactConfig.templeName || '宮廟名稱',
+            templeAddress: contactConfig.templeAddress || '宮廟地址'
+        };
+    }
+
+    /**
+     * 獲取存儲前綴（支援多宮廟資料分離）
+     */
+    getStoragePrefix() {
+        if (window.templeConfig) {
+            const config = window.templeConfig.getConfig();
+            return `temple-${config.templeId || 'default'}-`;
+        }
+        return 'temple-default-';
+    }
+
+    /**
      * 獲取個資保護狀態報告
      */
     getPrivacyReport() {
-        const totalRecords = JSON.parse(localStorage.getItem('temple-records') || '[]').length;
-        const totalBelievers = JSON.parse(localStorage.getItem('temple-believers') || '[]').length;
+        const prefix = this.getStoragePrefix();
+        const totalRecords = JSON.parse(localStorage.getItem(prefix + 'records') || '[]').length;
+        const totalBelievers = JSON.parse(localStorage.getItem(prefix + 'believers') || '[]').length;
         const totalConsents = this.consentRecords.size;
         const activeConsents = Array.from(this.consentRecords.values()).filter(c => c.status === 'active').length;
         

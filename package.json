@@ -1,7 +1,7 @@
 {
-  "name": "guangqing-temple-accounting",
-  "version": "1.0.0",
-  "description": "廣清宮快速記帳軟體 - 專為宮廟設計的記帳系統",
+  "name": "temple-accounting-system",
+  "version": "2.0.0",
+  "description": "宮廟快速記帳軟體 - 專為台灣宮廟設計的通用記帳系統",
   "type": "module",
   "engines": {
     "node": ">=18.0.0",
@@ -45,6 +45,6 @@
     "vite",
     "pinia"
   ],
-  "author": "廣清宮開發團隊",
+  "author": "宮廟軟體開發團隊",
   "license": "MIT"
 }
