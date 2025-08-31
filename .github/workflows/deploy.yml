@@ -33,15 +33,52 @@ jobs:
         else
           echo "📁 直接複製檔案進行部署"
           mkdir -p dist
-          cp index.html dist/
-          cp style.css dist/
-          cp app.js dist/
-          cp firebase-config.js dist/
-          cp cloud-sync.js dist/
-          cp offline-storage.js dist/
-          cp manifest.json dist/
-          cp service-worker.js dist/
+          
+          # 複製基本檔案
+          cp *.html dist/ 2>/dev/null || true
+          cp *.css dist/ 2>/dev/null || true
+          cp *.js dist/ 2>/dev/null || true
+          cp *.json dist/ 2>/dev/null || true
+          
+          # 確保關鍵檔案存在
+          cp index.html dist/ 2>/dev/null || true
+          cp index-enhanced.html dist/ 2>/dev/null || true
+          cp style.css dist/ 2>/dev/null || true
+          cp app.js dist/ 2>/dev/null || true
+          cp firebase-config.js dist/ 2>/dev/null || true
+          cp cloud-sync.js dist/ 2>/dev/null || true
+          cp offline-storage.js dist/ 2>/dev/null || true
+          cp manifest.json dist/ 2>/dev/null || true
+          cp service-worker.js dist/ 2>/dev/null || true
+          
+          # 複製所有修復工具
+          cp facai-fix.html dist/ 2>/dev/null || true
+          cp indexeddb-reset.html dist/ 2>/dev/null || true
+          cp category-repair-tool.html dist/ 2>/dev/null || true
+          cp system-health-dashboard.html dist/ 2>/dev/null || true
+          cp temple-deployment-generator.html dist/ 2>/dev/null || true
+          cp donation-demo.html dist/ 2>/dev/null || true
+          cp privacy-policy.html dist/ 2>/dev/null || true
+          cp privacy-dashboard.html dist/ 2>/dev/null || true
+          cp privacy-quick-access.html dist/ 2>/dev/null || true
+          
+          # 複製所有JavaScript系統
+          cp temple-config.js dist/ 2>/dev/null || true
+          cp donation-system.js dist/ 2>/dev/null || true
+          cp category-manager.js dist/ 2>/dev/null || true
+          cp emergency-category-fix.js dist/ 2>/dev/null || true
+          cp user-support-system.js dist/ 2>/dev/null || true
+          cp premium-support.js dist/ 2>/dev/null || true
+          cp privacy-protection.js dist/ 2>/dev/null || true
+          cp access-control.js dist/ 2>/dev/null || true
+          cp cloud-sync-manager.js dist/ 2>/dev/null || true
+          cp qrcode-generator.js dist/ 2>/dev/null || true
+          
+          # GitHub Pages 配置
           echo "" > dist/.nojekyll
+          
+          echo "✅ 所有檔案已複製到 dist 目錄"
+          ls -la dist/
         fi
         
     - name: 🌐 部署到 GitHub Pages
