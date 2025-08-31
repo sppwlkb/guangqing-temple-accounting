@@ -10,8 +10,12 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
+    "build:simple": "mkdir dist 2>nul & copy index.html dist\\ & copy style.css dist\\ & copy app.js dist\\ & copy firebase-config.js dist\\ & copy cloud-sync.js dist\\ & copy offline-storage.js dist\\ & copy manifest.json dist\\ & copy service-worker.js dist\\ & echo. > dist\\.nojekyll",
     "preview": "vite preview --host",
     "serve": "vite preview --port 3000",
+    "deploy": "powershell -ExecutionPolicy Bypass -File auto-deploy.ps1",
+    "deploy:bat": "auto-deploy.bat",
+    "deploy:quick": "powershell -ExecutionPolicy Bypass -File auto-deploy.ps1 -SkipConfirmation",
     "clean": "rimraf dist node_modules/.vite",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
     "clean-install": "rmdir /s /q node_modules 2>nul & del package-lock.json 2>nul & npm cache clean --force & npm install --legacy-peer-deps",

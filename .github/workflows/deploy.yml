@@ -1,37 +1,65 @@
-name: Deploy to GitHub Pages
+name: 🚀 自動部署到 GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
-      contents: read    # to checkout the repository
-    
-    # Deploy to the github-pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
     steps:
-    - name: Checkout
+    - name: 📥 檢出程式碼
       uses: actions/checkout@v4
       
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-      
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
+    - name: 🔧 設置 Node.js
+      uses: actions/setup-node@v4
       with:
-        # Upload entire repository (since it's a static site)
-        path: '.'
+        node-version: '18'
+        cache: 'npm'
         
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4 
+    - name: 📦 安裝依賴
+      run: |
+        npm ci || npm install --legacy-peer-deps
+        
+    - name: 🏗️ 構建專案
+      run: |
+        # 如果有構建腳本就使用，否則直接複製檔案
+        if npm run build 2>/dev/null; then
+          echo "✅ 使用 npm run build 構建成功"
+        else
+          echo "📁 直接複製檔案進行部署"
+          mkdir -p dist
+          cp index.html dist/
+          cp style.css dist/
+          cp app.js dist/
+          cp firebase-config.js dist/
+          cp cloud-sync.js dist/
+          cp offline-storage.js dist/
+          cp manifest.json dist/
+          cp service-worker.js dist/
+          echo "" > dist/.nojekyll
+        fi
+        
+    - name: 🌐 部署到 GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      if: github.ref == 'refs/heads/main'
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        publish_branch: gh-pages
+        force_orphan: true
+        
+    - name: 📊 部署狀態
+      if: success()
+      run: |
+        echo "🎉 部署成功！"
+        echo "🌐 網站將在幾分鐘內更新：https://${{ github.repository_owner }}.github.io/guangqing-temple-accounting/"
+        
+    - name: ❌ 部署失敗通知
+      if: failure()
+      run: |
+        echo "❌ 部署失敗，請檢查錯誤日誌" 
