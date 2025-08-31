@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宮廟記帳軟體 - 專屬版本產生器</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #8b4513, #d4af37);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #8b4513;
+        }
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #d4af37;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #d4af37;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background: #b8941f;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .preview-box {
+            background: #f8f9fa;
+            border: 2px dashed #d4af37;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .url-preview {
+            font-size: 18px;
+            font-weight: bold;
+            color: #d4af37;
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .step {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .step h4 {
+            margin-top: 0;
+            color: #28a745;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #d4af37;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: #6c757d;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            color: #d4af37;
+            border-bottom-color: #d4af37;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏛️ 宮廟記帳軟體專屬版本產生器</h1>
+            <p>為您的宮廟創建專屬的記帳軟體網站</p>
+        </div>
+
+        <div class="card">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">📝 宮廟資訊設定</h2>
+            
+            <div class="form-group">
+                <label for="temple-name">宮廟名稱 *</label>
+                <input type="text" id="temple-name" placeholder="例如：廣清宮、天后宮、關帝廟" onchange="updatePreview()">
+            </div>
+            
+            <div class="form-group">
+                <label for="temple-english">英文名稱（用於網址）*</label>
+                <input type="text" id="temple-english" placeholder="例如：guangqing, tianhou, guandi" onchange="updatePreview()">
+                <small style="color: #666;">只能使用英文字母、數字和連字號</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="github-username">GitHub 用戶名 *</label>
+                <input type="text" id="github-username" placeholder="您的GitHub用戶名" onchange="updatePreview()">
+            </div>
+            
+            <div class="form-group">
+                <label for="temple-address">宮廟地址</label>
+                <input type="text" id="temple-address" placeholder="完整地址">
+            </div>
+            
+            <div class="form-group">
+                <label for="temple-phone">聯絡電話</label>
+                <input type="text" id="temple-phone" placeholder="聯絡電話">
+            </div>
+            
+            <div class="form-group">
+                <label for="main-deity">主祀神明</label>
+                <input type="text" id="main-deity" placeholder="例如：媽祖、觀音菩薩、關聖帝君">
+            </div>
+            
+            <div class="form-group">
+                <label for="dpo-name">個資保護負責人 *</label>
+                <input type="text" id="dpo-name" placeholder="負責人姓名">
+            </div>
+        </div>
+
+        <!-- 網址預覽 -->
+        <div class="card">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">🌐 您的專屬網址預覽</h2>
+            <div class="preview-box">
+                <div>您的宮廟記帳軟體網址將會是：</div>
+                <div class="url-preview" id="url-preview">
+                    請先填寫上方資訊
+                </div>
+                <div style="color: #666; font-size: 14px; margin-top: 10px;">
+                    這將是完全屬於您宮廟的獨立網站！
+                </div>
+            </div>
+        </div>
+
+        <!-- 部署方案選擇 -->
+        <div class="card">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">🚀 選擇部署方案</h2>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('github-pages')">GitHub Pages (免費)</button>
+                <button class="tab" onclick="showTab('custom-domain')">自訂網域 (付費)</button>
+                <button class="tab" onclick="showTab('netlify')">Netlify (免費/付費)</button>
+            </div>
+            
+            <!-- GitHub Pages 方案 -->
+            <div id="github-pages" class="tab-content active">
+                <div class="highlight">
+                    <h3>🆓 GitHub Pages 方案（推薦）</h3>
+                    <p><strong>完全免費，適合大部分宮廟使用</strong></p>
+                    
+                    <div style="margin: 20px 0;">
+                        <strong>優點：</strong>
+                        <ul>
+                            <li>✅ 完全免費</li>
+                            <li>✅ 自動SSL憑證</li>
+                            <li>✅ 全球CDN加速</li>
+                            <li>✅ 自動部署</li>
+                        </ul>
+                        
+                        <strong>網址格式：</strong>
+                        <div class="code-block" id="github-url-format">
+                            https://您的GitHub用戶名.github.io/宮廟英文名-temple/
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 自訂網域方案 -->
+            <div id="custom-domain" class="tab-content">
+                <div class="highlight">
+                    <h3>🌟 自訂網域方案</h3>
+                    <p><strong>專業形象，需購買網域（約NT$ 500-1000/年）</strong></p>
+                    
+                    <div style="margin: 20px 0;">
+                        <strong>優點：</strong>
+                        <ul>
+                            <li>✅ 專業形象</li>
+                            <li>✅ 易記網址</li>
+                            <li>✅ SEO優勢</li>
+                            <li>✅ 品牌建立</li>
+                        </ul>
+                        
+                        <strong>網址格式：</strong>
+                        <div class="code-block" id="custom-url-format">
+                            https://宮廟英文名-temple.com/
+                        </div>
+                        
+                        <strong>推薦網域商：</strong>
+                        <ul>
+                            <li>Namecheap（便宜）</li>
+                            <li>GoDaddy（知名）</li>
+                            <li>Cloudflare（安全）</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Netlify 方案 -->
+            <div id="netlify" class="tab-content">
+                <div class="highlight">
+                    <h3>⚡ Netlify 方案</h3>
+                    <p><strong>更快的部署，免費版有限制</strong></p>
+                    
+                    <div style="margin: 20px 0;">
+                        <strong>優點：</strong>
+                        <ul>
+                            <li>✅ 快速部署</li>
+                            <li>✅ 表單處理</li>
+                            <li>✅ 函數支援</li>
+                            <li>✅ 分析功能</li>
+                        </ul>
+                        
+                        <strong>網址格式：</strong>
+                        <div class="code-block" id="netlify-url-format">
+                            https://宮廟英文名-temple.netlify.app/
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 自動產生部署檔案 -->
+        <div class="card">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">🔧 產生專屬部署檔案</h2>
+            
+            <button class="btn" onclick="generateDeploymentFiles()" style="width: 100%; margin-bottom: 20px;">
+                🎉 產生宮廟專屬版本
+            </button>
+            
+            <div id="generated-files" style="display: none;">
+                <h3>📁 已產生的檔案：</h3>
+                <div id="file-list"></div>
+                
+                <div class="highlight">
+                    <h4>📋 部署步驟：</h4>
+                    <ol>
+                        <li>下載所有產生的檔案</li>
+                        <li>在GitHub建立新倉庫：<code id="repo-name"></code></li>
+                        <li>上傳檔案到倉庫</li>
+                        <li>啟用GitHub Pages</li>
+                        <li>您的宮廟軟體就上線了！</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- 詳細步驟說明 -->
+        <div class="card">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">📚 詳細部署步驟</h2>
+            
+            <div class="step">
+                <h4>步驟 1：建立GitHub倉庫</h4>
+                <p>1. 前往 <a href="https://github.com" target="_blank">GitHub.com</a> 並登入</p>
+                <p>2. 點擊右上角「+」→「New repository」</p>
+                <p>3. Repository name: <code id="step-repo-name">填寫宮廟資訊後顯示</code></p>
+                <p>4. 設為 Public，點擊「Create repository」</p>
+            </div>
+            
+            <div class="step">
+                <h4>步驟 2：上傳檔案</h4>
+                <p>1. 下載本頁面產生的所有檔案</p>
+                <p>2. 在GitHub倉庫頁面點擊「uploading an existing file」</p>
+                <p>3. 將所有檔案拖拽上傳</p>
+                <p>4. 填寫 Commit message：「初始化宮廟記帳軟體」</p>
+                <p>5. 點擊「Commit changes」</p>
+            </div>
+            
+            <div class="step">
+                <h4>步驟 3：啟用GitHub Pages</h4>
+                <p>1. 在倉庫頁面點擊「Settings」</p>
+                <p>2. 左側選單找到「Pages」</p>
+                <p>3. Source 選擇「Deploy from a branch」</p>
+                <p>4. Branch 選擇「main」</p>
+                <p>5. 點擊「Save」</p>
+            </div>
+            
+            <div class="step">
+                <h4>步驟 4：完成！</h4>
+                <p>🎉 恭喜！您的宮廟軟體已上線</p>
+                <p>網址：<code id="final-url">等待填寫資訊</code></p>
+                <p>通常需要5-10分鐘生效</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 更新預覽
+        function updatePreview() {
+            const templeName = document.getElementById('temple-name').value;
+            const templeEnglish = document.getElementById('temple-english').value;
+            const githubUsername = document.getElementById('github-username').value;
+            
+            if (templeEnglish && githubUsername) {
+                const repoName = `${templeEnglish}-temple`;
+                const url = `https://${githubUsername}.github.io/${repoName}/`;
+                
+                document.getElementById('url-preview').textContent = url;
+                document.getElementById('github-url-format').textContent = url;
+                document.getElementById('custom-url-format').textContent = `https://${templeEnglish}-temple.com/`;
+                document.getElementById('netlify-url-format').textContent = `https://${templeEnglish}-temple.netlify.app/`;
+                document.getElementById('repo-name').textContent = repoName;
+                document.getElementById('step-repo-name').textContent = repoName;
+                document.getElementById('final-url').textContent = url;
+            }
+        }
+
+        // 分頁切換
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // 產生部署檔案
+        function generateDeploymentFiles() {
+            const templeName = document.getElementById('temple-name').value;
+            const templeEnglish = document.getElementById('temple-english').value;
+            const githubUsername = document.getElementById('github-username').value;
+            const templeAddress = document.getElementById('temple-address').value;
+            const templePhone = document.getElementById('temple-phone').value;
+            const mainDeity = document.getElementById('main-deity').value;
+            const dpoName = document.getElementById('dpo-name').value;
+            
+            if (!templeName || !templeEnglish || !githubUsername || !dpoName) {
+                alert('請填寫必要欄位（標記*的欄位）');
+                return;
+            }
+            
+            // 產生客製化的配置檔案
+            const config = {
+                templeName: templeName,
+                templeEnglish: templeEnglish,
+                templeAddress: templeAddress,
+                templePhone: templePhone,
+                mainDeity: mainDeity,
+                githubUsername: githubUsername,
+                repoName: `${templeEnglish}-temple`,
+                websiteUrl: `https://${githubUsername}.github.io/${templeEnglish}-temple/`,
+                privacy: {
+                    dpoName: dpoName,
+                    dpoPhone: templePhone,
+                    templeName: templeName,
+                    templeAddress: templeAddress
+                },
+                generatedAt: new Date().toISOString()
+            };
+            
+            // 產生各種檔案
+            generateIndexHTML(config);
+            generatePackageJSON(config);
+            generateREADME(config);
+            generateGitHubActions(config);
+            generatePrivacyPolicy(config);
+            
+            // 顯示產生結果
+            document.getElementById('generated-files').style.display = 'block';
+            document.getElementById('file-list').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px;">📄</div>
+                        <div><strong>index.html</strong></div>
+                        <div style="font-size: 12px; color: #666;">主頁面</div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px;">📦</div>
+                        <div><strong>package.json</strong></div>
+                        <div style="font-size: 12px; color: #666;">專案配置</div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px;">📖</div>
+                        <div><strong>README.md</strong></div>
+                        <div style="font-size: 12px; color: #666;">說明文件</div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px;">⚙️</div>
+                        <div><strong>deploy.yml</strong></div>
+                        <div style="font-size: 12px; color: #666;">自動部署</div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px;">🛡️</div>
+                        <div><strong>隱私政策</strong></div>
+                        <div style="font-size: 12px; color: #666;">個資保護</div>
+                    </div>
+                    <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 24px;">🧧</div>
+                        <div><strong>贊助系統</strong></div>
+                        <div style="font-size: 12px; color: #666;">紅包功能</div>
+                    </div>
+                </div>
+            `;
+            
+            alert(`🎉 ${templeName} 專屬版本已產生！\n\n請按照下方步驟完成部署。\n所有檔案已準備就緒。`);
+        }
+
+        // 產生 index.html
+        function generateIndexHTML(config) {
+            const content = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${config.templeName} - 記帳管理系統</title>
+    <meta name="description" content="${config.templeName}專屬的記帳管理系統">
+    
+    <!-- 載入核心系統 -->
+    <script src="https://sppwlkb.github.io/guangqing-temple-accounting/temple-config.js"></script>
+    <script src="https://sppwlkb.github.io/guangqing-temple-accounting/donation-system.js"></script>
+    <script src="https://sppwlkb.github.io/guangqing-temple-accounting/privacy-protection.js"></script>
+    <script src="https://sppwlkb.github.io/guangqing-temple-accounting/access-control.js"></script>
+    
+    <style>
+        body { font-family: 'Microsoft JhengHei', Arial, sans-serif; margin: 0; padding: 0; }
+        .loading { text-align: center; padding: 50px; }
+    </style>
+</head>
+<body>
+    <div class="loading">
+        <h1>🏛️ ${config.templeName}</h1>
+        <p>記帳管理系統載入中...</p>
+        <div>⏳ 正在初始化專屬設定...</div>
+    </div>
+    
+    <script>
+        // 自動配置宮廟資訊
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (window.templeConfig) {
+                    const customConfig = ${JSON.stringify(config, null, 8)};
+                    window.templeConfig.updateConfig(customConfig);
+                    
+                    // 載入主要應用程式
+                    window.location.href = 'https://sppwlkb.github.io/guangqing-temple-accounting/?temple=${config.templeEnglish}';
+                } else {
+                    console.error('配置系統載入失敗');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>`;
+            
+            downloadFile(`${config.repoName}-index.html`, content);
+        }
+
+        // 產生 package.json
+        function generatePackageJSON(config) {
+            const packageData = {
+                name: config.repoName,
+                version: "1.0.0",
+                description: `${config.templeName} 專屬記帳管理系統`,
+                keywords: ["temple", "accounting", config.templeName, config.templeEnglish],
+                author: `${config.templeName} 開發團隊`,
+                license: "MIT",
+                homepage: config.websiteUrl,
+                repository: {
+                    type: "git",
+                    url: `https://github.com/${config.githubUsername}/${config.repoName}.git`
+                }
+            };
+            
+            downloadFile('package.json', JSON.stringify(packageData, null, 2));
+        }
+
+        // 產生 README.md
+        function generateREADME(config) {
+            const content = `# 🏛️ ${config.templeName} - 記帳管理系統
+
+## 📋 簡介
+
+這是 ${config.templeName} 的專屬記帳管理系統，基於宮廟快速記帳軟體打造。
+
+## 🌐 線上使用
+
+**網址：** ${config.websiteUrl}
+
+## 📞 聯絡資訊
+
+- **宮廟名稱：** ${config.templeName}
+- **主祀神明：** ${config.mainDeity || '請填入'}
+- **地址：** ${config.templeAddress || '請填入'}
+- **電話：** ${config.templePhone || '請填入'}
+- **個資負責人：** ${config.dpoName}
+
+## 🔐 個資保護
+
+本系統完全符合台灣個人資料保護法規範，所有信眾資料都受到完整保護。
+
+## 🧧 功能等級
+
+- 🆓 **基礎功能：** 免費使用
+- 🧧 **進階功能：** 小紅包贊助 (NT$ 888/年)
+- 🎊 **專業功能：** 大紅包贊助 (NT$ 1,688/年)
+
+## 📈 技術支援
+
+如有問題請聯絡：
+- GitHub Issues: https://github.com/${config.githubUsername}/${config.repoName}/issues
+- 原始專案: https://github.com/sppwlkb/guangqing-temple-accounting
+
+---
+
+*基於宮廟快速記帳軟體 v2.0.0*  
+*產生時間：${new Date().toLocaleString('zh-TW')}*
+`;
+            
+            downloadFile('README.md', content);
+        }
+
+        // 產生 GitHub Actions
+        function generateGitHubActions(config) {
+            const content = `name: 🚀 ${config.templeName} 自動部署
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 檢出程式碼
+      uses: actions/checkout@v4
+      
+    - name: 🏗️ 準備部署檔案
+      run: |
+        echo "準備 ${config.templeName} 的部署檔案"
+        mkdir -p dist
+        cp *.html dist/ 2>/dev/null || true
+        cp *.css dist/ 2>/dev/null || true
+        cp *.js dist/ 2>/dev/null || true
+        cp *.json dist/ 2>/dev/null || true
+        echo "" > dist/.nojekyll
+        
+    - name: 🌐 部署到 GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: \${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        publish_branch: gh-pages
+        
+    - name: 🎉 部署完成
+      run: |
+        echo "🎉 ${config.templeName} 部署成功！"
+        echo "🌐 網站地址：${config.websiteUrl}"
+`;
+            
+            // 創建資料夾結構
+            const folderContent = `# GitHub Actions 工作流程
+
+將此檔案放在 .github/workflows/deploy.yml
+
+\`\`\`yaml
+${content}
+\`\`\``;
+            
+            downloadFile('github-actions-deploy.yml', content);
+            downloadFile('GitHub-Actions-說明.md', folderContent);
+        }
+
+        // 產生隱私政策
+        function generatePrivacyPolicy(config) {
+            const content = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>${config.templeName} - 隱私權保護政策</title>
+</head>
+<body>
+    <h1>${config.templeName} 隱私權保護政策</h1>
+    
+    <h2>聯絡資訊</h2>
+    <p><strong>宮廟名稱：</strong>${config.templeName}</p>
+    <p><strong>地址：</strong>${config.templeAddress}</p>
+    <p><strong>電話：</strong>${config.templePhone}</p>
+    <p><strong>個資保護負責人：</strong>${config.dpoName}</p>
+    
+    <p>詳細隱私政策請參考：</p>
+    <p><a href="https://sppwlkb.github.io/guangqing-temple-accounting/privacy-policy.html">完整隱私權保護政策</a></p>
+    
+    <script>
+        // 自動載入完整隱私政策並客製化
+        window.location.href = 'https://sppwlkb.github.io/guangqing-temple-accounting/privacy-policy.html';
+    </script>
+</body>
+</html>`;
+            
+            downloadFile('privacy-policy.html', content);
+        }
+
+        // 下載檔案函數
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html> 
