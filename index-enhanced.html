@@ -38,6 +38,9 @@
     <script src="offline-storage.js"></script>
     <script src="cloud-sync-manager.js"></script>
     <script src="cloud-sync.js"></script>
+    
+    <!-- 類別管理系統 -->
+    <script src="category-manager.js"></script>
 
     <!-- QR Code生成器 -->
     <script src="qrcode-generator.js"></script>
@@ -6522,8 +6525,22 @@
 
                 const saveCustomCategoriesToStorage = () => {
                     try {
-                        localStorage.setItem('custom-income-categories', JSON.stringify(customIncomeCategories.value));
-                        localStorage.setItem('custom-expense-categories', JSON.stringify(customExpenseCategories.value));
+                        // 使用統一的類別管理器儲存
+                        if (window.categoryManager) {
+                            window.categoryManager.customIncomeCategories = customIncomeCategories.value.filter(cat => !cat.isDefault);
+                            window.categoryManager.customExpenseCategories = customExpenseCategories.value.filter(cat => !cat.isDefault);
+                            window.categoryManager.saveCustomCategories();
+                        } else {
+                            // 降級到直接localStorage儲存
+                            const prefix = window.templeConfig ? `temple-${window.templeConfig.getConfig().templeId || 'default'}-` : 'temple-default-';
+                            localStorage.setItem(prefix + 'custom-income-categories', JSON.stringify(customIncomeCategories.value.filter(cat => !cat.isDefault)));
+                            localStorage.setItem(prefix + 'custom-expense-categories', JSON.stringify(customExpenseCategories.value.filter(cat => !cat.isDefault)));
+                            
+                            // 同時儲存到舊格式（向下相容）
+                            localStorage.setItem('custom-income-categories', JSON.stringify(customIncomeCategories.value.filter(cat => !cat.isDefault)));
+                            localStorage.setItem('custom-expense-categories', JSON.stringify(customExpenseCategories.value.filter(cat => !cat.isDefault)));
+                        }
+                        console.log('✅ 自訂類別已儲存');
                     } catch (error) {
                         console.error('保存自定義類別失敗:', error);
                     }
@@ -6531,29 +6548,157 @@
 
                 const loadCustomCategoriesFromStorage = async () => {
                     try {
-                        // 優先從 IndexedDB 載入
-                        if (window.offlineStorage && window.offlineStorage.isInitialized) {
-                            const incomeCategories = await window.offlineStorage.getByIndex('categories', 'type', 'income');
-                            const expenseCategories = await window.offlineStorage.getByIndex('categories', 'type', 'expense');
-                            
-                            customIncomeCategories.value = incomeCategories || [];
-                            customExpenseCategories.value = expenseCategories || [];
+                        // 使用統一的類別管理器載入
+                        if (window.categoryManager) {
+                            await window.categoryManager.loadCustomCategories();
+                            customIncomeCategories.value = window.categoryManager.customIncomeCategories;
+                            customExpenseCategories.value = window.categoryManager.customExpenseCategories;
+                            console.log('✅ 從類別管理器載入自訂類別');
                         } else {
-                            // 降級到 localStorage
-                            const savedIncomeCategories = localStorage.getItem('custom-income-categories');
-                            const savedExpenseCategories = localStorage.getItem('custom-expense-categories');
+                            // 降級到直接localStorage載入
+                            const prefix = window.templeConfig ? `temple-${window.templeConfig.getConfig().templeId || 'default'}-` : 'temple-default-';
                             
-                            if (savedIncomeCategories) {
-                                customIncomeCategories.value = JSON.parse(savedIncomeCategories);
+                            // 嘗試多個可能的儲存位置
+                            const incomeKeys = [
+                                prefix + 'custom-income-categories',
+                                'custom-income-categories',
+                                'temple-income-categories'
+                            ];
+                            
+                            const expenseKeys = [
+                                prefix + 'custom-expense-categories',
+                                'custom-expense-categories',
+                                'temple-expense-categories'
+                            ];
+                            
+                            // 載入收入類別
+                            for (const key of incomeKeys) {
+                                const saved = localStorage.getItem(key);
+                                if (saved) {
+                                    try {
+                                        const parsed = JSON.parse(saved);
+                                        const customOnly = Array.isArray(parsed) ? parsed.filter(cat => !cat.isDefault) : [];
+                                        if (customOnly.length > 0) {
+                                            customIncomeCategories.value = customOnly;
+                                            console.log(`✅ 從 ${key} 載入了 ${customOnly.length} 個收入類別`);
+                                            break;
+                                        }
+                                    } catch (error) {
+                                        console.warn(`載入 ${key} 失敗:`, error);
+                                    }
+                                }
                             }
-                            if (savedExpenseCategories) {
-                                customExpenseCategories.value = JSON.parse(savedExpenseCategories);
+                            
+                            // 載入支出類別
+                            for (const key of expenseKeys) {
+                                const saved = localStorage.getItem(key);
+                                if (saved) {
+                                    try {
+                                        const parsed = JSON.parse(saved);
+                                        const customOnly = Array.isArray(parsed) ? parsed.filter(cat => !cat.isDefault) : [];
+                                        if (customOnly.length > 0) {
+                                            customExpenseCategories.value = customOnly;
+                                            console.log(`✅ 從 ${key} 載入了 ${customOnly.length} 個支出類別`);
+                                            break;
+                                        }
+                                    } catch (error) {
+                                        console.warn(`載入 ${key} 失敗:`, error);
+                                    }
+                                }
                             }
                         }
+                        
+                        // 特別檢查發財金類別
+                        const hasFacaiCategory = customIncomeCategories.value.some(cat => cat.name === '發財金');
+                        if (!hasFacaiCategory) {
+                            console.log('🔍 未找到發財金類別，嘗試恢復...');
+                            // 可能在某個儲存位置，嘗試恢復
+                            await attemptRestoreFacaiCategory();
+                        } else {
+                            console.log('✅ 發財金類別已載入');
+                        }
+                        
                     } catch (error) {
                         console.error('載入自定義類別失敗:', error);
                     }
                 };
+                
+                // 嘗試恢復發財金類別
+                const attemptRestoreFacaiCategory = async () => {
+                    const allPossibleKeys = [
+                        'custom-income-categories',
+                        'temple-income-categories',
+                        'temple-default-custom-income-categories'
+                    ];
+                    
+                    for (const key of allPossibleKeys) {
+                        const saved = localStorage.getItem(key);
+                        if (saved) {
+                            try {
+                                const categories = JSON.parse(saved);
+                                const facai = categories.find(cat => cat.name === '發財金');
+                                if (facai) {
+                                    console.log(`✅ 從 ${key} 恢復發財金類別`);
+                                    customIncomeCategories.value.push({
+                                        ...facai,
+                                        id: Date.now(), // 使用時間戳作為ID
+                                        isCustom: true,
+                                        restoredAt: new Date().toISOString()
+                                    });
+                                    saveCustomCategoriesToStorage();
+                                    return;
+                                }
+                            } catch (error) {
+                                console.warn(`從 ${key} 恢復失敗:`, error);
+                            }
+                        }
+                    }
+                    
+                                         console.log('ℹ️ 無法自動恢復發財金類別，請重新新增');
+                 };
+                 
+                 // 檢查並恢復發財金類別
+                 const checkAndRestoreFacaiCategory = async () => {
+                     try {
+                         console.log('🔍 檢查發財金類別...');
+                         
+                         // 檢查當前是否有發財金類別
+                         const allIncomeCategories = [...defaultIncomeCategories, ...customIncomeCategories.value];
+                         const hasFacai = allIncomeCategories.some(cat => cat.name === '發財金');
+                         
+                         if (hasFacai) {
+                             console.log('✅ 發財金類別存在');
+                             return;
+                         }
+                         
+                         console.log('⚠️ 發財金類別不存在，嘗試恢復...');
+                         
+                         // 使用類別管理器恢復
+                         if (window.categoryManager) {
+                             const restored = await window.categoryManager.checkAndRestoreFacaiCategory();
+                             if (restored) {
+                                 // 重新載入自訂類別
+                                 customIncomeCategories.value = window.categoryManager.customIncomeCategories;
+                                 console.log('✅ 發財金類別已恢復');
+                                 
+                                 // 顯示恢復通知
+                                 if (window.ElMessage) {
+                                     ElMessage.success('✅ 發財金類別已自動恢復');
+                                 }
+                                 return;
+                             }
+                         }
+                         
+                         // 如果無法恢復，提示使用者
+                         console.log('ℹ️ 無法自動恢復發財金類別');
+                         if (window.ElMessage) {
+                             ElMessage.info('如果您之前新增過「發財金」類別，請重新新增');
+                         }
+                         
+                     } catch (error) {
+                         console.error('檢查發財金類別失敗:', error);
+                     }
+                 };
 
                 // 同步狀態更新方法
                 const updateSyncStatus = async () => {
@@ -9640,9 +9785,20 @@
                     // 設置事件監聽器
                     setupEventListeners();
                     
+                    // 等待類別管理器初始化
+                    if (window.categoryManager) {
+                        await window.categoryManager.initializeCategories();
+                        console.log('🔧 類別管理器已初始化');
+                    }
+                    
                     // 載入資料
                     await loadFromIndexedDB();
                     await loadCustomCategoriesFromStorage();
+                    
+                    // 特別檢查發財金類別（延遲檢查確保載入完成）
+                    setTimeout(async () => {
+                        await checkAndRestoreFacaiCategory();
+                    }, 1000);
 
                     // 初始化同步狀態
                     setTimeout(updateSyncStatus, 1000);

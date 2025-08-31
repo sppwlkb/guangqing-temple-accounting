@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宮廟記帳軟體 - 類別修復工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #dc3545, #fd7e14);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .category-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        .category-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .category-item.custom {
+            border-left-color: #28a745;
+        }
+        .category-item.missing {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        .step {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .step h4 {
+            margin-top: 0;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 類別修復工具</h1>
+            <p>解決自訂類別消失問題</p>
+        </div>
+
+        <div class="alert alert-warning">
+            <h4>⚠️ 常見問題</h4>
+            <p>如果您發現新增的類別（如「發財金」）在重新載入頁面後消失，這個工具可以幫您診斷和修復問題。</p>
+        </div>
+
+        <div class="card">
+            <h2>🔍 診斷工具</h2>
+            <p>點擊下方按鈕檢查您的類別儲存狀況：</p>
+            
+            <button class="btn btn-primary" onclick="diagnoseStorage()">
+                🔍 診斷儲存狀況
+            </button>
+            <button class="btn btn-success" onclick="repairCategories()">
+                🔧 修復類別儲存
+            </button>
+            <button class="btn btn-warning" onclick="showAllStorageKeys()">
+                📋 顯示所有儲存資料
+            </button>
+            
+            <div id="diagnosis-result" style="margin-top: 20px;"></div>
+        </div>
+
+        <div class="card">
+            <h2>📊 當前類別狀況</h2>
+            <div id="current-categories">
+                <p>載入中...</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🛠️ 手動修復選項</h2>
+            
+            <div class="step">
+                <h4>步驟 1：快速新增發財金類別</h4>
+                <button class="btn btn-success" onclick="addFacaiCategory()">
+                    ➕ 新增發財金類別
+                </button>
+                <p>如果發財金類別遺失，點擊此按鈕快速新增。</p>
+            </div>
+            
+            <div class="step">
+                <h4>步驟 2：匯出類別備份</h4>
+                <button class="btn btn-primary" onclick="exportCategories()">
+                    📄 匯出類別設定
+                </button>
+                <p>建議定期匯出類別設定作為備份。</p>
+            </div>
+            
+            <div class="step">
+                <h4>步驟 3：清理重複資料</h4>
+                <button class="btn btn-warning" onclick="cleanupDuplicates()">
+                    🧹 清理重複類別
+                </button>
+                <p>清理可能造成衝突的重複類別資料。</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 操作記錄</h2>
+            <div id="operation-log" class="category-list">
+                <p>尚無操作記錄</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入必要的系統 -->
+    <script src="temple-config.js"></script>
+    <script src="category-manager.js"></script>
+    <script src="privacy-protection.js"></script>
+    
+    <script>
+        let operationLog = [];
+        
+        // 記錄操作
+        function logOperation(message, type = 'info') {
+            const timestamp = new Date().toLocaleString('zh-TW');
+            operationLog.unshift({
+                timestamp,
+                message,
+                type
+            });
+            
+            updateOperationLog();
+        }
+        
+        // 更新操作記錄顯示
+        function updateOperationLog() {
+            const logElement = document.getElementById('operation-log');
+            if (operationLog.length === 0) {
+                logElement.innerHTML = '<p>尚無操作記錄</p>';
+                return;
+            }
+            
+            const logHTML = operationLog.slice(0, 20).map(log => {
+                const typeColor = {
+                    'success': '#28a745',
+                    'warning': '#ffc107', 
+                    'error': '#dc3545',
+                    'info': '#007bff'
+                };
+                
+                return `
+                    <div style="padding: 8px; margin: 5px 0; border-left: 3px solid ${typeColor[log.type] || '#007bff'};">
+                        <div style="font-weight: bold; font-size: 12px; color: #666;">${log.timestamp}</div>
+                        <div>${log.message}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            logElement.innerHTML = logHTML;
+        }
+        
+        // 診斷儲存狀況
+        function diagnoseStorage() {
+            logOperation('開始診斷儲存狀況...', 'info');
+            
+            try {
+                const diagnosis = {
+                    storageKeys: [],
+                    categories: { income: [], expense: [] },
+                    issues: []
+                };
+                
+                // 檢查所有可能的儲存位置
+                const possibleKeys = [
+                    'custom-income-categories',
+                    'custom-expense-categories',
+                    'temple-income-categories', 
+                    'temple-expense-categories',
+                    'temple-default-custom-income-categories',
+                    'temple-default-custom-expense-categories'
+                ];
+                
+                possibleKeys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    if (value) {
+                        diagnosis.storageKeys.push({
+                            key,
+                            size: value.length,
+                            preview: value.substring(0, 100) + (value.length > 100 ? '...' : '')
+                        });
+                        
+                        try {
+                            const parsed = JSON.parse(value);
+                            if (Array.isArray(parsed)) {
+                                if (key.includes('income')) {
+                                    diagnosis.categories.income.push(...parsed);
+                                } else if (key.includes('expense')) {
+                                    diagnosis.categories.expense.push(...parsed);
+                                }
+                            }
+                        } catch (error) {
+                            diagnosis.issues.push(`${key}: JSON解析失敗`);
+                        }
+                    }
+                });
+                
+                // 檢查發財金類別
+                const facaiExists = diagnosis.categories.income.some(cat => cat.name === '發財金');
+                if (!facaiExists) {
+                    diagnosis.issues.push('未找到發財金類別');
+                } else {
+                    logOperation('✅ 找到發財金類別', 'success');
+                }
+                
+                // 顯示診斷結果
+                const resultElement = document.getElementById('diagnosis-result');
+                resultElement.innerHTML = `
+                    <div class="alert alert-info">
+                        <h4>📊 診斷結果</h4>
+                        <p><strong>找到儲存位置：</strong>${diagnosis.storageKeys.length} 個</p>
+                        <p><strong>收入類別總數：</strong>${diagnosis.categories.income.length} 個</p>
+                        <p><strong>支出類別總數：</strong>${diagnosis.categories.expense.length} 個</p>
+                        <p><strong>發現問題：</strong>${diagnosis.issues.length} 個</p>
+                        
+                        ${diagnosis.issues.length > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <strong>問題清單：</strong>
+                            <ul>
+                                ${diagnosis.issues.map(issue => `<li>${issue}</li>`).join('')}
+                            </ul>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                logOperation(`診斷完成 - 找到 ${diagnosis.storageKeys.length} 個儲存位置`, 'success');
+                
+            } catch (error) {
+                logOperation(`診斷失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 修復類別儲存
+        async function repairCategories() {
+            logOperation('開始修復類別儲存...', 'info');
+            
+            try {
+                if (window.categoryManager) {
+                    const result = await window.categoryManager.repairCategoryStorage();
+                    logOperation(`修復完成 - 恢復收入類別：${result.recoveredIncome} 個，支出類別：${result.recoveredExpense} 個`, 'success');
+                    
+                    // 更新顯示
+                    updateCurrentCategories();
+                    
+                    alert(`🔧 類別修復完成！\n\n恢復結果：\n• 收入類別：${result.recoveredIncome} 個\n• 支出類別：${result.recoveredExpense} 個\n\n請重新載入主頁面查看結果。`);
+                } else {
+                    logOperation('類別管理器未載入，無法執行修復', 'error');
+                    alert('❌ 類別管理器未載入，請重新載入頁面後再試');
+                }
+            } catch (error) {
+                logOperation(`修復失敗: ${error.message}`, 'error');
+                alert('❌ 修復失敗：' + error.message);
+            }
+        }
+        
+        // 顯示所有儲存資料
+        function showAllStorageKeys() {
+            const allKeys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.includes('categor') || key.includes('temple')) {
+                    const value = localStorage.getItem(key);
+                    allKeys.push({
+                        key,
+                        size: value.length,
+                        preview: value.substring(0, 200)
+                    });
+                }
+            }
+            
+            const resultElement = document.getElementById('diagnosis-result');
+            resultElement.innerHTML = `
+                <div class="alert alert-info">
+                    <h4>📋 所有相關儲存資料</h4>
+                    ${allKeys.map(item => `
+                        <div style="margin: 10px 0; padding: 10px; background: white; border-radius: 5px;">
+                            <strong>${item.key}</strong> (${item.size} 字元)<br>
+                            <code style="font-size: 12px; color: #666;">${item.preview}${item.size > 200 ? '...' : ''}</code>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            logOperation(`顯示了 ${allKeys.length} 個相關儲存項目`, 'info');
+        }
+        
+        // 快速新增發財金類別
+        function addFacaiCategory() {
+            try {
+                if (window.categoryManager) {
+                    const facaiCategory = window.categoryManager.addIncomeCategory('發財金', '#FFD700', '發財金收入');
+                    logOperation('✅ 成功新增發財金類別', 'success');
+                    updateCurrentCategories();
+                    alert('✅ 發財金類別已新增！\n\n請返回主頁面查看。');
+                } else {
+                    // 直接儲存到localStorage
+                    const customCategories = JSON.parse(localStorage.getItem('custom-income-categories') || '[]');
+                    const facaiCategory = {
+                        id: Date.now(),
+                        name: '發財金',
+                        color: '#FFD700',
+                        description: '發財金收入',
+                        isCustom: true,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    customCategories.push(facaiCategory);
+                    localStorage.setItem('custom-income-categories', JSON.stringify(customCategories));
+                    
+                    logOperation('✅ 直接新增發財金類別到localStorage', 'success');
+                    alert('✅ 發財金類別已新增！');
+                }
+            } catch (error) {
+                logOperation(`新增發財金類別失敗: ${error.message}`, 'error');
+                alert('❌ 新增失敗：' + error.message);
+            }
+        }
+        
+        // 匯出類別設定
+        function exportCategories() {
+            try {
+                if (window.categoryManager) {
+                    window.categoryManager.exportCategories();
+                    logOperation('✅ 類別設定已匯出', 'success');
+                } else {
+                    // 手動匯出
+                    const allData = {
+                        exportedAt: new Date().toISOString(),
+                        customIncomeCategories: JSON.parse(localStorage.getItem('custom-income-categories') || '[]'),
+                        customExpenseCategories: JSON.parse(localStorage.getItem('custom-expense-categories') || '[]')
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(allData, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `類別備份_${new Date().toISOString().split('T')[0]}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    
+                    logOperation('✅ 手動匯出類別設定', 'success');
+                }
+            } catch (error) {
+                logOperation(`匯出失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 清理重複類別
+        function cleanupDuplicates() {
+            try {
+                if (confirm('確定要清理重複的類別資料嗎？這可能會刪除一些重複的儲存項目。')) {
+                    // 清理可能重複的儲存項目
+                    const keysToClean = [
+                        'temple-income-categories',
+                        'temple-expense-categories'
+                    ];
+                    
+                    let cleanedCount = 0;
+                    keysToClean.forEach(key => {
+                        if (localStorage.getItem(key)) {
+                            localStorage.removeItem(key);
+                            cleanedCount++;
+                        }
+                    });
+                    
+                    logOperation(`清理了 ${cleanedCount} 個可能重複的儲存項目`, 'success');
+                    alert(`✅ 清理完成！清理了 ${cleanedCount} 個項目。`);
+                }
+            } catch (error) {
+                logOperation(`清理失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 更新當前類別顯示
+        function updateCurrentCategories() {
+            try {
+                const element = document.getElementById('current-categories');
+                
+                if (window.categoryManager) {
+                    const stats = window.categoryManager.getCategoryStats();
+                    const incomeCategories = window.categoryManager.getAllIncomeCategories();
+                    const expenseCategories = window.categoryManager.getAllExpenseCategories();
+                    
+                    element.innerHTML = `
+                        <div class="alert alert-success">
+                            <h4>📊 類別統計</h4>
+                            <p><strong>收入類別：</strong>預設 ${stats.income.default} 個 + 自訂 ${stats.income.custom} 個 = 總計 ${stats.income.total} 個</p>
+                            <p><strong>支出類別：</strong>預設 ${stats.expense.default} 個 + 自訂 ${stats.expense.custom} 個 = 總計 ${stats.expense.total} 個</p>
+                            <p><strong>儲存前綴：</strong>${stats.storagePrefix}</p>
+                        </div>
+                        
+                        <h4>收入類別清單：</h4>
+                        <div class="category-list">
+                            ${incomeCategories.map(cat => `
+                                <div class="category-item ${cat.isDefault ? '' : 'custom'}">
+                                    <span>
+                                        <span style="display: inline-block; width: 20px; height: 20px; background: ${cat.color}; border-radius: 3px; margin-right: 8px;"></span>
+                                        ${cat.name} ${cat.isDefault ? '(預設)' : '(自訂)'}
+                                    </span>
+                                    <span>ID: ${cat.id}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <h4>支出類別清單：</h4>
+                        <div class="category-list">
+                            ${expenseCategories.map(cat => `
+                                <div class="category-item ${cat.isDefault ? '' : 'custom'}">
+                                    <span>
+                                        <span style="display: inline-block; width: 20px; height: 20px; background: ${cat.color}; border-radius: 3px; margin-right: 8px;"></span>
+                                        ${cat.name} ${cat.isDefault ? '(預設)' : '(自訂)'}
+                                    </span>
+                                    <span>ID: ${cat.id}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    element.innerHTML = `
+                        <div class="alert alert-warning">
+                            <p>⚠️ 類別管理器尚未載入，請重新載入頁面</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                logOperation(`更新類別顯示失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 頁面載入完成後初始化
+        window.addEventListener('load', function() {
+            logOperation('類別修復工具已載入', 'info');
+            
+            setTimeout(() => {
+                updateCurrentCategories();
+                
+                // 自動檢查發財金類別
+                if (window.categoryManager) {
+                    const facaiExists = window.categoryManager.getAllIncomeCategories().some(cat => cat.name === '發財金');
+                    if (!facaiExists) {
+                        logOperation('⚠️ 未找到發財金類別', 'warning');
+                        document.getElementById('diagnosis-result').innerHTML = `
+                            <div class="alert alert-warning">
+                                <h4>⚠️ 發現問題</h4>
+                                <p>未找到「發財金」類別，建議點擊「新增發財金類別」按鈕恢復。</p>
+                            </div>
+                        `;
+                    } else {
+                        logOperation('✅ 發財金類別存在', 'success');
+                    }
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 
