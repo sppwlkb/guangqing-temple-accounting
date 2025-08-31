@@ -6,7 +6,7 @@
 class OfflineStorageService {
     constructor() {
         this.dbName = 'GuangqingTempleDB';
-        this.dbVersion = 1;
+        this.dbVersion = 2; // 升級版本以應用新索引
         this.db = null;
         this.isInitialized = false;
         
@@ -51,7 +51,8 @@ class OfflineStorageService {
                 indexes: [
                     { name: 'action', keyPath: 'action' },
                     { name: 'table', keyPath: 'table' },
-                    { name: 'timestamp', keyPath: 'timestamp' }
+                    { name: 'timestamp', keyPath: 'timestamp' },
+                    { name: 'synced', keyPath: 'synced' }
                 ]
             },
             settings: {
@@ -255,18 +256,38 @@ class OfflineStorageService {
         await this.ensureInitialized();
         
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([storeName], 'readonly');
-            const store = transaction.objectStore(storeName);
-            const index = store.index(indexName);
-            const request = index.getAll(value);
-            
-            request.onsuccess = () => {
-                resolve(request.result);
-            };
-            
-            request.onerror = () => {
-                reject(request.error);
-            };
+            try {
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                
+                let request;
+                try {
+                    const index = store.index(indexName);
+                    request = index.getAll(value);
+                } catch (indexError) {
+                    console.warn(`索引 ${indexName} 不存在於 ${storeName}，使用全部資料篩選`, indexError);
+                    // 降級到取得所有資料然後手動篩選
+                    request = store.getAll();
+                }
+                
+                request.onsuccess = () => {
+                    let result = request.result;
+                    
+                    // 如果是降級模式，手動篩選
+                    if (indexName && value !== undefined && !store.indexNames.contains(indexName)) {
+                        result = result.filter(item => item[indexName] === value);
+                    }
+                    
+                    resolve(result);
+                };
+                
+                request.onerror = () => {
+                    reject(request.error);
+                };
+            } catch (error) {
+                console.error(`getByIndex 失敗:`, error);
+                resolve([]); // 返回空陣列而不是錯誤
+            }
         });
     }
 

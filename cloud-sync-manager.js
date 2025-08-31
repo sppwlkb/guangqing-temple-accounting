@@ -540,8 +540,27 @@ class CloudSyncManager {
      * 獲取同步狀態
      */
     async getSyncStatus() {
-        const pendingCount = await window.offlineStorage.count('syncQueue', 'synced', false);
-        const stats = await window.offlineStorage.getStats();
+        let pendingCount = 0;
+        try {
+            pendingCount = await window.offlineStorage.count('syncQueue', 'synced', false);
+        } catch (error) {
+            console.warn('無法取得待同步數量，使用預設值', error);
+            // 降級方案：直接計算syncQueue中的所有項目
+            try {
+                pendingCount = await window.offlineStorage.count('syncQueue');
+            } catch (fallbackError) {
+                console.warn('降級計算也失敗，設為0', fallbackError);
+                pendingCount = 0;
+            }
+        }
+        
+        let stats = {};
+        try {
+            stats = await window.offlineStorage.getStats();
+        } catch (error) {
+            console.warn('無法取得儲存統計，使用預設值', error);
+            stats = { totalRecords: 0, totalBelievers: 0, lastUpdated: null };
+        }
         const firebaseStatus = window.firebaseCloud.getStatus();
         
         return {
