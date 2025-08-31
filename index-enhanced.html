@@ -41,6 +41,9 @@
     
     <!-- 類別管理系統 -->
     <script src="category-manager.js"></script>
+    
+    <!-- 緊急修復腳本 -->
+    <script src="emergency-category-fix.js"></script>
 
     <!-- QR Code生成器 -->
     <script src="qrcode-generator.js"></script>
@@ -6435,7 +6438,7 @@
                     };
                 };
 
-                const addCustomCategory = () => {
+                const addCustomCategory = async () => {
                     if (!newCategory.value.name.trim()) {
                         alert('請輸入類別名稱');
                         return;
@@ -6452,11 +6455,16 @@
                     }
 
                     const categoryToAdd = {
+                        id: Date.now(), // 確保有ID
                         name: newCategory.value.name.trim(),
                         color: newCategory.value.color,
                         description: newCategory.value.description.trim(),
-                        createdAt: new Date().toISOString()
+                        createdAt: new Date().toISOString(),
+                        isCustom: true,
+                        isDefault: false
                     };
+
+                    console.log(`💾 正在新增類別：${categoryToAdd.name}`);
 
                     if (currentCategoryType.value === 'income') {
                         customIncomeCategories.value.push(categoryToAdd);
@@ -6464,8 +6472,50 @@
                         customExpenseCategories.value.push(categoryToAdd);
                     }
 
-                    // 保存到本地存儲
-                    saveCustomCategoriesToStorage();
+                    // 立即保存到多個位置
+                    try {
+                        // 1. 使用統一管理器保存
+                        if (window.categoryManager) {
+                            if (currentCategoryType.value === 'income') {
+                                window.categoryManager.customIncomeCategories.push(categoryToAdd);
+                            } else {
+                                window.categoryManager.customExpenseCategories.push(categoryToAdd);
+                            }
+                            await window.categoryManager.saveCustomCategories();
+                            console.log('✅ 已通過類別管理器儲存');
+                        }
+                        
+                        // 2. 保存到本地存儲
+                        saveCustomCategoriesToStorage();
+                        
+                        // 3. 緊急備份儲存
+                        const emergencyKey = `emergency-${currentCategoryType.value}-categories`;
+                        const emergencyData = currentCategoryType.value === 'income' ? customIncomeCategories.value : customExpenseCategories.value;
+                        localStorage.setItem(emergencyKey, JSON.stringify(emergencyData));
+                        
+                        // 4. 立即驗證儲存
+                        setTimeout(() => {
+                            const verifyKey = 'custom-income-categories';
+                            const saved = localStorage.getItem(verifyKey);
+                            if (saved) {
+                                const parsed = JSON.parse(saved);
+                                const exists = parsed.some(cat => cat.name === categoryToAdd.name);
+                                if (exists) {
+                                    console.log(`✅ 驗證成功：${categoryToAdd.name} 已正確儲存`);
+                                    showNotification('類別已新增', `「${categoryToAdd.name}」類別已成功新增並儲存`);
+                                } else {
+                                    console.error(`❌ 驗證失敗：${categoryToAdd.name} 儲存異常，執行緊急修復`);
+                                    if (window.emergencyFixCategories) {
+                                        window.emergencyFixCategories();
+                                    }
+                                }
+                            }
+                        }, 200);
+                        
+                    } catch (error) {
+                        console.error('儲存類別失敗:', error);
+                        alert('⚠️ 類別新增成功但儲存可能有問題，請檢查類別修復工具');
+                    }
 
                     // 重置表單
                     newCategory.value = {
@@ -6474,7 +6524,7 @@
                         description: ''
                     };
 
-                    showNotification('類別已新增', '自定義類別已成功新增');
+                    showCategoryDialog.value = false;
                 };
 
                 const deleteCustomCategory = (index) => {

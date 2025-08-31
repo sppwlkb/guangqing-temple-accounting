@@ -331,8 +331,13 @@ class OfflineStorageService {
             
             let request;
             if (indexName && value !== null) {
-                const index = store.index(indexName);
-                request = index.count(value);
+                try {
+                    const index = store.index(indexName);
+                    request = index.count(value);
+                } catch (error) {
+                    console.warn(`索引 ${indexName} 不存在，使用全部計數`, error);
+                    request = store.count();
+                }
             } else {
                 request = store.count();
             }
