@@ -697,11 +697,20 @@
         .cloud-sync-buttons {
             display: flex;
             align-items: center;
+            gap: 5px;
         }
         
         @media (max-width: 768px) {
             .cloud-sync-buttons {
-                display: none;
+                /* 手機版也顯示，但調整樣式 */
+                flex-direction: column;
+                gap: 3px;
+            }
+            
+            .cloud-sync-buttons .btn-sm {
+                font-size: 10px;
+                padding: 4px 6px;
+                min-width: 60px;
             }
         }
 
