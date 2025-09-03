@@ -3041,6 +3041,17 @@
             <div class="app-main">
                 <!-- 儀表板頁面 -->
                 <div class="page-content active" id="dashboard">
+                    <!-- 雲端同步測試按鈕 - 臨時放在明顯位置 -->
+                    <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; text-align: center; border-radius: 8px;">
+                        <div style="font-size: 14px; margin-bottom: 8px; color: #666;">雲端同步功能</div>
+                        <button onclick="alert('上傳按鈕點擊成功！')" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px; font-size: 12px;">
+                            ☁️ 測試上傳
+                        </button>
+                        <button onclick="alert('下載按鈕點擊成功！')" style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px;">
+                            📥 測試下載
+                        </button>
+                    </div>
+                    
                     <!-- 緊急提醒 -->
                     <div v-if="urgentReminders.length > 0" class="reminders-section">
                         <div class="section-title">
