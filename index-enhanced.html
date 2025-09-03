@@ -3008,16 +3008,6 @@
                         <div v-if="pendingChanges > 0" class="pending-badge">{{ pendingChanges }}</div>
                     </div>
                     
-                    <!-- 雲端同步快速按鈕 -->
-                    <div class="cloud-sync-buttons">
-                        <button class="btn btn-success btn-sm" @click="quickUploadToCloud" :disabled="uploadInProgress" style="margin-right: 5px;">
-                            {{ uploadInProgress ? '上傳中...' : '☁️ 上傳' }}
-                        </button>
-                        <button class="btn btn-info btn-sm" @click="quickDownloadFromCloud" :disabled="downloadInProgress" style="margin-right: 5px;">
-                            {{ downloadInProgress ? '下載中...' : '📥 下載' }}
-                        </button>
-                    </div>
-                    
                     <!-- 用戶狀態 -->
                     <div class="user-status" @click="showUserModal = true">
                         <span class="user-icon">👤</span>
@@ -3027,6 +3017,15 @@
                     <button class="btn btn-primary" @click="showAddModal = true" style="padding: 8px 12px; font-size: 14px;">
                         快速記帳
                     </button>
+                    
+                    <!-- 雲端同步快速按鈕 - 移到主要按鈕區域 -->
+                    <button class="btn btn-success" @click="quickUploadToCloud" :disabled="uploadInProgress" style="padding: 6px 10px; font-size: 12px; margin-left: 5px;">
+                        {{ uploadInProgress ? '上傳中...' : '☁️上傳' }}
+                    </button>
+                    <button class="btn btn-info" @click="quickDownloadFromCloud" :disabled="downloadInProgress" style="padding: 6px 10px; font-size: 12px; margin-left: 5px;">
+                        {{ downloadInProgress ? '下載中...' : '📥下載' }}
+                    </button>
+                    
                     <div style="position: relative;">
                         <button class="btn btn-secondary" @click="showNotifications" style="padding: 8px 12px; font-size: 14px;">
                             🔔
