@@ -3052,6 +3052,62 @@
                         </button>
                     </div>
                     
+                    <!-- 雲端同步快速功能區 - 永遠顯示在頂部 -->
+                    <div class="cloud-sync-section" style="
+                        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+                        color: white;
+                        padding: 15px;
+                        margin: 15px 0;
+                        border-radius: 12px;
+                        text-align: center;
+                        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+                    ">
+                        <div style="font-size: 16px; font-weight: bold; margin-bottom: 12px;">
+                            ☁️ 雲端同步功能
+                        </div>
+                        <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+                            <button 
+                                @click="quickUploadToCloud" 
+                                :disabled="uploadInProgress"
+                                style="
+                                    background: #fff;
+                                    color: #4CAF50;
+                                    border: none;
+                                    padding: 10px 20px;
+                                    border-radius: 8px;
+                                    font-weight: bold;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    min-width: 120px;
+                                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                                "
+                            >
+                                {{ uploadInProgress ? '上傳中...' : '☁️ 上傳資料' }}
+                            </button>
+                            <button 
+                                @click="quickDownloadFromCloud" 
+                                :disabled="downloadInProgress"
+                                style="
+                                    background: #2196F3;
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 20px;
+                                    border-radius: 8px;
+                                    font-weight: bold;
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    min-width: 120px;
+                                    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                                "
+                            >
+                                {{ downloadInProgress ? '下載中...' : '📥 下載資料' }}
+                            </button>
+                        </div>
+                        <div style="font-size: 12px; margin-top: 8px; opacity: 0.9;">
+                            💡 登入帳號後即可使用跨設備同步功能
+                        </div>
+                    </div>
+
                     <!-- 緊急提醒 -->
                     <div v-if="urgentReminders.length > 0" class="reminders-section">
                         <div class="section-title">
