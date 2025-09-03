@@ -687,6 +687,23 @@
             padding: 4px 8px;
             font-size: 12px;
         }
+        
+        .btn-sm {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        
+        .cloud-sync-buttons {
+            display: flex;
+            align-items: center;
+        }
+        
+        @media (max-width: 768px) {
+            .cloud-sync-buttons {
+                display: none;
+            }
+        }
 
         /* 信眾管理樣式 */
         .page-header {
@@ -2980,6 +2997,16 @@
                             <span class="sync-text">{{ syncStatusText }}</span>
                         </div>
                         <div v-if="pendingChanges > 0" class="pending-badge">{{ pendingChanges }}</div>
+                    </div>
+                    
+                    <!-- 雲端同步快速按鈕 -->
+                    <div class="cloud-sync-buttons">
+                        <button class="btn btn-success btn-sm" @click="quickUploadToCloud" :disabled="uploadInProgress" style="margin-right: 5px;">
+                            {{ uploadInProgress ? '上傳中...' : '☁️ 上傳' }}
+                        </button>
+                        <button class="btn btn-info btn-sm" @click="quickDownloadFromCloud" :disabled="downloadInProgress" style="margin-right: 5px;">
+                            {{ downloadInProgress ? '下載中...' : '📥 下載' }}
+                        </button>
                     </div>
                     
                     <!-- 用戶狀態 -->
@@ -5997,6 +6024,8 @@
                 const isRealtimeSync = ref(false);
                 const authTab = ref('login');
                 const authLoading = ref(false);
+                const uploadInProgress = ref(false);
+                const downloadInProgress = ref(false);
                 const authForm = ref({
                     email: '',
                     password: '',
@@ -6906,6 +6935,175 @@
                         alert('訪客登入失敗：' + error.message);
                     } finally {
                         authLoading.value = false;
+                    }
+                };
+
+                // 快速上傳資料到雲端
+                const quickUploadToCloud = async () => {
+                    if (!window.firebaseCloud?.currentUser) {
+                        showNotification('請先登入', '您需要先登入帳號才能使用雲端同步功能', 'warning');
+                        showUserModal.value = true;
+                        return;
+                    }
+
+                    if (!navigator.onLine) {
+                        showNotification('網路錯誤', '請檢查網路連線', 'warning');
+                        return;
+                    }
+
+                    uploadInProgress.value = true;
+                    try {
+                        // 收集本地資料
+                        const localData = {
+                            records: records.value || [],
+                            believers: believers.value || [],
+                            reminders: reminders.value || [],
+                            customCategories: {
+                                income: JSON.parse(localStorage.getItem('custom-income-categories') || '[]'),
+                                expense: JSON.parse(localStorage.getItem('custom-expense-categories') || '[]')
+                            }
+                        };
+
+                        // 如果使用IndexedDB，從IndexedDB獲取資料
+                        if (window.offlineStorage && window.offlineStorage.isInitialized) {
+                            const [recordsData, believersData, remindersData] = await Promise.all([
+                                window.offlineStorage.getAll('records'),
+                                window.offlineStorage.getAll('believers'),
+                                window.offlineStorage.getAll('reminders')
+                            ]);
+                            
+                            localData.records = recordsData || [];
+                            localData.believers = believersData || [];
+                            localData.reminders = remindersData || [];
+                        }
+
+                        // 上傳到Firebase
+                        const result = await window.firebaseCloud.uploadData(localData);
+                        
+                        if (result.success) {
+                            showNotification('上傳成功', 
+                                `已成功上傳 ${localData.records.length} 筆記錄、${localData.believers.length} 位信眾資料、${localData.reminders.length} 個提醒到雲端`, 
+                                'success');
+                        } else {
+                            throw new Error(result.message || '上傳失敗');
+                        }
+                    } catch (error) {
+                        console.error('上傳資料錯誤:', error);
+                        showNotification('上傳失敗', error.message || '上傳資料時發生錯誤', 'error');
+                    } finally {
+                        uploadInProgress.value = false;
+                    }
+                };
+
+                // 快速從雲端下載資料
+                const quickDownloadFromCloud = async () => {
+                    if (!window.firebaseCloud?.currentUser) {
+                        showNotification('請先登入', '您需要先登入帳號才能使用雲端同步功能', 'warning');
+                        showUserModal.value = true;
+                        return;
+                    }
+
+                    if (!navigator.onLine) {
+                        showNotification('網路錯誤', '請檢查網路連線', 'warning');
+                        return;
+                    }
+
+                    if (!confirm('此操作會用雲端資料覆蓋本地資料，確定要繼續嗎？')) {
+                        return;
+                    }
+
+                    downloadInProgress.value = true;
+                    try {
+                        // 從Firebase下載資料
+                        const result = await window.firebaseCloud.downloadData();
+                        
+                        if (result.success && result.data) {
+                            const cloudData = result.data;
+                            
+                            // 更新本地資料
+                            if (cloudData.records) {
+                                records.value = cloudData.records;
+                            }
+                            if (cloudData.believers) {
+                                believers.value = cloudData.believers;
+                            }
+                            if (cloudData.reminders) {
+                                reminders.value = cloudData.reminders;
+                            }
+
+                            // 如果使用IndexedDB，也更新IndexedDB資料
+                            if (window.offlineStorage && window.offlineStorage.isInitialized) {
+                                // 清空現有資料
+                                await Promise.all([
+                                    window.offlineStorage.clear('records'),
+                                    window.offlineStorage.clear('believers'),
+                                    window.offlineStorage.clear('reminders')
+                                ]);
+
+                                // 批次插入新資料
+                                const operations = [];
+                                
+                                if (cloudData.records) {
+                                    cloudData.records.forEach(record => {
+                                        operations.push({
+                                            type: 'update',
+                                            storeName: 'records',
+                                            data: record
+                                        });
+                                    });
+                                }
+                                
+                                if (cloudData.believers) {
+                                    cloudData.believers.forEach(believer => {
+                                        operations.push({
+                                            type: 'update',
+                                            storeName: 'believers',
+                                            data: believer
+                                        });
+                                    });
+                                }
+                                
+                                if (cloudData.reminders) {
+                                    cloudData.reminders.forEach(reminder => {
+                                        operations.push({
+                                            type: 'update',
+                                            storeName: 'reminders',
+                                            data: reminder
+                                        });
+                                    });
+                                }
+
+                                if (operations.length > 0) {
+                                    await window.offlineStorage.batch(operations);
+                                }
+                            }
+
+                            // 更新自定義類別
+                            if (cloudData.customCategories) {
+                                if (cloudData.customCategories.customIncomeCategories) {
+                                    localStorage.setItem('custom-income-categories', 
+                                        JSON.stringify(cloudData.customCategories.customIncomeCategories));
+                                }
+                                if (cloudData.customCategories.customExpenseCategories) {
+                                    localStorage.setItem('custom-expense-categories', 
+                                        JSON.stringify(cloudData.customCategories.customExpenseCategories));
+                                }
+                            }
+
+                            // 刷新頁面資料
+                            await loadData();
+                            
+                            showNotification('下載成功', 
+                                `已從雲端下載 ${cloudData.records?.length || 0} 筆記錄、${cloudData.believers?.length || 0} 位信眾資料、${cloudData.reminders?.length || 0} 個提醒`, 
+                                'success');
+                        } else {
+                            throw new Error(result.message || '下載失敗');
+                        }
+                    } catch (error) {
+                        console.error('下載資料錯誤:', error);
+                        showNotification('下載失敗', error.message || '下載資料時發生錯誤', 'error');
+                    } finally {
+                        downloadInProgress.value = false;
                     }
                 };
 
@@ -9968,6 +10166,10 @@
                     loginUser,
                     registerUser,
                     loginAnonymously,
+                    quickUploadToCloud,
+                    quickDownloadFromCloud,
+                    uploadInProgress,
+                    downloadInProgress,
                     logoutUser,
                     manualSync,
                     forceResync,
