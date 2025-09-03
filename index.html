@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=./index-enhanced.html">
+    <!-- 臨時移除轉向，直接在此頁面測試 -->
+    <!-- <meta http-equiv="refresh" content="0; url=./index-enhanced.html"> -->
     <title>宮廟快速記帳軟體</title>
     
     <!-- PWA支援 -->
@@ -2473,17 +2474,71 @@
     </style>
 </head>
 <body>
-    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
-        <h2>正在跳轉到最新版本...</h2>
-        <p>如果沒有自動跳轉，請點擊下方連結：</p>
-        <a href="./index-enhanced.html" style="color: #409EFF; text-decoration: none; font-size: 18px;">
-            🏛️ 廣清宮快速記帳軟體（含自定義類別功能）
-        </a>
+    <div style="text-align: center; padding: 20px; font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh;">
+        <h1>廣清宮快速記帳軟體</h1>
+        <h2>🔧 測試版本</h2>
+        
+        <!-- 雲端同步測試區域 -->
+        <div style="background: white; color: black; padding: 20px; margin: 20px auto; border-radius: 10px; max-width: 400px;">
+            <h3 style="color: #333; margin-bottom: 15px;">☁️ 雲端同步功能測試</h3>
+            
+            <button onclick="testUpload()" style="
+                background: #4CAF50; 
+                color: white; 
+                border: none; 
+                padding: 15px 25px; 
+                border-radius: 8px; 
+                font-size: 16px; 
+                margin: 10px; 
+                cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                ☁️ 測試上傳功能
+            </button>
+            
+            <button onclick="testDownload()" style="
+                background: #2196F3; 
+                color: white; 
+                border: none; 
+                padding: 15px 25px; 
+                border-radius: 8px; 
+                font-size: 16px; 
+                margin: 10px; 
+                cursor: pointer;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            ">
+                📥 測試下載功能
+            </button>
+            
+            <div style="margin-top: 20px;">
+                <p style="font-size: 12px; color: #666;">
+                    如果看到此頁面且按鈕能點擊，表示基本功能正常
+                </p>
+            </div>
+        </div>
+        
+        <div style="margin-top: 30px;">
+            <a href="./index-enhanced.html" style="
+                background: #FF9800; 
+                color: white; 
+                text-decoration: none; 
+                padding: 12px 20px; 
+                border-radius: 6px; 
+                font-size: 14px;
+                display: inline-block;
+            ">
+                🚀 進入完整版軟體
+            </a>
+        </div>
+        
         <script>
-            // 確保重定向
-            setTimeout(() => {
-                window.location.href = './index-enhanced.html';
-            }, 2000);
+            function testUpload() {
+                alert('✅ 上傳功能測試成功！\n\n如果您看到此訊息，代表：\n1. JavaScript正常執行\n2. 按鈕點擊事件正常\n3. 手機瀏覽器相容性良好');
+            }
+            
+            function testDownload() {
+                alert('✅ 下載功能測試成功！\n\n接下來請：\n1. 點擊"進入完整版軟體"\n2. 登入您的帳號\n3. 使用真正的雲端同步功能');
+            }
         </script>
     </div>
     <div id="app" style="display: none;">
