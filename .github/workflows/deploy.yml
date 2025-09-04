@@ -50,16 +50,16 @@ jobs:
         ls -la dist/ | head -20
         
     - name: 📄 設定 Pages 配置
-      uses: actions/configure-pages@v3
+      uses: actions/configure-pages@v4
       
     - name: 📦 上傳檔案
-      uses: actions/upload-pages-artifact@v2
+      uses: actions/upload-pages-artifact@v3
       with:
         path: './dist'
         
     - name: 🌐 部署到 GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v2
+      uses: actions/deploy-pages@v4
         
     - name: 📊 部署狀態
       if: success()
