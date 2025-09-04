@@ -379,12 +379,17 @@ class OfflineStorageService {
                     try {
                         // 檢查索引是否存在
                         if (store.indexNames.contains(indexName)) {
-                            const index = store.index(indexName);
                             // 進一步檢查值是否有效
                             if (this.isValidKey(value)) {
-                                request = index.count(value);
+                                const index = store.index(indexName);
+                                try {
+                                    request = index.count(value);
+                                } catch (countError) {
+                                    console.warn(`計數操作失敗，使用全部計數:`, countError);
+                                    request = store.count();
+                                }
                             } else {
-                                console.warn(`索引 ${indexName} 的值無效，使用全部計數`);
+                                console.warn(`索引 ${indexName} 的值無效 (${typeof value}: ${value})，使用全部計數`);
                                 request = store.count();
                             }
                         } else {
@@ -567,9 +572,10 @@ class OfflineStorageService {
                 }
             }
             
-            // 嘗試獲取待同步數量，如果失敗則設為 0
+            // 手動獲取待同步數量，不依賴索引
             try {
-                stats.pendingSync = await this.count('syncQueue', 'synced', false);
+                const allSyncItems = await this.getAll('syncQueue');
+                stats.pendingSync = allSyncItems.filter(item => item.synced === false).length;
             } catch (error) {
                 console.warn('無法獲取待同步數量，設為 0:', error);
                 stats.pendingSync = 0;
