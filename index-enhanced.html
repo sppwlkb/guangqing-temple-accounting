@@ -6878,17 +6878,16 @@
                             if (!loginResult.success) {
                                 throw new Error('自動登入失敗: ' + loginResult.message);
                             }
-                            // 等待認證狀態更新
-                            await new Promise(resolve => {
-                                const checkAuth = () => {
-                                    if (window.firebaseCloud?.currentUser) {
-                                        resolve();
-                                    } else {
-                                        setTimeout(checkAuth, 100);
-                                    }
-                                };
-                                checkAuth();
-                            });
+                            // 等待認證狀態更新（最多等待3秒）
+                            let waitCount = 0;
+                            while (!window.firebaseCloud?.currentUser && waitCount < 30) {
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                                waitCount++;
+                            }
+                            
+                            if (!window.firebaseCloud?.currentUser) {
+                                console.warn('等待認證狀態超時，但登入已成功，繼續執行');
+                            }
                         }
 
                         // 上傳到Firebase
@@ -6928,17 +6927,16 @@
                             if (!loginResult.success) {
                                 throw new Error('自動登入失敗: ' + loginResult.message);
                             }
-                            // 等待認證狀態更新
-                            await new Promise(resolve => {
-                                const checkAuth = () => {
-                                    if (window.firebaseCloud?.currentUser) {
-                                        resolve();
-                                    } else {
-                                        setTimeout(checkAuth, 100);
-                                    }
-                                };
-                                checkAuth();
-                            });
+                            // 等待認證狀態更新（最多等待3秒）
+                            let waitCount = 0;
+                            while (!window.firebaseCloud?.currentUser && waitCount < 30) {
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                                waitCount++;
+                            }
+                            
+                            if (!window.firebaseCloud?.currentUser) {
+                                console.warn('等待認證狀態超時，但登入已成功，繼續執行');
+                            }
                         }
 
                         // 從Firebase下載資料

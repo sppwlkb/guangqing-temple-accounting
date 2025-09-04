@@ -21,6 +21,7 @@ class FirebaseCloudService {
         this.db = null;
         this.storage = null;
         this.isInitialized = false;
+        this.localStorageMode = false;
         this.currentUser = null;
         this.isOnline = navigator.onLine;
         
@@ -196,12 +197,17 @@ class FirebaseCloudService {
      * 匿名登入（用於訪客使用）
      */
     async loginAnonymously() {
-        // 如果是本地存傲模式，模擬成功登入
-        if (this.localStorageMode || !this.isInitialized) {
-            console.log('使用本地存傲模式，模擬匿名登入');
-            // 設定一個模擬的currentUser
+        console.log('嘗試匿名登入，當前狀態:', {
+            localStorageMode: this.localStorageMode,
+            isInitialized: this.isInitialized,
+            hasAuth: !!this.auth
+        });
+        
+        // 如果是本地存儲模式，模擬成功登入
+        if (this.localStorageMode) {
+            console.log('使用本地存儲模式，模擬匿名登入');
             this.currentUser = {
-                uid: 'local-user-' + Date.now(),
+                uid: 'guangqing-local-' + Date.now(),
                 isAnonymous: true,
                 displayName: '廣清宮本地用戶'
             };
@@ -211,19 +217,42 @@ class FirebaseCloudService {
                 message: '本地模式登入成功'
             };
         }
+        
+        // 如果 Firebase 未初始化，嘗試等待一段時間
+        if (!this.isInitialized) {
+            console.log('等待 Firebase 初始化...');
+            let waitCount = 0;
+            while (!this.isInitialized && waitCount < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                waitCount++;
+            }
+        }
 
         try {
+            // 檢查Firebase是否正常初始化
+            if (!this.isInitialized || !this.auth) {
+                throw new Error('Firebase認證服務未初始化或不可用');
+            }
+            
+            console.log('嘗試 Firebase 匿名登入...');
             const userCredential = await this.auth.signInAnonymously();
+            console.log('Firebase 匿名登入成功');
+            
             return {
                 success: true,
                 user: userCredential.user,
                 message: '匿名登入成功'
             };
         } catch (error) {
+            console.warn('Firebase匿名登入失敗，降級到本地模式:', error);
+            
+            // 自動降級到本地模式
+            this.fallbackToLocalStorage();
+            
             return {
-                success: false,
-                error: error.code,
-                message: this.getErrorMessage(error.code)
+                success: true,
+                user: this.currentUser,
+                message: '本地模式登入成功（雲端服務不可用）'
             };
         }
     }
@@ -251,12 +280,12 @@ class FirebaseCloudService {
      * 上傳資料到雲端
      */
     async uploadData(data) {
-        // 如果是本地存傲模式，直接返回成功
+        // 如果是本地存儲模式，直接返回成功
         if (this.localStorageMode || !this.isInitialized) {
-            console.log('使用本地存傲模式，模擬上傳成功');
+            console.log('使用本地存儲模式，模擬上傳成功');
             return {
                 success: true,
-                message: '資料已存傲在本地（雲端服務不可用）',
+                message: '資料已存儲在本地（雲端服務不可用）',
                 timestamp: new Date().toLocaleString('zh-TW')
             };
         }
@@ -341,9 +370,9 @@ class FirebaseCloudService {
      * 從雲端下載資料
      */
     async downloadData() {
-        // 如果是本地存傲模式，返回空資料
+        // 如果是本地存儲模式，返回空資料
         if (this.localStorageMode || !this.isInitialized) {
-            console.log('使用本地存傲模式，返回空資料');
+            console.log('使用本地存儲模式，返回空資料');
             return {
                 success: true,
                 data: {
@@ -353,7 +382,7 @@ class FirebaseCloudService {
                     customCategories: null,
                     downloadedAt: new Date().toISOString()
                 },
-                message: '本地存傲模式（雲端服務不可用）',
+                message: '本地存儲模式（雲端服務不可用）',
                 timestamp: new Date().toLocaleString('zh-TW')
             };
         }
@@ -504,6 +533,14 @@ class FirebaseCloudService {
         console.warn('降級到本地存儲模式');
         this.localStorageMode = true;
         this.isInitialized = false;
+        
+        // 設置本地模擬用戶
+        this.currentUser = {
+            uid: 'guangqing-local-' + Date.now(),
+            isAnonymous: true,
+            displayName: '廣清宮本地用戶'
+        };
+        
         // 這裡可以使用原有的 CloudSyncService
         if (window.cloudSync) {
             console.log('使用備用雲端同步服務');
