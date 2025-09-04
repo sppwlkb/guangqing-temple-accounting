@@ -197,6 +197,22 @@ class FirebaseCloudService {
      * 匿名登入（用於訪客使用）
      */
     async loginAnonymously() {
+        // 如果是本地存傲模式，模擬成功登入
+        if (this.localStorageMode || !this.isInitialized) {
+            console.log('使用本地存傲模式，模擬匿名登入');
+            // 設定一個模擬的currentUser
+            this.currentUser = {
+                uid: 'local-user-' + Date.now(),
+                isAnonymous: true,
+                displayName: '廣清宮本地用戶'
+            };
+            return {
+                success: true,
+                user: this.currentUser,
+                message: '本地模式登入成功'
+            };
+        }
+
         try {
             const userCredential = await this.auth.signInAnonymously();
             return {
@@ -236,6 +252,16 @@ class FirebaseCloudService {
      * 上傳資料到雲端
      */
     async uploadData(data) {
+        // 如果是本地存傲模式，直接返回成功
+        if (this.localStorageMode || !this.isInitialized) {
+            console.log('使用本地存傲模式，模擬上傳成功');
+            return {
+                success: true,
+                message: '資料已存傲在本地（雲端服務不可用）',
+                timestamp: new Date().toLocaleString('zh-TW')
+            };
+        }
+
         if (!this.currentUser) {
             throw new Error('用戶未登入');
         }
@@ -316,6 +342,23 @@ class FirebaseCloudService {
      * 從雲端下載資料
      */
     async downloadData() {
+        // 如果是本地存傲模式，返回空資料
+        if (this.localStorageMode || !this.isInitialized) {
+            console.log('使用本地存傲模式，返回空資料');
+            return {
+                success: true,
+                data: {
+                    records: [],
+                    believers: [],
+                    reminders: [],
+                    customCategories: null,
+                    downloadedAt: new Date().toISOString()
+                },
+                message: '本地存傲模式（雲端服務不可用）',
+                timestamp: new Date().toLocaleString('zh-TW')
+            };
+        }
+
         if (!this.currentUser) {
             throw new Error('用戶未登入');
         }
@@ -460,9 +503,11 @@ class FirebaseCloudService {
      */
     fallbackToLocalStorage() {
         console.warn('降級到本地存儲模式');
+        this.localStorageMode = true;
+        this.isInitialized = false;
         // 這裡可以使用原有的 CloudSyncService
         if (window.cloudSync) {
-            this.localStorageMode = true;
+            console.log('使用備用雲端同步服務');
         }
     }
 
