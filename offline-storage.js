@@ -353,10 +353,16 @@ class OfflineStorageService {
             let request;
             if (indexName && value !== null) {
                 try {
-                    const index = store.index(indexName);
-                    request = index.count(value);
+                    // 檢查索引是否存在
+                    if (store.indexNames.contains(indexName)) {
+                        const index = store.index(indexName);
+                        request = index.count(value);
+                    } else {
+                        console.warn(`索引 ${indexName} 不存在，使用全部計數`);
+                        request = store.count();
+                    }
                 } catch (error) {
-                    console.warn(`索引 ${indexName} 不存在，使用全部計數`, error);
+                    console.warn(`索引 ${indexName} 訪問失敗，使用全部計數:`, error);
                     request = store.count();
                 }
             } else {
@@ -459,7 +465,12 @@ class OfflineStorageService {
      * 獲取未同步的項目
      */
     async getPendingSyncItems() {
-        return await this.getByIndex('syncQueue', 'synced', false);
+        try {
+            return await this.getByIndex('syncQueue', 'synced', false);
+        } catch (error) {
+            console.warn('獲取未同步項目失敗，返回空結果:', error);
+            return [];
+        }
     }
 
     /**
@@ -478,13 +489,17 @@ class OfflineStorageService {
      * 清理已同步的項目
      */
     async cleanupSyncQueue() {
-        const syncedItems = await this.getByIndex('syncQueue', 'synced', true);
-        const cutoffTime = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7天前
-        
-        for (const item of syncedItems) {
-            if (item.timestamp < cutoffTime) {
-                await this.delete('syncQueue', item.id);
+        try {
+            const syncedItems = await this.getByIndex('syncQueue', 'synced', true);
+            const cutoffTime = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7天前
+            
+            for (const item of syncedItems) {
+                if (item.timestamp < cutoffTime) {
+                    await this.delete('syncQueue', item.id);
+                }
             }
+        } catch (error) {
+            console.warn('清理同步佇列失敗:', error);
         }
     }
 
@@ -494,14 +509,28 @@ class OfflineStorageService {
     async getStats() {
         const stats = {};
         
-        for (const storeName of Object.keys(this.stores)) {
-            if (storeName !== 'syncQueue') {
-                stats[storeName] = await this.count(storeName);
+        try {
+            for (const storeName of Object.keys(this.stores)) {
+                if (storeName !== 'syncQueue') {
+                    stats[storeName] = await this.count(storeName);
+                }
             }
+            
+            // 嘗試獲取待同步數量，如果失敗則設為 0
+            try {
+                stats.pendingSync = await this.count('syncQueue', 'synced', false);
+            } catch (error) {
+                console.warn('無法獲取待同步數量，設為 0:', error);
+                stats.pendingSync = 0;
+            }
+            
+            stats.dbSize = await this.getDBSize();
+        } catch (error) {
+            console.error('獲取資料庫統計失敗:', error);
+            // 返回基本統計信息
+            stats.pendingSync = 0;
+            stats.dbSize = null;
         }
-        
-        stats.pendingSync = await this.count('syncQueue', 'synced', false);
-        stats.dbSize = await this.getDBSize();
         
         return stats;
     }
