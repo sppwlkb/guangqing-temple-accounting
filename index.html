@@ -97,6 +97,71 @@
             gap: 10px;
         }
 
+        /* 雲端同步按鈕樣式 */
+        .cloud-sync-header {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .cloud-sync-buttons {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .cloud-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 80px;
+            backdrop-filter: blur(10px);
+            touch-action: manipulation;
+        }
+
+        .cloud-btn:hover, 
+        .cloud-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .cloud-icon {
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        .cloud-text {
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .upload-btn:hover .cloud-icon {
+            animation: bounce 0.6s ease-in-out;
+        }
+
+        .download-btn:hover .cloud-icon {
+            animation: bounce 0.6s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-4px); }
+            80% { transform: translateY(-2px); }
+        }
+
         /* 搜尋樣式 */
         .search-container {
             position: relative;
@@ -2407,7 +2472,30 @@
                 height: auto;
                 padding: 12px 15px;
                 gap: 12px;
-                min-height: 80px;
+                min-height: 120px;
+            }
+
+            /* 手機版雲端同步按鈕優化 */
+            .cloud-sync-header {
+                order: 1;
+                margin: 10px 0;
+            }
+
+            .cloud-sync-buttons {
+                gap: 12px;
+            }
+
+            .cloud-btn {
+                padding: 10px 12px;
+                min-width: 70px;
+            }
+
+            .cloud-icon {
+                font-size: 20px;
+            }
+
+            .cloud-text {
+                font-size: 11px;
             }
 
             .search-container {
@@ -2456,7 +2544,25 @@
 
             .app-header {
                 padding: 15px 12px;
-                min-height: 85px;
+                min-height: 110px;
+            }
+
+            /* 超小螢幕雲端同步按鈕優化 */
+            .cloud-sync-buttons {
+                gap: 10px;
+            }
+
+            .cloud-btn {
+                padding: 8px 10px;
+                min-width: 65px;
+            }
+
+            .cloud-icon {
+                font-size: 18px;
+            }
+
+            .cloud-text {
+                font-size: 10px;
             }
         }
 
@@ -2545,6 +2651,20 @@
             <!-- 頂部標題 -->
             <div class="app-header">
                 <div class="app-title">廣清宮快速記帳軟體</div>
+
+                <!-- 雲端同步快速按鈕 -->
+                <div class="cloud-sync-header">
+                    <div class="cloud-sync-buttons">
+                        <button class="cloud-btn upload-btn" @click="syncToCloud" title="雲端備份">
+                            <div class="cloud-icon">☁️</div>
+                            <div class="cloud-text">雲端備份</div>
+                        </button>
+                        <button class="cloud-btn download-btn" @click="syncFromCloud" title="從雲端同步">
+                            <div class="cloud-icon">📥</div>
+                            <div class="cloud-text">雲端同步</div>
+                        </button>
+                    </div>
+                </div>
 
                 <!-- 搜尋框 -->
                 <div class="search-container">
