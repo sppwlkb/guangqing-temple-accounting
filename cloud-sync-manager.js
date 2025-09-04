@@ -464,11 +464,17 @@ class CloudSyncManager {
         // 每30秒檢查一次待同步項目
         this.autoSyncInterval = setInterval(async () => {
             if (this.isOnline && window.firebaseCloud.currentUser && !this.syncInProgress) {
-                const pendingCount = await window.offlineStorage.count('syncQueue', 'synced', false);
-                this.syncStatus.pendingChanges = pendingCount;
-                
-                if (pendingCount > 0) {
-                    await this.syncPendingChanges();
+                try {
+                    // 不再依賴有問題的索引，直接使用手動篩選
+                    const allSyncItems = await window.offlineStorage.getAll('syncQueue');
+                    const pendingCount = allSyncItems.filter(item => item.synced === false).length;
+                    this.syncStatus.pendingChanges = pendingCount;
+                    
+                    if (pendingCount > 0) {
+                        await this.syncPendingChanges();
+                    }
+                } catch (error) {
+                    console.warn('自動同步檢查失敗:', error);
                 }
             }
             
