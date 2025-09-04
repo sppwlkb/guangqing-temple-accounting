@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="0; url=./index-enhanced.html">
-    <title>宮廟快速記帳軟體</title>
+    <title>廣清宮管理系統 - 專用版</title>
     
     <!-- PWA支援 -->
     <link rel="manifest" href="manifest.json">
@@ -13,7 +13,7 @@
     <!-- iOS PWA支援 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="廣清宮記帳">
+    <meta name="apple-mobile-web-app-title" content="廣清宮管理系統">
     <link rel="apple-touch-icon" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
@@ -2580,8 +2580,12 @@
 </head>
 <body>
     <div style="text-align: center; padding: 20px; font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh;">
-        <h1>廣清宮快速記帳軟體</h1>
-        <h2>🔧 測試版本</h2>
+        <h1>🏛️ 廣清宮管理系統</h1>
+        <h2>⚡ 專用版 - 全功能管理平台</h2>
+        <p style="margin: 20px 0; opacity: 0.9; font-size: 16px;">
+            🌟 專為廣清宮量身打造的完整管理系統<br>
+            📊 財務管理 | 👥 信眾管理 | 🏮 太歲管理 | ☁️ 雲端同步
+        </p>
         
         <!-- 雲端同步測試區域 -->
         <div style="background: white; color: black; padding: 20px; margin: 20px auto; border-radius: 10px; max-width: 400px;">
@@ -2632,7 +2636,7 @@
                 font-size: 14px;
                 display: inline-block;
             ">
-                🚀 進入完整版軟體
+                🏛️ 進入廣清宮管理系統
             </a>
         </div>
         
@@ -2642,7 +2646,7 @@
             }
             
             function testDownload() {
-                alert('✅ 下載功能測試成功！\n\n接下來請：\n1. 點擊"進入完整版軟體"\n2. 登入您的帳號\n3. 使用真正的雲端同步功能');
+                alert('✅ 下載功能測試成功！\n\n接下來請：\n1. 點擊"進入廣清宮管理系統"\n2. 開始使用完整功能\n3. 使用雲端同步功能');
             }
         </script>
     </div>
@@ -2650,7 +2654,7 @@
         <div class="app-container">
             <!-- 頂部標題 -->
             <div class="app-header">
-                <div class="app-title">廣清宮快速記帳軟體</div>
+                <div class="app-title">🏛️ 廣清宮管理系統 <span style="font-size: 14px; opacity: 0.8;">[專用版]</span></div>
 
                 <!-- 雲端同步快速按鈕 -->
                 <div class="cloud-sync-header">
@@ -2738,6 +2742,12 @@
             <div class="app-main">
                 <!-- 儀表板頁面 -->
                 <div class="page-content active" id="dashboard">
+                    <!-- 廣清宮專屬歡迎區 -->
+                    <div class="welcome-section" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                        <h2 style="margin: 0 0 10px 0; font-size: 22px;">🏛️ 歡迎使用廣清宮管理系統</h2>
+                        <p style="margin: 0; opacity: 0.9; font-size: 14px;">專為廣清宮打造的全方位管理平台 | 今天是 {{ new Date().toLocaleDateString('zh-TW') }}</p>
+                    </div>
+
                     <!-- 緊急提醒 -->
                     <div v-if="urgentReminders.length > 0" class="reminders-section">
                         <div class="section-title">
@@ -3499,6 +3509,18 @@
                 <div class="page-content" id="settings">
                     <div class="page-header">
                         <h2>⚙️ 系統設定</h2>
+                    </div>
+
+                    <!-- 廣清宮系統資訊 -->
+                    <div class="content-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 20px;">
+                        <div class="card-title" style="color: white;">🏛️ 廣清宮專用版資訊</div>
+                        <div style="display: grid; gap: 10px; font-size: 14px;">
+                            <div><strong>系統名稱：</strong>廣清宮管理系統 (專用版)</div>
+                            <div><strong>版本資訊：</strong>v2.0.0 - 完整功能版</div>
+                            <div><strong>專用功能：</strong>信眾管理、太歲管理、財務報表、雲端同步</div>
+                            <div><strong>授權對象：</strong>廣清宮專用 (內部使用)</div>
+                            <div><strong>最後更新：</strong>{{ new Date().toLocaleDateString('zh-TW') }}</div>
+                        </div>
                     </div>
 
                     <!-- 宮廟基本資料 -->
@@ -5428,15 +5450,17 @@
                     notes: ''
                 });
 
-                // 類別定義
+                // 類別定義 - 廣清宮專用分類
                 const incomeCategories = [
-                    '香油錢', '點光明燈', '屬名紅包', '未屬名紅包', 
-                    '祝壽', '看風水', '停車費', '感謝神尊', '其他'
+                    '香油錢', '點光明燈', '太歲燈', '平安燈', '財神燈',
+                    '屬名紅包', '未屬名紅包', '祝壽', '安太歲', '看風水', 
+                    '問事', '停車費', '感謝神尊', '廟會捐款', '其他'
                 ];
                 
                 const expenseCategories = [
-                    '人員薪水', '房租', '水電費', '雜項開支', 
-                    '參訪金', '修繕費', '管理費', '其他'
+                    '人員薪水', '房租', '水電費', '瓦斯費', '電話費',
+                    '修繕費', '管理費', '參訪金', '供品費', '香燭費',
+                    '法器用品', '清潔用品', '慶典費用', '雜項開支', '其他'
                 ];
                 
                 // 計算屬性
