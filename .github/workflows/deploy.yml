@@ -7,21 +7,13 @@ on:
 
 # 設定權限
 permissions:
-  contents: read
+  contents: write
   pages: write
-  id-token: write
-
-# 只允許一個部署在執行
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  actions: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: 📥 檢出程式碼
@@ -49,17 +41,13 @@ jobs:
         echo "✅ 檔案準備完成"
         ls -la dist/ | head -20
         
-    - name: 📄 設定 Pages 配置
-      uses: actions/configure-pages@v4
-      
-    - name: 📦 上傳檔案
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: './dist'
-        
     - name: 🌐 部署到 GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./dist
+        publish_branch: gh-pages
+        force_orphan: true
         
     - name: 📊 部署狀態
       if: success()
