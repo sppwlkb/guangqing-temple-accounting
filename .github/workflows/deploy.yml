@@ -5,9 +5,23 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# 設定權限
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 只允許一個部署在執行
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: 📥 檢出程式碼
@@ -35,14 +49,17 @@ jobs:
         echo "✅ 檔案準備完成"
         ls -la dist/ | head -20
         
-    - name: 🌐 部署到 GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      if: github.ref == 'refs/heads/main'
+    - name: 📄 設定 Pages 配置
+      uses: actions/configure-pages@v3
+      
+    - name: 📦 上傳檔案
+      uses: actions/upload-pages-artifact@v2
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./dist
-        publish_branch: gh-pages
-        force_orphan: true
+        path: './dist'
+        
+    - name: 🌐 部署到 GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v2
         
     - name: 📊 部署狀態
       if: success()
