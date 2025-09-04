@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>廣清宮快速記帳軟體</title>
     
     <!-- PWA支援 -->
@@ -54,6 +57,20 @@
     
     <!-- Day.js -->
     <script src="https://unpkg.com/dayjs@1.11.9/dayjs.min.js"></script>
+    
+    <script>
+        // 版本標識和緩存清除
+        console.log('廣清宮記帳軟體 v2025.01.05 - loadData 修復版');
+        
+        // 強制清除緩存
+        if ('caches' in window) {
+            caches.keys().then(function(cacheNames) {
+                cacheNames.forEach(function(cacheName) {
+                    caches.delete(cacheName);
+                });
+            });
+        }
+    </script>
     
     <style>
         * {
@@ -7016,7 +7033,9 @@
                             }
 
                             // 刷新頁面資料
+                            console.log('正在重新載入 IndexedDB 資料...');
                             await loadFromIndexedDB();
+                            console.log('IndexedDB 資料載入完成');
                             
                             showNotification('下載成功', 
                                 `已從雲端下載 ${cloudData.records?.length || 0} 筆記錄、${cloudData.believers?.length || 0} 位信眾資料、${cloudData.reminders?.length || 0} 個提醒`, 
