@@ -7016,7 +7016,7 @@
                             }
 
                             // 刷新頁面資料
-                            await loadData();
+                            await loadFromIndexedDB();
                             
                             showNotification('下載成功', 
                                 `已從雲端下載 ${cloudData.records?.length || 0} 筆記錄、${cloudData.believers?.length || 0} 位信眾資料、${cloudData.reminders?.length || 0} 個提醒`, 
