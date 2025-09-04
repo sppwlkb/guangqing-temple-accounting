@@ -5,14 +5,13 @@
 
 // Firebase 配置
 const firebaseConfig = {
-    // 注意：這些是示例配置，實際使用時請替換為您的 Firebase 專案配置
-    apiKey: "ap0dZIvLckVvv4Q7bH9D_wivoQ0tNEbMg1cUUbwqpkc",
+    apiKey: "AIzaSyAFBpWl0A6TKNgFVSaQag0adVAGIvx0WCI",
     authDomain: "guangqing-temple-accounting.firebaseapp.com",
-    databaseURL: "https://guangqing-temple-accounting-default-rtdb.firebaseio.com",
     projectId: "guangqing-temple-accounting",
-    storageBucket: "guangqing-temple-accounting.appspot.com",
+    storageBucket: "guangqing-temple-accounting.firebasestorage.app",
     messagingSenderId: "149239503393",
-    appId: "1:123456789:web:abcdefghijklmnop"
+    appId: "1:149239503393:web:b9f0ab73e4412e1c77a160",
+    measurementId: "G-EQTHNQH9T5"
 };
 
 class FirebaseCloudService {
