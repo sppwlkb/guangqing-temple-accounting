@@ -2999,32 +2999,11 @@
                 </div>
 
                 <div class="header-actions">
-                    <!-- 雲端同步狀態 -->
-                    <div class="sync-status" :class="syncStatusClass">
-                        <div class="sync-indicator" @click="showSyncModal = true">
-                            <span class="sync-icon">{{ syncIcon }}</span>
-                            <span class="sync-text">{{ syncStatusText }}</span>
-                        </div>
-                        <div v-if="pendingChanges > 0" class="pending-badge">{{ pendingChanges }}</div>
-                    </div>
-                    
-                    <!-- 用戶狀態 -->
-                    <div class="user-status" @click="showUserModal = true">
-                        <span class="user-icon">👤</span>
-                        <span class="user-name">{{ currentUserName }}</span>
-                    </div>
-                    
                     <button class="btn btn-primary" @click="showAddModal = true" style="padding: 8px 12px; font-size: 14px;">
                         快速記帳
                     </button>
                     
-                    <!-- 雲端同步快速按鈕 - 移到主要按鈕區域 -->
-                    <button class="btn btn-success" @click="quickUploadToCloud" :disabled="uploadInProgress" style="padding: 6px 10px; font-size: 12px; margin-left: 5px;">
-                        {{ uploadInProgress ? '上傳中...' : '☁️上傳' }}
-                    </button>
-                    <button class="btn btn-info" @click="quickDownloadFromCloud" :disabled="downloadInProgress" style="padding: 6px 10px; font-size: 12px; margin-left: 5px;">
-                        {{ downloadInProgress ? '下載中...' : '📥下載' }}
-                    </button>
+
                     
                     <div style="position: relative;">
                         <button class="btn btn-secondary" @click="showNotifications" style="padding: 8px 12px; font-size: 14px;">
@@ -3041,16 +3020,7 @@
             <div class="app-main">
                 <!-- 儀表板頁面 -->
                 <div class="page-content active" id="dashboard">
-                    <!-- 雲端同步測試按鈕 - 臨時放在明顯位置 -->
-                    <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; text-align: center; border-radius: 8px;">
-                        <div style="font-size: 14px; margin-bottom: 8px; color: #666;">雲端同步功能</div>
-                        <button onclick="alert('上傳按鈕點擊成功！')" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-right: 10px; font-size: 12px;">
-                            ☁️ 測試上傳
-                        </button>
-                        <button onclick="alert('下載按鈕點擊成功！')" style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-size: 12px;">
-                            📥 測試下載
-                        </button>
-                    </div>
+
                     
                     <!-- 雲端同步快速功能區 - 永遠顯示在頂部 -->
                     <div class="cloud-sync-section" style="
@@ -3104,7 +3074,7 @@
                             </button>
                         </div>
                         <div style="font-size: 12px; margin-top: 8px; opacity: 0.9;">
-                            💡 登入帳號後即可使用跨設備同步功能
+                            💾 廣清宮專用版 - 直接使用所有功能
                         </div>
                     </div>
 
@@ -4520,153 +4490,9 @@
             <div class="notification-message">{{ currentNotification.message }}</div>
         </div>
 
-        <!-- 用戶認證對話框 -->
-        <div v-if="showUserModal" class="modal" @click.self="closeUserModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="modal-title">{{ currentUser ? '用戶設定' : '登入/註冊' }}</div>
-                    <button class="close-btn" @click="closeUserModal">&times;</button>
-                </div>
 
-                <!-- 未登入狀態 -->
-                <div v-if="!currentUser" class="auth-container">
-                    <div class="auth-tabs">
-                        <button 
-                            :class="['tab-btn', { active: authTab === 'login' }]"
-                            @click="authTab = 'login'"
-                        >
-                            登入
-                        </button>
-                        <button 
-                            :class="['tab-btn', { active: authTab === 'register' }]"
-                            @click="authTab = 'register'"
-                        >
-                            註冊
-                        </button>
-                        <button 
-                            :class="['tab-btn', { active: authTab === 'guest' }]"
-                            @click="authTab = 'guest'"
-                        >
-                            訪客模式
-                        </button>
-                    </div>
 
-                    <!-- 登入表單 -->
-                    <form v-if="authTab === 'login'" @submit.prevent="loginUser" class="auth-form">
-                        <div class="form-group">
-                            <label class="form-label">電子郵件</label>
-                            <input v-model="authForm.email" type="email" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">密碼</label>
-                            <input v-model="authForm.password" type="password" class="form-input" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary" :disabled="authLoading">
-                            {{ authLoading ? '登入中...' : '登入' }}
-                        </button>
-                    </form>
 
-                    <!-- 註冊表單 -->
-                    <form v-if="authTab === 'register'" @submit.prevent="registerUser" class="auth-form">
-                        <div class="form-group">
-                            <label class="form-label">宮廟名稱</label>
-                            <input v-model="authForm.displayName" type="text" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">電子郵件</label>
-                            <input v-model="authForm.email" type="email" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">密碼</label>
-                            <input v-model="authForm.password" type="password" class="form-input" minlength="6" required>
-                        </div>
-                        <button type="submit" class="btn btn-primary" :disabled="authLoading">
-                            {{ authLoading ? '註冊中...' : '註冊' }}
-                        </button>
-                    </form>
-
-                    <!-- 訪客模式 -->
-                    <div v-if="authTab === 'guest'" class="guest-mode">
-                        <p>訪客模式將使用匿名登入，資料會保存在雲端但無法跨設備同步。</p>
-                        <button @click="loginAnonymously" class="btn btn-secondary" :disabled="authLoading">
-                            {{ authLoading ? '登入中...' : '使用訪客模式' }}
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 已登入狀態 -->
-                <div v-else class="user-info">
-                    <div class="user-profile">
-                        <div class="user-avatar">{{ currentUser.displayName ? currentUser.displayName.charAt(0) : '👤' }}</div>
-                        <div class="user-details">
-                            <div class="user-name">{{ currentUser.displayName || '匿名用戶' }}</div>
-                            <div class="user-email">{{ currentUser.email || '訪客模式' }}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="user-actions">
-                        <button @click="manualSync" class="btn btn-primary" :disabled="syncInProgress">
-                            {{ syncInProgress ? '同步中...' : '手動同步' }}
-                        </button>
-                        <button @click="logoutUser" class="btn btn-secondary">
-                            登出
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 同步狀態對話框 -->
-        <div v-if="showSyncModal" class="modal" @click.self="closeSyncModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <div class="modal-title">雲端同步狀態</div>
-                    <button class="close-btn" @click="closeSyncModal">&times;</button>
-                </div>
-
-                <div class="sync-info">
-                    <div class="info-item">
-                        <span class="info-label">網路狀態：</span>
-                        <span :class="['info-value', isOnline ? 'online' : 'offline']">
-                            {{ isOnline ? '🟢 已連線' : '🔴 離線' }}
-                        </span>
-                    </div>
-                    
-                    <div class="info-item">
-                        <span class="info-label">登入狀態：</span>
-                        <span class="info-value">
-                            {{ currentUser ? '✅ 已登入' : '❌ 未登入' }}
-                        </span>
-                    </div>
-                    
-                    <div class="info-item">
-                        <span class="info-label">最後同步：</span>
-                        <span class="info-value">{{ lastSyncFormatted }}</span>
-                    </div>
-                    
-                    <div class="info-item">
-                        <span class="info-label">待同步變更：</span>
-                        <span class="info-value">{{ pendingChanges }} 個項目</span>
-                    </div>
-                    
-                    <div class="info-item">
-                        <span class="info-label">即時同步：</span>
-                        <span class="info-value">
-                            {{ isRealtimeSync ? '🟢 已啟用' : '🔴 未啟用' }}
-                        </span>
-                    </div>
-                </div>
-
-                <div class="sync-actions">
-                    <button @click="manualSync" class="btn btn-primary" :disabled="!currentUser || !isOnline || syncInProgress">
-                        {{ syncInProgress ? '同步中...' : '立即同步' }}
-                    </button>
-                    <button @click="forceResync" class="btn btn-warning" :disabled="!currentUser || !isOnline">
-                        強制重新同步
-                    </button>
-                </div>
-            </div>
-        </div>
 
         <!-- 類別管理對話框 -->
         <div v-if="showCategoryManagerModal" class="modal" @click.self="closeCategoryManagerModal">
@@ -7015,12 +6841,6 @@
 
                 // 快速上傳資料到雲端
                 const quickUploadToCloud = async () => {
-                    if (!window.firebaseCloud?.currentUser) {
-                        showNotification('請先登入', '您需要先登入帳號才能使用雲端同步功能', 'warning');
-                        showUserModal.value = true;
-                        return;
-                    }
-
                     if (!navigator.onLine) {
                         showNotification('網路錯誤', '請檢查網路連線', 'warning');
                         return;
@@ -7052,6 +6872,11 @@
                             localData.reminders = remindersData || [];
                         }
 
+                        // 自動登入作為廣清宮用戶
+                        if (!window.firebaseCloud?.currentUser) {
+                            await window.firebaseCloud.loginAnonymously();
+                        }
+
                         // 上傳到Firebase
                         const result = await window.firebaseCloud.uploadData(localData);
                         
@@ -7072,12 +6897,6 @@
 
                 // 快速從雲端下載資料
                 const quickDownloadFromCloud = async () => {
-                    if (!window.firebaseCloud?.currentUser) {
-                        showNotification('請先登入', '您需要先登入帳號才能使用雲端同步功能', 'warning');
-                        showUserModal.value = true;
-                        return;
-                    }
-
                     if (!navigator.onLine) {
                         showNotification('網路錯誤', '請檢查網路連線', 'warning');
                         return;
@@ -7089,6 +6908,11 @@
 
                     downloadInProgress.value = true;
                     try {
+                        // 自動登入作為廣清宮用戶
+                        if (!window.firebaseCloud?.currentUser) {
+                            await window.firebaseCloud.loginAnonymously();
+                        }
+
                         // 從Firebase下載資料
                         const result = await window.firebaseCloud.downloadData();
                         
