@@ -262,30 +262,53 @@ class OfflineStorageService {
                 
                 let request;
                 try {
-                    const index = store.index(indexName);
-                    request = index.getAll(value);
+                    // 檢查索引是否存在且值有效
+                    if (store.indexNames.contains(indexName) && this.isValidKey(value)) {
+                        const index = store.index(indexName);
+                        request = index.getAll(value);
+                    } else {
+                        if (!store.indexNames.contains(indexName)) {
+                            console.warn(`索引 ${indexName} 不存在於 ${storeName}，使用全部資料篩選`);
+                        } else {
+                            console.warn(`索引 ${indexName} 的值無效，使用全部資料篩選`);
+                        }
+                        // 降級到取得所有資料然後手動篩選
+                        request = store.getAll();
+                    }
                 } catch (indexError) {
-                    console.warn(`索引 ${indexName} 不存在於 ${storeName}，使用全部資料篩選`, indexError);
-                    // 降級到取得所有資料然後手動篩選
+                    console.warn(`索引訪問失敗，降級到手動篩選:`, indexError);
                     request = store.getAll();
                 }
                 
                 request.onsuccess = () => {
                     let result = request.result;
                     
-                    // 如果是降級模式，手動篩選
-                    if (indexName && value !== undefined && !store.indexNames.contains(indexName)) {
-                        result = result.filter(item => item[indexName] === value);
+                    // 如果是降級模式或索引不存在，手動篩選
+                    if (indexName && value !== undefined && 
+                        (!store.indexNames.contains(indexName) || !this.isValidKey(value))) {
+                        result = result.filter(item => {
+                            try {
+                                return item[indexName] === value;
+                            } catch (e) {
+                                return false;
+                            }
+                        });
                     }
                     
                     resolve(result);
                 };
                 
                 request.onerror = () => {
-                    reject(request.error);
+                    console.warn(`getByIndex 操作失敗，返回空結果`);
+                    resolve([]);
+                };
+                
+                transaction.onerror = () => {
+                    console.warn(`getByIndex 交易失敗，返回空結果`);
+                    resolve([]);
                 };
             } catch (error) {
-                console.error(`getByIndex 失敗:`, error);
+                console.error(`getByIndex 方法失敗:`, error);
                 resolve([]); // 返回空陣列而不是錯誤
             }
         });
@@ -347,36 +370,64 @@ class OfflineStorageService {
         await this.ensureInitialized();
         
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([storeName], 'readonly');
-            const store = transaction.objectStore(storeName);
-            
-            let request;
-            if (indexName && value !== null) {
-                try {
-                    // 檢查索引是否存在
-                    if (store.indexNames.contains(indexName)) {
-                        const index = store.index(indexName);
-                        request = index.count(value);
-                    } else {
-                        console.warn(`索引 ${indexName} 不存在，使用全部計數`);
+            try {
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                
+                let request;
+                if (indexName && value !== null && value !== undefined) {
+                    try {
+                        // 檢查索引是否存在
+                        if (store.indexNames.contains(indexName)) {
+                            const index = store.index(indexName);
+                            // 進一步檢查值是否有效
+                            if (this.isValidKey(value)) {
+                                request = index.count(value);
+                            } else {
+                                console.warn(`索引 ${indexName} 的值無效，使用全部計數`);
+                                request = store.count();
+                            }
+                        } else {
+                            console.warn(`索引 ${indexName} 不存在，使用全部計數`);
+                            request = store.count();
+                        }
+                    } catch (error) {
+                        console.warn(`索引 ${indexName} 訪問失敗，使用全部計數:`, error);
                         request = store.count();
                     }
-                } catch (error) {
-                    console.warn(`索引 ${indexName} 訪問失敗，使用全部計數:`, error);
+                } else {
                     request = store.count();
                 }
-            } else {
-                request = store.count();
+                
+                request.onsuccess = () => {
+                    resolve(request.result);
+                };
+                
+                request.onerror = () => {
+                    console.warn(`計數操作失敗，返回 0`);
+                    resolve(0); // 返回 0 而不是拋出錯誤
+                };
+                
+                transaction.onerror = () => {
+                    console.warn(`交易失敗，返回 0`);
+                    resolve(0);
+                };
+            } catch (error) {
+                console.error(`count 方法失敗:`, error);
+                resolve(0);
             }
-            
-            request.onsuccess = () => {
-                resolve(request.result);
-            };
-            
-            request.onerror = () => {
-                reject(request.error);
-            };
         });
+    }
+    
+    /**
+     * 檢查值是否為有效的 IndexedDB 鍵
+     */
+    isValidKey(value) {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return true;
+        if (value instanceof Date) return true;
+        if (Array.isArray(value)) return value.every(v => this.isValidKey(v));
+        return false;
     }
 
     /**
