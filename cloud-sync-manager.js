@@ -542,16 +542,12 @@ class CloudSyncManager {
     async getSyncStatus() {
         let pendingCount = 0;
         try {
-            pendingCount = await window.offlineStorage.count('syncQueue', 'synced', false);
+            // 不再依賴有問題的索引，直接使用手動篩選
+            const allSyncItems = await window.offlineStorage.getAll('syncQueue');
+            pendingCount = allSyncItems.filter(item => item.synced === false).length;
         } catch (error) {
             console.warn('無法取得待同步數量，使用預設值', error);
-            // 降級方案：直接計算syncQueue中的所有項目
-            try {
-                pendingCount = await window.offlineStorage.count('syncQueue');
-            } catch (fallbackError) {
-                console.warn('降級計算也失敗，設為0', fallbackError);
-                pendingCount = 0;
-            }
+            pendingCount = 0;
         }
         
         let stats = {};
