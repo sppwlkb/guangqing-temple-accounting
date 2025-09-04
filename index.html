@@ -43,9 +43,8 @@
     <!-- 紅包贊助系統 -->
     <script src="donation-system.js"></script>
     
-    <!-- 個資保護系統 -->
+    <!-- 個資保護系統 - 廣清宮專用版已簡化 -->
     <script src="privacy-protection.js"></script>
-    <script src="access-control.js"></script>
 
     <!-- QR Code生成器 -->
     <script src="qrcode-generator.js"></script>
@@ -606,6 +605,18 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
+            cursor: move;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+        }
+
+        .modal-header:hover {
+            background-color: #f8f9fa;
+        }
+
+        .modal-header.dragging {
+            background-color: #e3f2fd;
         }
         
         .modal-title {
@@ -714,6 +725,17 @@
             z-index: 3000;
             max-width: 300px;
             animation: slideIn 0.3s ease;
+            cursor: move;
+            user-select: none;
+        }
+
+        .notification-popup:hover {
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .notification-popup.dragging {
+            opacity: 0.8;
+            transform: scale(1.02);
         }
         
         @keyframes slideIn {
@@ -725,6 +747,30 @@
             font-weight: 600;
             color: #303133;
             margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #909399;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .notification-close:hover {
+            background: #f5f7fa;
+            color: #606266;
         }
         
         .notification-message {
@@ -4163,7 +4209,10 @@
         
         <!-- 通知彈窗 -->
         <div v-if="showNotificationPopup" class="notification-popup">
-            <div class="notification-title">{{ currentNotification.title }}</div>
+            <div class="notification-title">
+                {{ currentNotification.title }}
+                <button class="notification-close" @click="showNotificationPopup = false">&times;</button>
+            </div>
             <div class="notification-message">{{ currentNotification.message }}</div>
         </div>
 
@@ -8704,6 +8753,172 @@
                         saveToStorage();
                     }
                 });
+
+                // 浮動視窗拖拽功能
+                const initDragFeature = () => {
+                    // 拖拽狀態
+                    let isDragging = false;
+                    let currentElement = null;
+                    let offsetX = 0;
+                    let offsetY = 0;
+
+                    // 為所有浮動視窗添加拖拽功能
+                    const addDragToModals = () => {
+                        // 處理 modal 視窗
+                        const modals = document.querySelectorAll('.modal');
+                        modals.forEach(modal => {
+                            const header = modal.querySelector('.modal-header');
+                            if (header && !header.hasAttribute('data-drag-enabled')) {
+                                header.setAttribute('data-drag-enabled', 'true');
+                                enableDrag(modal, header);
+                            }
+                        });
+
+                        // 處理 notification popup
+                        const notifications = document.querySelectorAll('.notification-popup');
+                        notifications.forEach(notification => {
+                            if (!notification.hasAttribute('data-drag-enabled')) {
+                                notification.setAttribute('data-drag-enabled', 'true');
+                                enableDrag(notification, notification);
+                            }
+                        });
+                    };
+
+                    // 啟用拖拽功能
+                    const enableDrag = (element, handle) => {
+                        const startDrag = (e) => {
+                            e.preventDefault();
+                            isDragging = true;
+                            currentElement = element;
+                            
+                            const clientX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+                            const clientY = e.type === 'mousedown' ? e.clientY : e.touches[0].clientY;
+                            const rect = element.getBoundingClientRect();
+                            
+                            offsetX = clientX - rect.left;
+                            offsetY = clientY - rect.top;
+
+                            // 添加拖拽樣式
+                            element.style.position = 'fixed';
+                            element.style.zIndex = '9999';
+                            element.classList.add('dragging');
+                            if (handle.classList.contains('modal-header')) {
+                                handle.classList.add('dragging');
+                            }
+
+                            document.addEventListener('mousemove', drag);
+                            document.addEventListener('mouseup', endDrag);
+                            document.addEventListener('touchmove', drag, { passive: false });
+                            document.addEventListener('touchend', endDrag);
+                        };
+
+                        const drag = (e) => {
+                            if (!isDragging || !currentElement) return;
+                            
+                            e.preventDefault();
+                            const clientX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+                            const clientY = e.type === 'mousemove' ? e.clientY : e.touches[0].clientY;
+                            
+                            let newX = clientX - offsetX;
+                            let newY = clientY - offsetY;
+                            
+                            // 防止拖出螢幕邊界
+                            const windowWidth = window.innerWidth;
+                            const windowHeight = window.innerHeight;
+                            const elementRect = currentElement.getBoundingClientRect();
+                            
+                            newX = Math.max(0, Math.min(newX, windowWidth - elementRect.width));
+                            newY = Math.max(0, Math.min(newY, windowHeight - elementRect.height));
+                            
+                            currentElement.style.left = newX + 'px';
+                            currentElement.style.top = newY + 'px';
+                            currentElement.style.right = 'auto';
+                            currentElement.style.bottom = 'auto';
+                        };
+
+                        const endDrag = () => {
+                            if (!isDragging) return;
+                            
+                            isDragging = false;
+                            if (currentElement) {
+                                currentElement.classList.remove('dragging');
+                                const header = currentElement.querySelector('.modal-header');
+                                if (header) {
+                                    header.classList.remove('dragging');
+                                }
+
+                                // 保存位置到本地存儲
+                                const rect = currentElement.getBoundingClientRect();
+                                const elementClass = currentElement.className.split(' ')[0];
+                                localStorage.setItem(`guangqing-${elementClass}-position`, JSON.stringify({
+                                    left: rect.left,
+                                    top: rect.top
+                                }));
+                            }
+                            currentElement = null;
+
+                            document.removeEventListener('mousemove', drag);
+                            document.removeEventListener('mouseup', endDrag);
+                            document.removeEventListener('touchmove', drag);
+                            document.removeEventListener('touchend', endDrag);
+                        };
+
+                        // 雙擊重置位置
+                        const resetPosition = () => {
+                            element.style.position = '';
+                            element.style.left = '';
+                            element.style.top = '';
+                            element.style.right = '';
+                            element.style.bottom = '';
+                            element.style.zIndex = '';
+                            
+                            // 清除保存的位置
+                            const elementClass = element.className.split(' ')[0];
+                            localStorage.removeItem(`guangqing-${elementClass}-position`);
+                        };
+
+                        // 綁定事件
+                        handle.addEventListener('mousedown', startDrag);
+                        handle.addEventListener('touchstart', startDrag, { passive: false });
+                        handle.addEventListener('dblclick', resetPosition);
+                    };
+
+                    // 恢復視窗位置
+                    const restorePositions = () => {
+                        const elements = document.querySelectorAll('.modal, .notification-popup');
+                        elements.forEach(element => {
+                            const elementClass = element.className.split(' ')[0];
+                            const saved = localStorage.getItem(`guangqing-${elementClass}-position`);
+                            if (saved) {
+                                try {
+                                    const position = JSON.parse(saved);
+                                    element.style.position = 'fixed';
+                                    element.style.left = position.left + 'px';
+                                    element.style.top = position.top + 'px';
+                                    element.style.right = 'auto';
+                                    element.style.bottom = 'auto';
+                                } catch (e) {
+                                    localStorage.removeItem(`guangqing-${elementClass}-position`);
+                                }
+                            }
+                        });
+                    };
+
+                    // 定期檢查新的浮動視窗
+                    const observer = new MutationObserver(() => {
+                        addDragToModals();
+                        setTimeout(restorePositions, 100);
+                    });
+
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+
+                    // 初始化
+                    addDragToModals();
+                    setTimeout(restorePositions, 100);
+                };
                 
                 return {
                     showAddModal,
@@ -8946,10 +9161,17 @@
                     updateYearComparison,
                     updateYearlyChart,
                     updateTrendChart,
-                    updateComparisonChart
+                    updateComparisonChart,
+                    // 浮動視窗拖拽功能
+                    initDragFeature
                 };
             }
         }).mount('#app');
+        
+        // 浮動視窗拖拽功能 - 在 Vue 應用掛載後初始化
+        setTimeout(() => {
+            initDragFeature();
+        }, 100);
     </script>
 </body>
 </html>
