@@ -239,12 +239,25 @@ class OfflineStorageService {
             const store = transaction.objectStore(storeName);
             const request = store.getAll();
             
+            // 設置較短的超時時間，避免長時間阻塞
+            const timeout = setTimeout(() => {
+                transaction.abort();
+                reject(new Error(`getAll operation timed out for ${storeName}`));
+            }, 10000); // 10秒超時
+            
             request.onsuccess = () => {
+                clearTimeout(timeout);
                 resolve(request.result);
             };
             
             request.onerror = () => {
+                clearTimeout(timeout);
                 reject(request.error);
+            };
+            
+            transaction.onabort = () => {
+                clearTimeout(timeout);
+                reject(new Error(`Transaction aborted for ${storeName}`));
             };
         });
     }
@@ -441,6 +454,25 @@ class OfflineStorageService {
     async batch(operations) {
         await this.ensureInitialized();
         
+        // 如果操作數量太大，分批處理以避免性能問題
+        if (operations.length > 500) {
+            console.log(`批次操作數量 ${operations.length} 過大，分批處理...`);
+            const batchSize = 100;
+            const results = [];
+            
+            for (let i = 0; i < operations.length; i += batchSize) {
+                const batch = operations.slice(i, i + batchSize);
+                const batchResult = await this.executeBatch(batch);
+                results.push(...batchResult);
+            }
+            
+            return results;
+        }
+        
+        return this.executeBatch(operations);
+    }
+
+    async executeBatch(operations) {
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(
                 [...new Set(operations.map(op => op.storeName))], 
@@ -449,13 +481,22 @@ class OfflineStorageService {
             
             const results = [];
             let completed = 0;
+            let hasError = false;
             
             transaction.oncomplete = () => {
-                resolve(results);
+                if (!hasError) {
+                    resolve(results);
+                }
             };
             
             transaction.onerror = () => {
+                hasError = true;
                 reject(transaction.error);
+            };
+            
+            transaction.onabort = () => {
+                hasError = true;
+                reject(new Error('Transaction aborted'));
             };
             
             operations.forEach((operation, index) => {

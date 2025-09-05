@@ -140,15 +140,33 @@ class CloudSyncService {
      */
     async downloadFromCloud(syncId = null) {
         try {
+            // 優先使用 Firebase 雲端服務
+            if (window.firebaseCloud && !window.firebaseCloud.localStorageMode) {
+                console.log('使用 Firebase 進行真正的雲端下載...');
+                const result = await window.firebaseCloud.downloadData();
+                
+                if (result.success && result.data) {
+                    console.log(`Firebase 下載成功: ${result.message}`);
+                    return result.data;
+                } else {
+                    console.warn('Firebase 下載失敗:', result.message);
+                    // 繼續嘗試本地備份
+                }
+            }
+            
+            // 備用方案：從本地備份恢復
+            console.log('使用本地備份進行恢復...');
             const targetSyncId = syncId || this.syncId;
             const cloudKey = `temple-cloud-${targetSyncId}`;
             const cloudData = localStorage.getItem(cloudKey);
 
             if (!cloudData) {
-                throw new Error('找不到雲端備份數據');
+                throw new Error('找不到雲端資料或本地備份');
             }
 
-            return JSON.parse(cloudData);
+            const parsedData = JSON.parse(cloudData);
+            console.log('從本地備份恢復數據');
+            return parsedData;
         } catch (error) {
             console.error('讀取雲端數據錯誤:', error);
             throw error;

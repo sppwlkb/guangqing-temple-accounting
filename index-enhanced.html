@@ -13,6 +13,7 @@
     <meta name="theme-color" content="#667eea">
 
     <!-- iOS PWA支援 -->
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="廣清宮記帳">
@@ -60,16 +61,31 @@
     
     <script>
         // 版本標識和緩存清除
-        console.log('廣清宮記帳軟體 v2025.01.05 - loadData 修復版');
+        console.log('廣清宮記帳軟體 v2025.01.05.3 - 本地存儲優先模式（無 Firebase 警告）');
         
-        // 強制清除緩存
+        // 強制清除緩存和無效化舊的 Firebase SDK
         if ('caches' in window) {
             caches.keys().then(function(cacheNames) {
                 cacheNames.forEach(function(cacheName) {
+                    console.log('清除緩存:', cacheName);
                     caches.delete(cacheName);
                 });
             });
         }
+        
+        // 清除 localStorage 中的 Firebase 相關緩存
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('firebase') || key.includes('firestore')) {
+                console.log('清除 Firebase 緩存:', key);
+                localStorage.removeItem(key);
+            }
+        });
+        
+        // 在本地存儲優先模式下，不需要重新載入
+        console.log('使用本地存儲優先模式，無 Firebase 棄用警告');
+        
+        // 標記緩存已清除
+        sessionStorage.setItem('firebase-cache-cleared', 'true');
     </script>
     
     <style>
@@ -6752,15 +6768,20 @@
                 const loadFromIndexedDB = async () => {
                     if (window.offlineStorage && window.offlineStorage.isInitialized) {
                         try {
+                            console.log('開始從 IndexedDB 載入資料...');
                             const [recordsData, believersData, remindersData] = await Promise.all([
                                 window.offlineStorage.getAll('records'),
                                 window.offlineStorage.getAll('believers'),
                                 window.offlineStorage.getAll('reminders')
                             ]);
                             
+                            console.log(`從 IndexedDB 載入: ${recordsData?.length || 0} 筆記錄, ${believersData?.length || 0} 位信眾, ${remindersData?.length || 0} 個提醒`);
+                            
                             records.value = recordsData || [];
                             believers.value = believersData || [];
                             reminders.value = remindersData || [];
+                            
+                            console.log(`響應式資料已更新: ${records.value.length} 筆記錄, ${believers.value.length} 位信眾, ${reminders.value.length} 個提醒`);
                             
                             // 同時更新 localStorage 以保持兼容性
                             localStorage.setItem('temple-records', JSON.stringify(records.value));
@@ -6769,9 +6790,11 @@
                         } catch (error) {
                             console.error('從 IndexedDB 載入資料失敗:', error);
                             // 降級到 localStorage
+                            console.log('降級到 localStorage 載入...');
                             loadFromStorage();
                         }
                     } else {
+                        console.log('IndexedDB 不可用，使用 localStorage...');
                         loadFromStorage();
                     }
                 };
@@ -7016,7 +7039,21 @@
                                 }
 
                                 if (operations.length > 0) {
-                                    await window.offlineStorage.batch(operations);
+                                    console.log(`正在批次更新 ${operations.length} 條資料到 IndexedDB...`);
+                                    try {
+                                        await window.offlineStorage.batch(operations);
+                                        console.log('IndexedDB 批次更新完成');
+                                    } catch (batchError) {
+                                        console.warn('批次更新失敗，嘗試逐條更新:', batchError.message);
+                                        // 降級到逐條更新
+                                        for (const operation of operations) {
+                                            try {
+                                                await window.offlineStorage.update(operation.storeName, operation.data);
+                                            } catch (individualError) {
+                                                console.warn(`更新 ${operation.storeName} 資料失敗:`, individualError.message);
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
@@ -7037,9 +7074,22 @@
                             await loadFromIndexedDB();
                             console.log('IndexedDB 資料載入完成');
                             
+                            // 強制更新響應式資料以確保界面刷新
+                            nextTick(() => {
+                                // 觸發計算屬性重新計算
+                                console.log(`界面更新完成 - 記錄: ${records.value.length}, 信眾: ${believers.value.length}, 提醒: ${reminders.value.length}`);
+                            });
+                            
                             showNotification('下載成功', 
                                 `已從雲端下載 ${cloudData.records?.length || 0} 筆記錄、${cloudData.believers?.length || 0} 位信眾資料、${cloudData.reminders?.length || 0} 個提醒`, 
                                 'success');
+                            
+                            // 如果有記錄，自動切換到記錄頁面
+                            if (cloudData.records && cloudData.records.length > 0) {
+                                setTimeout(() => {
+                                    activeTab.value = 'records';
+                                }, 1000);
+                            }
                         } else {
                             throw new Error(result.message || '下載失敗');
                         }

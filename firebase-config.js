@@ -43,6 +43,8 @@ class FirebaseCloudService {
      * 初始化 Firebase
      */
     async initFirebase() {
+        console.log('正在初始化 Firebase...');
+        
         try {
             // 動態載入 Firebase SDK
             if (typeof firebase === 'undefined') {
@@ -61,15 +63,30 @@ class FirebaseCloudService {
             this.db = firebase.firestore();
             this.storage = firebase.storage();
 
-            // 啟用離線持久化
+            // 配置 Firestore 設定
             if (!this.isInitialized) {
-                this.db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
-                    if (err.code == 'failed-precondition') {
-                        console.warn('離線持久化失敗：多個標籤頁打開');
-                    } else if (err.code == 'unimplemented') {
-                        console.warn('離線持久化不支援此瀏覽器');
+                try {
+                    // 使用新版本兼容的設定，避免棄用警告
+                    this.db.settings({
+                        ignoreUndefinedProperties: true,
+                        // 使用新的快取設定替代已棄用的 enableMultiTabIndexedDbPersistence
+                        cache: {
+                            kind: 'memory'  // 或者 'persistent' 如果需要持久化
+                        }
+                    });
+                    
+                    console.log('Firestore 已配置（新版本模式）');
+                } catch (err) {
+                    console.warn('Firestore 設定警告:', err.message);
+                    // 降級到基本設定
+                    try {
+                        this.db.settings({
+                            ignoreUndefinedProperties: true
+                        });
+                    } catch (fallbackErr) {
+                        console.warn('基本 Firestore 設定也失敗:', fallbackErr.message);
                     }
-                });
+                }
             }
 
             // 監聽認證狀態變化
@@ -83,9 +100,56 @@ class FirebaseCloudService {
             
         } catch (error) {
             console.error('Firebase 初始化失敗:', error);
-            // 降級到本地存儲模式
             this.fallbackToLocalStorage();
         }
+        
+        /* 原 Firebase 初始化代碼已停用
+        try {
+            // 動態載入 Firebase SDK
+            if (typeof firebase === 'undefined') {
+                await this.loadFirebaseSDK();
+            }
+
+            // 初始化 Firebase
+            if (!firebase.apps.length) {
+                this.app = firebase.initializeApp(firebaseConfig);
+            } else {
+                this.app = firebase.app();
+            }
+
+            // 初始化服務
+            this.auth = firebase.auth();
+            this.db = firebase.firestore();
+            this.storage = firebase.storage();
+
+            // 配置 Firestore 設定（使用新的配置方式避免棄用警告）
+            if (!this.isInitialized) {
+                try {
+                    this.db.settings({
+                        ignoreUndefinedProperties: true,
+                        experimentalForceLongPolling: false
+                    });
+                    
+                    console.log('Firestore 已配置（新版本兼容模式）');
+                } catch (err) {
+                    console.warn('Firestore 設定失敗:', err);
+                }
+            }
+
+            // 監聽認證狀態變化
+            this.auth.onAuthStateChanged((user) => {
+                this.currentUser = user;
+                this.onAuthStateChanged(user);
+            });
+
+            this.isInitialized = true;
+            console.log('Firebase 初始化成功');
+            
+        } catch (error) {
+            console.error('Firebase 初始化失敗:', error);
+            this.fallbackToLocalStorage();
+        }
+        */
     }
 
     /**
@@ -93,24 +157,25 @@ class FirebaseCloudService {
      */
     async loadFirebaseSDK() {
         return new Promise((resolve, reject) => {
+            // 使用更新的 Firebase SDK 版本 (10.x) 以避免棄用警告
             // Firebase App (核心)
             const appScript = document.createElement('script');
-            appScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+            appScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js';
             
             appScript.onload = () => {
                 // Firebase Auth
                 const authScript = document.createElement('script');
-                authScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
+                authScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js';
                 
                 authScript.onload = () => {
                     // Firebase Firestore
                     const firestoreScript = document.createElement('script');
-                    firestoreScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
+                    firestoreScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js';
                     
                     firestoreScript.onload = () => {
                         // Firebase Storage
                         const storageScript = document.createElement('script');
-                        storageScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js';
+                        storageScript.src = 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js';
                         
                         storageScript.onload = resolve;
                         storageScript.onerror = reject;
@@ -203,58 +268,53 @@ class FirebaseCloudService {
             hasAuth: !!this.auth
         });
         
-        // 如果是本地存儲模式，模擬成功登入
-        if (this.localStorageMode) {
-            console.log('使用本地存儲模式，模擬匿名登入');
-            this.currentUser = {
-                uid: 'guangqing-local-' + Date.now(),
-                isAnonymous: true,
-                displayName: '廣清宮本地用戶'
-            };
-            return {
-                success: true,
-                user: this.currentUser,
-                message: '本地模式登入成功'
-            };
+        // 首先嘗試 Firebase 登入（除非已經在本地模式）
+        if (!this.localStorageMode) {
+            // 如果 Firebase 未初始化，等待初始化完成
+            if (!this.isInitialized) {
+                console.log('等待 Firebase 初始化...');
+                let waitCount = 0;
+                while (!this.isInitialized && waitCount < 50) { // 增加等待時間
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    waitCount++;
+                }
+            }
+
+            // 嘗試 Firebase 匿名登入
+            if (this.isInitialized && this.auth) {
+                try {
+                    console.log('嘗試 Firebase 匿名登入...');
+                    const userCredential = await this.auth.signInAnonymously();
+                    console.log('Firebase 匿名登入成功，UID:', userCredential.user.uid);
+                    
+                    return {
+                        success: true,
+                        user: userCredential.user,
+                        message: 'Firebase 匿名登入成功'
+                    };
+                } catch (error) {
+                    console.warn('Firebase 匿名登入失敗，原因:', error.message);
+                    // 不立即降級，先嘗試其他方法
+                }
+            }
         }
         
-        // 如果 Firebase 未初始化，嘗試等待一段時間
-        if (!this.isInitialized) {
-            console.log('等待 Firebase 初始化...');
-            let waitCount = 0;
-            while (!this.isInitialized && waitCount < 30) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                waitCount++;
-            }
-        }
-
-        try {
-            // 檢查Firebase是否正常初始化
-            if (!this.isInitialized || !this.auth) {
-                throw new Error('Firebase認證服務未初始化或不可用');
-            }
-            
-            console.log('嘗試 Firebase 匿名登入...');
-            const userCredential = await this.auth.signInAnonymously();
-            console.log('Firebase 匿名登入成功');
-            
-            return {
-                success: true,
-                user: userCredential.user,
-                message: '匿名登入成功'
-            };
-        } catch (error) {
-            console.warn('Firebase匿名登入失敗，降級到本地模式:', error);
-            
-            // 自動降級到本地模式
-            this.fallbackToLocalStorage();
-            
-            return {
-                success: true,
-                user: this.currentUser,
-                message: '本地模式登入成功（雲端服務不可用）'
-            };
-        }
+        // Firebase 不可用，嘗試使用備用登入
+        console.log('Firebase 登入不可用，嘗試本地模式');
+        this.currentUser = {
+            uid: 'guangqing-local-' + Date.now(),
+            isAnonymous: true,
+            displayName: '廣清宮本地用戶'
+        };
+        
+        // 設置為本地存儲模式
+        this.localStorageMode = true;
+        
+        return {
+            success: true,
+            user: this.currentUser,
+            message: '本地模式登入成功（雲端服務暫時不可用）'
+        };
     }
 
     /**
@@ -370,55 +430,132 @@ class FirebaseCloudService {
      * 從雲端下載資料
      */
     async downloadData() {
-        // 如果是本地存儲模式，返回空資料
-        if (this.localStorageMode || !this.isInitialized) {
-            console.log('使用本地存儲模式，返回空資料');
-            return {
-                success: true,
-                data: {
-                    records: [],
-                    believers: [],
-                    reminders: [],
-                    customCategories: null,
-                    downloadedAt: new Date().toISOString()
-                },
-                message: '本地存儲模式（雲端服務不可用）',
-                timestamp: new Date().toLocaleString('zh-TW')
-            };
+        // 優先嘗試 Firebase 下載
+        if (!this.localStorageMode && this.isInitialized && this.currentUser) {
+            console.log('嘗試從 Firebase 下載資料...');
+            try {
+                return await this.downloadFromFirebase();
+            } catch (error) {
+                console.warn('Firebase 下載失敗，嘗試備用方法:', error.message);
+                // 如果 Firebase 失敗，降級到本地模式但不返回空資料
+            }
         }
+        
+        // 如果 Firebase 不可用，嘗試使用現有的 CloudSyncService 作為備用
+        if (window.cloudSync && typeof window.cloudSync.downloadData === 'function') {
+            console.log('使用備用雲端同步服務下載資料...');
+            try {
+                return await window.cloudSync.downloadData();
+            } catch (error) {
+                console.warn('備用雲端服務下載失敗:', error.message);
+            }
+        }
+        
+        // 最後返回本地空資料（但提示用戶檢查設定）
+        console.log('所有雲端服務不可用，返回空資料');
+        return {
+            success: false,
+            data: {
+                records: [],
+                believers: [],
+                reminders: [],
+                customCategories: null,
+                downloadedAt: new Date().toISOString()
+            },
+            message: '雲端服務不可用，請檢查網路連線或登入狀態',
+            timestamp: new Date().toLocaleString('zh-TW')
+        };
+    }
 
+    /**
+     * 從 Firebase 下載資料
+     */
+    async downloadFromFirebase() {
         if (!this.currentUser) {
             throw new Error('用戶未登入');
         }
 
         try {
             const userDoc = this.db.collection('temples').doc(this.currentUser.uid);
+            console.log(`正在從用戶文檔下載資料: temples/${this.currentUser.uid}`);
             
             // 並行獲取所有資料
             const [recordsSnapshot, believersSnapshot, remindersSnapshot, categoriesSnapshot] = await Promise.all([
-                userDoc.collection('records').get(),
+                userDoc.collection('records').orderBy('date', 'desc').get(),
                 userDoc.collection('believers').get(),
                 userDoc.collection('reminders').get(),
                 userDoc.collection('settings').doc('categories').get()
             ]);
 
+            // 處理記錄資料，確保格式正確
+            const records = recordsSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: parseInt(doc.id) || doc.id,
+                    date: data.date,
+                    type: data.type,
+                    category: data.category,
+                    subcategory: data.subcategory,
+                    amount: data.amount,
+                    description: data.description,
+                    believerName: data.believerName || '',
+                    location: data.location || '',
+                    updatedAt: data.updatedAt,
+                    synced: true
+                };
+            });
+
+            // 處理信眾資料
+            const believers = believersSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: data.id || doc.id,
+                    name: data.name,
+                    phone: data.phone || '',
+                    address: data.address || '',
+                    notes: data.notes || '',
+                    totalDonation: data.totalDonation || 0,
+                    visitCount: data.visitCount || 0,
+                    lastVisit: data.lastVisit || '',
+                    updatedAt: data.updatedAt,
+                    synced: true
+                };
+            });
+
+            // 處理提醒資料
+            const reminders = remindersSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: parseInt(doc.id) || doc.id,
+                    title: data.title,
+                    description: data.description || '',
+                    date: data.date,
+                    time: data.time,
+                    completed: data.completed || false,
+                    updatedAt: data.updatedAt,
+                    synced: true
+                };
+            });
+
             const data = {
-                records: recordsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-                believers: believersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-                reminders: remindersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                records,
+                believers,
+                reminders,
                 customCategories: categoriesSnapshot.exists ? categoriesSnapshot.data() : null,
                 downloadedAt: new Date().toISOString()
             };
 
+            console.log(`成功下載資料: ${records.length} 筆記錄, ${believers.length} 位信眾, ${reminders.length} 個提醒`);
+
             return {
                 success: true,
                 data: data,
-                message: '資料已成功從雲端下載',
+                message: `資料已成功從雲端下載 (${records.length} 筆記錄, ${believers.length} 位信眾, ${reminders.length} 個提醒)`,
                 timestamp: new Date().toLocaleString('zh-TW')
             };
         } catch (error) {
-            console.error('下載資料錯誤:', error);
-            throw error;
+            console.error('Firebase 下載資料錯誤:', error);
+            throw new Error(`下載失敗: ${error.message}`);
         }
     }
 
@@ -530,21 +667,32 @@ class FirebaseCloudService {
      * 降級到本地存儲模式
      */
     fallbackToLocalStorage() {
-        console.warn('降級到本地存儲模式');
+        console.warn('暫時降級到本地存儲模式');
         this.localStorageMode = true;
-        this.isInitialized = false;
+        // 注意：不重置 this.isInitialized，保留 Firebase 初始化狀態以便後續重試
         
-        // 設置本地模擬用戶
-        this.currentUser = {
-            uid: 'guangqing-local-' + Date.now(),
-            isAnonymous: true,
-            displayName: '廣清宮本地用戶'
-        };
-        
-        // 這裡可以使用原有的 CloudSyncService
-        if (window.cloudSync) {
-            console.log('使用備用雲端同步服務');
+        // 設置本地模擬用戶（如果還沒有用戶的話）
+        if (!this.currentUser) {
+            this.currentUser = {
+                uid: 'guangqing-local-' + Date.now(),
+                isAnonymous: true,
+                displayName: '廣清宮本地用戶'
+            };
         }
+        
+        // 檢查是否有備用雲端同步服務
+        if (window.cloudSync) {
+            console.log('檢測到備用雲端同步服務，可用作備選方案');
+        }
+        
+        // 設置定時重試 Firebase 連接（每 5 分鐘檢查一次）
+        setTimeout(() => {
+            if (this.localStorageMode && navigator.onLine) {
+                console.log('嘗試重新連接 Firebase...');
+                this.localStorageMode = false;
+                this.initFirebase();
+            }
+        }, 5 * 60 * 1000);
     }
 
     /**
