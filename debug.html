@@ -84,6 +84,7 @@
         </div>
         <button class="btn" onclick="runDiagnostics()">🔍 重新檢測</button>
         <button class="btn success" onclick="runAutoFix()">🔧 自動修復</button>
+        <button class="btn" onclick="loadAndTest()">📦 載入完整依賴</button>
     </div>
 
     <div class="diagnostic-section">
@@ -102,6 +103,31 @@
 
     <!-- 載入錯誤修復腳本 -->
     <script src="error-fix.js"></script>
+    
+    <!-- 可選：載入其他依賴進行完整測試 -->
+    <script>
+        // 動態載入測試依賴
+        window.loadTestDependencies = function() {
+            const dependencies = [
+                'https://unpkg.com/vue@3.3.4/dist/vue.global.js',
+                'https://unpkg.com/element-plus@2.3.8/dist/index.full.js',
+                'https://unpkg.com/echarts@5.4.3/dist/echarts.min.js',
+                'offline-storage.js',
+                'firebase-config.js',
+                'cloud-sync-manager.js'
+            ];
+            
+            return dependencies.reduce((promise, src) => {
+                return promise.then(() => new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = src;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                }));
+            }, Promise.resolve());
+        };
+    </script>
 
     <script>
         let errorCount = 0;
@@ -268,6 +294,29 @@
             const errorItems = results.filter(r => r.status === 'error');
             if (errorItems.length > 0) {
                 log(`發現 ${errorItems.length} 個錯誤項目`, 'WARNING');
+            }
+        }
+
+        // 載入完整依賴進行測試
+        async function loadAndTest() {
+            log('開始載入完整依賴...');
+            
+            try {
+                // 顯示載入中狀態
+                const resultsElement = document.getElementById('diagnosticResults');
+                resultsElement.innerHTML = '<div class="status-item"><span>正在載入依賴...</span><span class="status-warning">⏳</span></div>';
+                
+                await window.loadTestDependencies();
+                log('所有依賴載入完成', 'SUCCESS');
+                
+                // 等待一下讓依賴完全初始化
+                setTimeout(() => {
+                    runDiagnostics();
+                }, 2000);
+                
+            } catch (error) {
+                log(`載入依賴失敗: ${error.message}`, 'ERROR');
+                captureError(error, 'DependencyLoad');
             }
         }
 
