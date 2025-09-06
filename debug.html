@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 廣清宮記帳軟體 - 錯誤診斷工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #333;
+        }
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .diagnostic-section {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        .status-good { color: #52c41a; }
+        .status-warning { color: #faad14; }
+        .status-error { color: #f5222d; }
+        .log-area {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 13px;
+        }
+        .btn {
+            background: #1890ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #40a9ff; }
+        .btn.danger { background: #f5222d; }
+        .btn.danger:hover { background: #ff4d4f; }
+        .btn.success { background: #52c41a; }
+        .btn.success:hover { background: #73d13d; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 廣清宮記帳軟體 - 錯誤診斷工具</h1>
+        <p>檢測和修復應用程式中的常見錯誤</p>
+    </div>
+
+    <div class="diagnostic-section">
+        <h3>📊 系統檢測</h3>
+        <div id="diagnosticResults">
+            <div class="status-item">
+                <span>正在進行系統檢測...</span>
+                <span class="status-warning">⏳</span>
+            </div>
+        </div>
+        <button class="btn" onclick="runDiagnostics()">🔍 重新檢測</button>
+        <button class="btn success" onclick="runAutoFix()">🔧 自動修復</button>
+    </div>
+
+    <div class="diagnostic-section">
+        <h3>🚨 錯誤捕獲</h3>
+        <div id="errorCount">捕獲的錯誤數量: <span id="errorCounter">0</span></div>
+        <button class="btn danger" onclick="clearErrors()">🧹 清除錯誤記錄</button>
+        <div id="errorLog" class="log-area">等待錯誤資訊...</div>
+    </div>
+
+    <div class="diagnostic-section">
+        <h3>📋 系統日誌</h3>
+        <button class="btn" onclick="clearLog()">🧹 清除日誌</button>
+        <button class="btn" onclick="exportLog()">📤 匯出日誌</button>
+        <div id="systemLog" class="log-area">系統日誌準備中...</div>
+    </div>
+
+    <!-- 載入錯誤修復腳本 -->
+    <script src="error-fix.js"></script>
+
+    <script>
+        let errorCount = 0;
+        let systemLog = [];
+        let errorLog = [];
+
+        // 日誌函數
+        function log(message, level = 'INFO') {
+            const timestamp = new Date().toLocaleTimeString('zh-TW', { 
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                fractionalSecondDigits: 3 
+            });
+            const logEntry = `[${timestamp}] [${level}] ${message}`;
+            systemLog.push(logEntry);
+            
+            const logElement = document.getElementById('systemLog');
+            logElement.textContent = systemLog.slice(-50).join('\n'); // 保持最新50條
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        // 錯誤捕獲
+        function captureError(error, source = 'Unknown') {
+            errorCount++;
+            document.getElementById('errorCounter').textContent = errorCount;
+            
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            const errorEntry = `[${timestamp}] 來源: ${source}\n錯誤: ${error.toString()}\n${error.stack || ''}\n---`;
+            errorLog.push(errorEntry);
+            
+            const errorLogElement = document.getElementById('errorLog');
+            errorLogElement.textContent = errorLog.slice(-10).join('\n'); // 保持最新10個錯誤
+            errorLogElement.scrollTop = errorLogElement.scrollHeight;
+            
+            log(`捕獲錯誤: ${error.message} (來源: ${source})`, 'ERROR');
+        }
+
+        // 覆蓋全域錯誤處理
+        window.addEventListener('error', function(event) {
+            captureError(event.error || new Error(event.message), event.filename || 'Global');
+        });
+
+        window.addEventListener('unhandledrejection', function(event) {
+            captureError(new Error(event.reason), 'Promise');
+            event.preventDefault();
+        });
+
+        // 診斷函數
+        async function runDiagnostics() {
+            log('開始系統診斷...');
+            const results = [];
+            
+            // 1. 檢查 JavaScript 環境
+            try {
+                const jsFeatures = {
+                    'ES6 支援': () => typeof Promise !== 'undefined' && typeof class{} === 'function',
+                    'Fetch API': () => typeof fetch !== 'undefined',
+                    'LocalStorage': () => typeof localStorage !== 'undefined',
+                    'IndexedDB': () => typeof indexedDB !== 'undefined',
+                    'WebWorker': () => typeof Worker !== 'undefined'
+                };
+
+                for (const [name, test] of Object.entries(jsFeatures)) {
+                    try {
+                        const result = test();
+                        results.push({
+                            name,
+                            status: result ? 'good' : 'error',
+                            message: result ? '✅ 支援' : '❌ 不支援'
+                        });
+                    } catch (e) {
+                        results.push({
+                            name,
+                            status: 'error',
+                            message: '❌ 檢測失敗: ' + e.message
+                        });
+                    }
+                }
+            } catch (e) {
+                log(`JavaScript 環境檢測失敗: ${e.message}`, 'ERROR');
+            }
+
+            // 2. 檢查必要的全域變數
+            const globals = {
+                'Vue': 'Vue.js 框架',
+                'ElementPlus': 'ElementPlus UI',
+                'echarts': 'ECharts 圖表',
+                'firebase': 'Firebase SDK'
+            };
+
+            for (const [globalName, description] of Object.entries(globals)) {
+                try {
+                    const exists = typeof window[globalName] !== 'undefined';
+                    results.push({
+                        name: description,
+                        status: exists ? 'good' : 'warning',
+                        message: exists ? '✅ 已載入' : '⚠️ 未載入'
+                    });
+                    
+                    if (exists && globalName === 'Vue') {
+                        const version = window.Vue.version || '未知版本';
+                        results.push({
+                            name: 'Vue 版本',
+                            status: 'good',
+                            message: `📦 ${version}`
+                        });
+                    }
+                } catch (e) {
+                    results.push({
+                        name: description,
+                        status: 'error',
+                        message: '❌ 檢測錯誤: ' + e.message
+                    });
+                }
+            }
+
+            // 3. 檢查自定義服務
+            const services = {
+                'window.firebaseCloud': 'Firebase 雲端服務',
+                'window.offlineStorage': '離線存儲服務',
+                'window.cloudSyncManager': '雲端同步管理器'
+            };
+
+            for (const [servicePath, description] of Object.entries(services)) {
+                try {
+                    const service = servicePath.split('.').reduce((obj, prop) => obj?.[prop], window);
+                    const exists = service !== undefined;
+                    results.push({
+                        name: description,
+                        status: exists ? 'good' : 'warning',
+                        message: exists ? '✅ 已載入' : '⚠️ 未載入'
+                    });
+                } catch (e) {
+                    results.push({
+                        name: description,
+                        status: 'error',
+                        message: '❌ 檢測錯誤: ' + e.message
+                    });
+                }
+            }
+
+            // 4. 網路連接檢測
+            results.push({
+                name: '網路連接',
+                status: navigator.onLine ? 'good' : 'warning',
+                message: navigator.onLine ? '🌐 已連接' : '📡 離線模式'
+            });
+
+            // 更新 UI
+            const resultsElement = document.getElementById('diagnosticResults');
+            resultsElement.innerHTML = results.map(item => `
+                <div class="status-item">
+                    <span>${item.name}</span>
+                    <span class="status-${item.status}">${item.message}</span>
+                </div>
+            `).join('');
+
+            log(`診斷完成，共檢測 ${results.length} 項目`);
+            
+            const errorItems = results.filter(r => r.status === 'error');
+            if (errorItems.length > 0) {
+                log(`發現 ${errorItems.length} 個錯誤項目`, 'WARNING');
+            }
+        }
+
+        // 自動修復函數
+        async function runAutoFix() {
+            log('開始自動修復程序...');
+            
+            try {
+                // 檢查是否有錯誤修復腳本
+                if (typeof window.runErrorFix === 'function') {
+                    log('執行錯誤修復腳本...');
+                    await window.runErrorFix();
+                    log('錯誤修復腳本執行完成', 'SUCCESS');
+                } else {
+                    log('錯誤修復腳本未載入', 'WARNING');
+                }
+
+                // 清理可能的殘留錯誤狀態
+                if (window.localStorage) {
+                    const keysToCheck = ['error-state', 'debug-mode', 'temp-fix'];
+                    keysToCheck.forEach(key => {
+                        if (localStorage.getItem(key)) {
+                            localStorage.removeItem(key);
+                            log(`清理 localStorage 鍵: ${key}`);
+                        }
+                    });
+                }
+
+                // 重新運行診斷
+                setTimeout(() => {
+                    runDiagnostics();
+                }, 1000);
+
+                log('自動修復程序完成', 'SUCCESS');
+            } catch (error) {
+                log(`自動修復失敗: ${error.message}`, 'ERROR');
+                captureError(error, 'AutoFix');
+            }
+        }
+
+        // 清除函數
+        function clearErrors() {
+            errorCount = 0;
+            errorLog = [];
+            document.getElementById('errorCounter').textContent = '0';
+            document.getElementById('errorLog').textContent = '錯誤記錄已清除';
+            log('錯誤記錄已清除');
+        }
+
+        function clearLog() {
+            systemLog = [];
+            document.getElementById('systemLog').textContent = '系統日誌已清除';
+            console.clear();
+        }
+
+        function exportLog() {
+            const allLogs = {
+                timestamp: new Date().toISOString(),
+                systemLog: systemLog,
+                errorLog: errorLog,
+                errorCount: errorCount,
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            };
+
+            const blob = new Blob([JSON.stringify(allLogs, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `guangqing-debug-${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log('診斷日誌已匯出');
+        }
+
+        // 監聽修復完成事件
+        window.addEventListener('errorFixComplete', function(event) {
+            log('收到錯誤修復完成通知', 'SUCCESS');
+            log(`Firebase 狀態: ${event.detail.firebaseOK ? '正常' : '異常'}`);
+            log(`IndexedDB 狀態: ${event.detail.indexedDBOK ? '正常' : '異常'}`);
+            
+            // 重新運行診斷
+            setTimeout(runDiagnostics, 500);
+        });
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('診斷工具已載入');
+            log('用戶代理: ' + navigator.userAgent);
+            log('當前 URL: ' + window.location.href);
+            
+            // 延遲執行診斷，等待其他腳本載入
+            setTimeout(runDiagnostics, 2000);
+        });
+
+        // 提供全域調試接口
+        window.debugTool = {
+            runDiagnostics,
+            runAutoFix,
+            clearErrors,
+            clearLog,
+            exportLog,
+            getSystemLog: () => systemLog,
+            getErrorLog: () => errorLog
+        };
+
+        log('診斷工具接口已註冊到 window.debugTool');
+    </script>
+</body>
+</html>
