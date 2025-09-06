@@ -1,20 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { ElMessage } from 'element-plus' // ElMessage is used, so keep it.
 import dayjs from 'dayjs'
 import { debounce, memoize } from '@/utils/performance'
-import {
-  formatAmount,
-  generateId,
-  sumBy,
-  groupBy,
-  safeJsonParse,
-  safeJsonStringify
-} from '@/utils/helpers'
-import {
-  STORAGE_KEYS,
-  DEFAULT_CATEGORIES,
-  LOADING_MESSAGES
-} from '@/constants'
+import { sumBy, generateId } from '@/utils/helpers' // Keep used helpers
+import { storageService } from '@/services/storageService' // Add new service
+
 
 export const useIncomeStore = defineStore('income', () => {
   // 狀態
@@ -70,10 +61,9 @@ export const useIncomeStore = defineStore('income', () => {
   const loadIncomes = async () => {
     loading.value = true
     try {
-      // 從本地儲存載入
-      const savedIncomes = localStorage.getItem(STORAGE_KEYS.INCOMES)
+      const savedIncomes = storageService.getData('incomes')
       if (savedIncomes) {
-        incomes.value = safeJsonParse(savedIncomes, [])
+        incomes.value = savedIncomes
       }
       
       // 如果沒有資料，載入示例資料
@@ -90,7 +80,7 @@ export const useIncomeStore = defineStore('income', () => {
 
   const saveIncomes = async () => {
     try {
-      localStorage.setItem(STORAGE_KEYS.INCOMES, safeJsonStringify(incomes.value))
+      storageService.saveData('incomes', incomes.value)
     } catch (error) {
       console.error('儲存收入資料失敗:', error)
       throw error
@@ -229,7 +219,7 @@ export const useIncomeStore = defineStore('income', () => {
 
   const saveCategories = async () => {
     try {
-      localStorage.setItem('temple-income-categories', JSON.stringify(categories.value))
+      storageService.saveData('income-categories', categories.value)
     } catch (error) {
       console.error('儲存收入類別失敗:', error)
       throw error
@@ -238,9 +228,9 @@ export const useIncomeStore = defineStore('income', () => {
 
   const loadCategories = async () => {
     try {
-      const savedCategories = localStorage.getItem('temple-income-categories')
+      const savedCategories = storageService.getData('income-categories')
       if (savedCategories) {
-        categories.value = JSON.parse(savedCategories)
+        categories.value = savedCategories
       }
     } catch (error) {
       console.error('載入收入類別失敗:', error)
@@ -297,6 +287,17 @@ export const useIncomeStore = defineStore('income', () => {
     })
   }
 
+  // --- 同步專用 Actions ---
+  const setIncomes = (newIncomes) => {
+    incomes.value = newIncomes;
+    saveIncomes(); // 持久化從雲端獲取的數據
+  }
+
+  const setCategories = (newCategories) => {
+    categories.value = newCategories;
+    saveCategories();
+  }
+
   return {
     // 狀態
     incomes,
@@ -320,6 +321,10 @@ export const useIncomeStore = defineStore('income', () => {
     deleteCategory,
     loadCategories,
     getCategoryById,
-    getIncomesByDateRange
+    getIncomesByDateRange,
+
+    // 同步方法
+    setIncomes,
+    setCategories,
   }
 })

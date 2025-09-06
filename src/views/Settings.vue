@@ -22,6 +22,10 @@
             <el-menu-item index="categories">
               <el-icon><Grid /></el-icon>
               <span>類別管理</span>
+            </el--menu-item>
+            <el-menu-item index="sync">
+              <el-icon><Cloudy /></el-icon>
+              <span>雲端同步</span>
             </el-menu-item>
             <el-menu-item index="backup">
               <el-icon><FolderOpened /></el-icon>
@@ -235,6 +239,45 @@
           </FormCard>
         </div>
 
+        <!-- 雲端同步 -->
+        <div v-show="activeTab === 'sync'" class="settings-content">
+          <FormCard title="帳號狀態">
+            <div v-if="currentUser" class="user-status">
+              <p>已登入: <strong>{{ currentUser.email }}</strong></p>
+              <el-button type="danger" @click="handleLogout">登出</el-button>
+            </div>
+            <div v-else>
+              <el-form :model="loginForm" ref="loginFormRef" label-width="80px">
+                <el-form-item label="信箱" prop="email">
+                  <el-input v-model="loginForm.email" placeholder="請輸入電子信箱"></el-input>
+                </el-form-item>
+                <el-form-item label="密碼" prop="password">
+                  <el-input v-model="loginForm.password" type="password" placeholder="請輸入密碼"></el-input>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="handleLogin" :loading="authLoading">登入</el-button>
+                  <el-button @click="handleRegister" :loading="authLoading">註冊</el-button>
+                </el-form-item>
+              </el-form>
+            </div>
+          </FormCard>
+
+          <FormCard title="雲端資料同步" description="將您的資料備份到雲端，或從雲端恢復。">
+            <div class="backup-actions">
+              <el-button type="primary" @click="handleSyncToCloud" :disabled="!currentUser || syncLoading">
+                <el-icon><Upload /></el-icon>
+                上傳到雲端
+              </el-button>
+              <el-button type="warning" @click="handleSyncFromCloud" :disabled="!currentUser || syncLoading">
+                <el-icon><Download /></el-icon>
+                從雲端下載
+              </el-button>
+            </div>
+            <el-alert v-if="syncLoading" title="同步中，請稍候..." type="info" :closable="false" show-icon />
+            <el-alert v-if="!currentUser" title="請先登入以使用雲端同步功能。" type="warning" :closable="false" show-icon />
+          </FormCard>
+        </div>
+
         <!-- 備份還原 -->
         <div v-show="activeTab === 'backup'" class="settings-content">
           <FormCard title="資料備份" description="備份您的記帳資料">
@@ -366,16 +409,18 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useIncomeStore } from '@/stores/income'
 import { useExpenseStore } from '@/stores/expense'
 import { useAppStore } from '@/stores/app'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FormCard from '@/components/common/FormCard.vue'
 import CategoryEditDialog from '@/components/business/CategoryEditDialog.vue'
+import { firebaseService } from '@/services/firebaseService'
+import { syncManager } from '@/services/syncManager'
 import {
   Setting, Grid, FolderOpened, InfoFilled, Plus, Download,
-  Upload, RefreshRight, Document, House
+  Upload, RefreshRight, Document, House, Cloudy
 } from '@element-plus/icons-vue'
 
 const incomeStore = useIncomeStore()
@@ -432,10 +477,75 @@ const autoBackupEnabled = ref(true)
 const autoBackupFrequency = ref(7)
 const maxBackupFiles = ref(5)
 
+// --- 新增雲端同步相關狀態 ---
+const loginFormRef = ref()
+const authLoading = ref(false)
+const syncLoading = ref(false)
+const currentUser = ref(null)
+
+const loginForm = reactive({
+  email: '',
+  password: ''
+})
+
+
 // 選單選擇處理
 const handleMenuSelect = (key) => {
   activeTab.value = key
 }
+
+// --- 新增雲端同步方法 ---
+const handleLogin = async () => {
+  if (!loginFormRef.value) return;
+  authLoading.value = true;
+  try {
+    const result = await firebaseService.loginUser(loginForm.email, loginForm.password);
+    if (result.success) {
+      ElMessage.success('登入成功！');
+    } else {
+      ElMessage.error(result.message || '登入失敗');
+    }
+  } catch (error) {
+    ElMessage.error('登入時發生錯誤');
+  } finally {
+    authLoading.value = false;
+  }
+};
+
+const handleRegister = async () => {
+  if (!loginFormRef.value) return;
+  authLoading.value = true;
+  try {
+    const result = await firebaseService.registerUser(loginForm.email, loginForm.password, loginForm.email);
+    if (result.success) {
+      ElMessage.success('註冊成功，已自動登入！');
+    } else {
+      ElMessage.error(result.message || '註冊失敗');
+    }
+  } catch (error) {
+    ElMessage.error('註冊時發生錯誤');
+  } finally {
+    authLoading.value = false;
+  }
+};
+
+const handleLogout = async () => {
+  await firebaseService.logout();
+  ElMessage.info('已登出');
+};
+
+const handleSyncToCloud = async () => {
+  syncLoading.value = true;
+  await syncManager.syncToCloud();
+  syncLoading.value = false;
+};
+
+const handleSyncFromCloud = async () => {
+  syncLoading.value = true;
+  await syncManager.syncFromCloud();
+  syncLoading.value = false;
+};
+
 
 // 儲存基本設定
 const saveBasicSettings = async () => {
@@ -629,6 +739,22 @@ const restoreBackup = async () => {
 }
 
 onMounted(async () => {
+  // 監聽 Firebase 認證狀態
+  if (firebaseService.auth) {
+    firebaseService.auth.onAuthStateChanged(user => {
+      currentUser.value = user;
+    });
+  } else {
+    // 如果 Firebase 還沒初始化好，等一下再試
+    setTimeout(() => {
+        if(firebaseService.auth) {
+            firebaseService.auth.onAuthStateChanged(user => {
+                currentUser.value = user;
+            });
+        }
+    }, 2000)
+  }
+
   // 載入設定
   await appStore.loadSettings()
   

@@ -4,6 +4,7 @@ import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import { handleError } from '@/utils/errorHandler'
 import { debounce, memoize } from '@/utils/performance'
+import { storageService } from '@/services/storageService'
 
 export const useExpenseStore = defineStore('expense', () => {
   // 狀態
@@ -57,10 +58,9 @@ export const useExpenseStore = defineStore('expense', () => {
   const loadExpenses = async () => {
     loading.value = true
     try {
-      // 從本地儲存載入
-      const savedExpenses = localStorage.getItem('temple-expenses')
+      const savedExpenses = storageService.getData('expenses')
       if (savedExpenses) {
-        expenses.value = JSON.parse(savedExpenses)
+        expenses.value = savedExpenses
       }
 
       // 如果沒有資料，載入示例資料
@@ -76,7 +76,7 @@ export const useExpenseStore = defineStore('expense', () => {
 
   const saveExpenses = async () => {
     try {
-      localStorage.setItem('temple-expenses', JSON.stringify(expenses.value))
+      storageService.saveData('expenses', expenses.value)
     } catch (error) {
       handleError(error, 'Data Storage', { operation: 'saveExpenses' })
       throw error
@@ -215,7 +215,7 @@ export const useExpenseStore = defineStore('expense', () => {
 
   const saveCategories = async () => {
     try {
-      localStorage.setItem('temple-expense-categories', JSON.stringify(categories.value))
+      storageService.saveData('expense-categories', categories.value)
     } catch (error) {
       console.error('儲存支出類別失敗:', error)
       throw error
@@ -224,9 +224,9 @@ export const useExpenseStore = defineStore('expense', () => {
 
   const loadCategories = async () => {
     try {
-      const savedCategories = localStorage.getItem('temple-expense-categories')
+      const savedCategories = storageService.getData('expense-categories')
       if (savedCategories) {
-        categories.value = JSON.parse(savedCategories)
+        categories.value = savedCategories
       }
     } catch (error) {
       console.error('載入支出類別失敗:', error)
@@ -283,6 +283,17 @@ export const useExpenseStore = defineStore('expense', () => {
     })
   }
 
+  // --- 同步專用 Actions ---
+  const setExpenses = (newExpenses) => {
+    expenses.value = newExpenses;
+    saveExpenses(); // 持久化從雲端獲取的數據
+  }
+
+  const setCategories = (newCategories) => {
+    categories.value = newCategories;
+    saveCategories();
+  }
+
   return {
     // 狀態
     expenses,
@@ -306,6 +317,10 @@ export const useExpenseStore = defineStore('expense', () => {
     deleteCategory,
     loadCategories,
     getCategoryById,
-    getExpensesByDateRange
+    getExpensesByDateRange,
+
+    // 同步方法
+    setExpenses,
+    setCategories,
   }
 })

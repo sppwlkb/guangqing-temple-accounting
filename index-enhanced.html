@@ -37,11 +37,8 @@
     <!-- ECharts -->
     <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
 
-    <!-- 雲端同步服務 -->
-    <script src="firebase-config.js"></script>
+    <!-- 離線存儲服務 -->
     <script src="offline-storage.js"></script>
-    <script src="cloud-sync-manager.js"></script>
-    <script src="cloud-sync.js"></script>
     
     <!-- 類別管理系統 -->
     <script src="category-manager.js"></script>
@@ -3032,12 +3029,25 @@
                 </div>
 
                 <div class="header-actions">
+<<<<<<< Updated upstream
+=======
+                    <!-- 雲端同步狀態 -->
+                    <!-- 網絡狀態指示器 -->
+                    <div class="network-status">
+                        <span class="network-icon">{{ isOnline ? '🌐' : '⚠️' }}</span>
+                        <span class="network-text">{{ networkStatusText }}</span>
+                    </div>
+                    
+>>>>>>> Stashed changes
                     <button class="btn btn-primary" @click="showAddModal = true" style="padding: 8px 12px; font-size: 14px;">
                         快速記帳
                     </button>
                     
+<<<<<<< Updated upstream
 
                     
+=======
+>>>>>>> Stashed changes
                     <div style="position: relative;">
                         <button class="btn btn-secondary" @click="showNotifications" style="padding: 8px 12px; font-size: 14px;">
                             🔔
@@ -3054,6 +3064,7 @@
                 <!-- 儀表板頁面 -->
                 <div class="page-content active" id="dashboard">
 
+<<<<<<< Updated upstream
                     
                     <!-- 雲端同步快速功能區 - 永遠顯示在頂部 -->
                     <div class="cloud-sync-section" style="
@@ -3110,6 +3121,8 @@
                             💾 廣清宮專用版 - 直接使用所有功能
                         </div>
                     </div>
+=======
+>>>>>>> Stashed changes
 
                     <!-- 緊急提醒 -->
                     <div v-if="urgentReminders.length > 0" class="reminders-section">
@@ -5947,24 +5960,8 @@
                 const dragOverIndex = ref(null);
                 const categoryListRef = ref(null);
 
-                // 雲端同步相關變數
-                const showUserModal = ref(false);
-                const showSyncModal = ref(false);
-                const currentUser = ref(null);
+                // 系統狀態變數
                 const isOnline = ref(navigator.onLine);
-                const syncInProgress = ref(false);
-                const pendingChanges = ref(0);
-                const lastSyncFormatted = ref('從未同步');
-                const isRealtimeSync = ref(false);
-                const authTab = ref('login');
-                const authLoading = ref(false);
-                const uploadInProgress = ref(false);
-                const downloadInProgress = ref(false);
-                const authForm = ref({
-                    email: '',
-                    password: '',
-                    displayName: ''
-                });
 
                 // 當前類別列表（用於管理對話框）
                 const currentCategoryList = computed(() => {
@@ -5988,34 +5985,9 @@
                     return form.value.type === 'income' ? incomeCategories.value : expenseCategories.value;
                 });
 
-                // 雲端同步相關計算屬性
-                const currentUserName = computed(() => {
-                    if (!currentUser.value) return '未登入';
-                    return currentUser.value.displayName || currentUser.value.email || '匿名用戶';
-                });
-
-                const syncStatusClass = computed(() => {
-                    if (!currentUser.value) return 'sync-status-offline';
-                    if (syncInProgress.value) return 'sync-status-syncing';
-                    if (!isOnline.value) return 'sync-status-offline';
-                    if (pendingChanges.value > 0) return 'sync-status-pending';
-                    return 'sync-status-online';
-                });
-
-                const syncIcon = computed(() => {
-                    if (!currentUser.value) return '☁️';
-                    if (syncInProgress.value) return '🔄';
-                    if (!isOnline.value) return '📱';
-                    if (pendingChanges.value > 0) return '⏳';
-                    return '✅';
-                });
-
-                const syncStatusText = computed(() => {
-                    if (!currentUser.value) return '未登入';
-                    if (syncInProgress.value) return '同步中';
-                    if (!isOnline.value) return '離線模式';
-                    if (pendingChanges.value > 0) return `${pendingChanges.value}個待同步`;
-                    return '已同步';
+                // 網路狀態計算屬性
+                const networkStatusText = computed(() => {
+                    return isOnline.value ? '在線' : '離線';
                 });
                 
                 const modalTitle = computed(() => {
@@ -6804,41 +6776,28 @@
                     form.value.category = '';
                 };
 
-                // 雲端同步方法
-                const closeUserModal = () => {
-                    showUserModal.value = false;
-                    authForm.value = {
-                        email: '',
-                        password: '',
-                        displayName: ''
-                    };
-                };
-
-                const closeSyncModal = () => {
-                    showSyncModal.value = false;
-                };
-
-                const loginUser = async () => {
-                    authLoading.value = true;
-                    try {
-                        const result = await window.firebaseCloud.loginUser(
-                            authForm.value.email,
-                            authForm.value.password
-                        );
-                        
-                        if (result.success) {
-                            showNotification('登入成功', '歡迎回來！');
-                            closeUserModal();
-                        } else {
-                            alert(result.message);
-                        }
-                    } catch (error) {
-                        alert('登入失敗：' + error.message);
-                    } finally {
-                        authLoading.value = false;
+                // 網絡狀態檢查方法
+                const checkNetworkStatus = () => {
+                    isOnline.value = navigator.onLine;
+                    if (isOnline.value) {
+                        showNotification('網絡已連接', '您現在可以正常使用所有功能', 'success');
+                    } else {
+                        showNotification('網絡已斷開', '您現在處於離線模式，資料將保存在本地', 'warning');
                     }
                 };
+                
+                // 監聽網絡狀態變化
+                window.addEventListener('online', () => {
+                    isOnline.value = true;
+                    showNotification('網絡已連接', '您現在可以正常使用所有功能', 'success');
+                });
+                
+                window.addEventListener('offline', () => {
+                    isOnline.value = false;
+                    showNotification('網絡已斷開', '您現在處於離線模式，資料將保存在本地', 'warning');
+                });
 
+<<<<<<< Updated upstream
                 const registerUser = async () => {
                     authLoading.value = true;
                     try {
@@ -7128,6 +7087,8 @@
                         console.error('強制重新同步失敗:', error);
                     }
                 };
+=======
+>>>>>>> Stashed changes
 
                 // 拖拽排序方法
                 const onDragStart = (event, index) => {

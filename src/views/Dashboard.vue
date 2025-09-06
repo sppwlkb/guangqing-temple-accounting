@@ -9,19 +9,19 @@
     <el-row :gutter="20" class="stats-row">
       <el-col :xs="24" :sm="8" :md="8">
         <div class="stat-card income">
-          <div class="stat-value">{{ formatCurrency(incomeStore.monthlyIncome) }}</div>
+          <div class="stat-value">{{ formatAmount(incomeStore.monthlyIncome, 'TWD') }}</div>
           <div class="stat-label">本月收入</div>
         </div>
       </el-col>
       <el-col :xs="24" :sm="8" :md="8">
         <div class="stat-card expense">
-          <div class="stat-value">{{ formatCurrency(expenseStore.monthlyExpense) }}</div>
+          <div class="stat-value">{{ formatAmount(expenseStore.monthlyExpense, 'TWD') }}</div>
           <div class="stat-label">本月支出</div>
         </div>
       </el-col>
       <el-col :xs="24" :sm="8" :md="8">
         <div class="stat-card balance">
-          <div class="stat-value">{{ formatCurrency(monthlyBalance) }}</div>
+          <div class="stat-value">{{ formatAmount(monthlyBalance, 'TWD') }}</div>
           <div class="stat-label">本月結餘</div>
         </div>
       </el-col>
@@ -32,13 +32,13 @@
       <el-col :xs="24" :md="12">
         <div class="chart-container">
           <h3 class="chart-title">收支趨勢 (近7天)</h3>
-          <div ref="trendChart" style="height: 300px;"></div>
+          <div ref="trendChartEl" style="height: 300px;"></div>
         </div>
       </el-col>
       <el-col :xs="24" :md="12">
         <div class="chart-container">
           <h3 class="chart-title">收入類別分布</h3>
-          <div ref="incomeChart" style="height: 300px;"></div>
+          <div ref="incomeChartEl" style="height: 300px;"></div>
         </div>
       </el-col>
     </el-row>
@@ -56,7 +56,7 @@
           <el-table :data="incomeStore.recentIncomes.slice(0, 5)" style="width: 100%">
             <el-table-column prop="date" label="日期" width="100">
               <template #default="{ row }">
-                {{ formatDate(row.date) }}
+                {{ formatDate(row.date, 'MM/DD') }}
               </template>
             </el-table-column>
             <el-table-column prop="categoryId" label="類別" width="100">
@@ -72,7 +72,7 @@
             </el-table-column>
             <el-table-column prop="amount" label="金額" align="right">
               <template #default="{ row }">
-                <span class="amount income">+{{ formatCurrency(row.amount) }}</span>
+                <span class="amount income">+{{ formatAmount(row.amount, 'TWD') }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -94,7 +94,7 @@
           <el-table :data="expenseStore.recentExpenses.slice(0, 5)" style="width: 100%">
             <el-table-column prop="date" label="日期" width="100">
               <template #default="{ row }">
-                {{ formatDate(row.date) }}
+                {{ formatDate(row.date, 'MM/DD') }}
               </template>
             </el-table-column>
             <el-table-column prop="categoryId" label="類別" width="100">
@@ -110,7 +110,7 @@
             </el-table-column>
             <el-table-column prop="amount" label="金額" align="right">
               <template #default="{ row }">
-                <span class="amount expense">-{{ formatCurrency(row.amount) }}</span>
+                <span class="amount expense">-{{ formatAmount(row.amount, 'TWD') }}</span>
               </template>
             </el-table-column>
           </el-table>
@@ -150,11 +150,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { useIncomeStore } from '../stores/income'
-import { useExpenseStore } from '../stores/expense'
-import * as echarts from 'echarts'
-import dayjs from 'dayjs'
+import { ref, computed, onMounted } from 'vue'
+import { useIncomeStore } from '@/stores/income'
+import { useExpenseStore } from '@/stores/expense'
+import { useTrendChart } from '@/composables/useTrendChart'
+import { useIncomeChart } from '@/composables/useIncomeChart'
+import { formatAmount, formatDate } from '@/utils/helpers'
 import { 
   Plus, Minus, Document, Download, DocumentRemove 
 } from '@element-plus/icons-vue'
@@ -162,171 +163,40 @@ import {
 const incomeStore = useIncomeStore()
 const expenseStore = useExpenseStore()
 
-const trendChart = ref(null)
-const incomeChart = ref(null)
+// Refs for chart elements
+const trendChartEl = ref(null)
+const incomeChartEl = ref(null)
+
+// Use composables to manage charts
+useTrendChart(trendChartEl)
+useIncomeChart(incomeChartEl)
 
 const monthlyBalance = computed(() => {
   return incomeStore.monthlyIncome - expenseStore.monthlyExpense
 })
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('zh-TW', {
-    style: 'currency',
-    currency: 'TWD',
-    minimumFractionDigits: 0
-  }).format(amount)
-}
-
-const formatDate = (date) => {
-  return dayjs(date).format('MM/DD')
-}
-
 const getCategoryName = (categoryId, type) => {
   const store = type === 'income' ? incomeStore : expenseStore
-  const category = store.getCategoryById(categoryId)
+  const category = store.categories.find(c => c.id === categoryId)
   return category ? category.name : '未知'
 }
 
 const getCategoryColor = (categoryId, type) => {
   const store = type === 'income' ? incomeStore : expenseStore
-  const category = store.getCategoryById(categoryId)
+  const category = store.categories.find(c => c.id === categoryId)
   return category ? category.color : '#909399'
 }
 
-const initTrendChart = () => {
-  if (!trendChart.value) return
-  
-  const chart = echarts.init(trendChart.value)
-  
-  // 生成近7天的資料
-  const dates = []
-  const incomeData = []
-  const expenseData = []
-  
-  for (let i = 6; i >= 0; i--) {
-    const date = dayjs().subtract(i, 'day')
-    dates.push(date.format('MM/DD'))
-    
-    const dayIncomes = incomeStore.incomes.filter(income => 
-      dayjs(income.date).isSame(date, 'day')
-    )
-    const dayExpenses = expenseStore.expenses.filter(expense => 
-      dayjs(expense.date).isSame(date, 'day')
-    )
-    
-    incomeData.push(dayIncomes.reduce((sum, item) => sum + item.amount, 0))
-    expenseData.push(dayExpenses.reduce((sum, item) => sum + item.amount, 0))
-  }
-  
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      formatter: function(params) {
-        let result = params[0].name + '<br/>'
-        params.forEach(param => {
-          result += param.marker + param.seriesName + ': ' + formatCurrency(param.value) + '<br/>'
-        })
-        return result
-      }
-    },
-    legend: {
-      data: ['收入', '支出']
-    },
-    xAxis: {
-      type: 'category',
-      data: dates
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: function(value) {
-          return formatCurrency(value)
-        }
-      }
-    },
-    series: [
-      {
-        name: '收入',
-        type: 'line',
-        data: incomeData,
-        itemStyle: { color: '#67C23A' },
-        areaStyle: { opacity: 0.3 }
-      },
-      {
-        name: '支出',
-        type: 'line',
-        data: expenseData,
-        itemStyle: { color: '#F56C6C' },
-        areaStyle: { opacity: 0.3 }
-      }
-    ]
-  }
-  
-  chart.setOption(option)
-  
-  // 響應式調整
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
-}
-
-const initIncomeChart = () => {
-  if (!incomeChart.value) return
-  
-  const chart = echarts.init(incomeChart.value)
-  
-  const data = incomeStore.categories.map(category => ({
-    name: category.name,
-    value: incomeStore.incomeByCategory[category.name] || 0,
-    itemStyle: { color: category.color }
-  })).filter(item => item.value > 0)
-  
-  const option = {
-    tooltip: {
-      trigger: 'item',
-      formatter: function(params) {
-        return params.name + '<br/>' + 
-               params.marker + formatCurrency(params.value) + 
-               ' (' + params.percent + '%)'
-      }
-    },
-    series: [
-      {
-        type: 'pie',
-        radius: ['40%', '70%'],
-        data: data,
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        }
-      }
-    ]
-  }
-  
-  chart.setOption(option)
-  
-  // 響應式調整
-  window.addEventListener('resize', () => {
-    chart.resize()
-  })
-}
-
-onMounted(async () => {
-  // 載入資料
-  await Promise.all([
+// Load data on component mount
+onMounted(() => {
+  // Data loading is now more centralized if needed, but can still be triggered here
+  // The chart composables will automatically initialize on mount.
+  Promise.all([
     incomeStore.loadIncomes(),
     incomeStore.loadCategories(),
     expenseStore.loadExpenses(),
     expenseStore.loadCategories()
   ])
-  
-  // 初始化圖表
-  await nextTick()
-  initTrendChart()
-  initIncomeChart()
 })
 </script>
 

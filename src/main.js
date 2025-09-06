@@ -8,6 +8,14 @@ import router from './router'
 import App from './App.vue'
 import './styles/main.css'
 import { setupGlobalErrorHandler } from './utils/errorHandler'
+import { firebaseService } from './services/firebaseService'
+
+// 初始化 Firebase 服務
+firebaseService.init().then(() => {
+  console.log('Firebase Service 已成功初始化');
+}).catch(error => {
+  console.error('Firebase Service 初始化失敗:', error);
+});
 
 // 設置全域錯誤處理
 setupGlobalErrorHandler()
