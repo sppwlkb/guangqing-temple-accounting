@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匯入測試數據 - 廣清宮記帳軟體</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn-primary {
+            background: #2196F3;
+        }
+        .btn-primary:hover {
+            background: #1976D2;
+        }
+        .btn-danger {
+            background: #f44336;
+        }
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            text-align: left;
+            border-left: 4px solid #4CAF50;
+        }
+        h1 {
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 2.5em;
+        }
+        .file-input {
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+        .file-input input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            background: white;
+            color: #333;
+        }
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .instructions h3 {
+            color: #ffeb3b;
+            margin-top: 0;
+        }
+        .instructions ol {
+            padding-left: 20px;
+        }
+        .instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .data-preview {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏛️ 廣清宮記帳軟體</h1>
+        <h2>📥 測試數據匯入工具</h2>
+        
+        <div class="instructions">
+            <h3>📋 使用說明：</h3>
+            <ol>
+                <li><strong>方法一：</strong>點擊「快速生成測試數據」按鈕，自動生成豐富的測試數據</li>
+                <li><strong>方法二：</strong>下載測試數據檔案，然後使用「選擇檔案」匯入</li>
+                <li>匯入完成後，點擊「前往主程式」開始測試列印功能</li>
+                <li>測試時請特別注意「捐款收據」和「財務報表」的選擇功能</li>
+            </ol>
+        </div>
+
+        <div style="margin: 30px 0;">
+            <button class="btn btn-primary" onclick="generateQuickData()">
+                🎲 快速生成測試數據
+            </button>
+            
+            <a href="temple-test-data.json" download class="btn">
+                📥 下載測試數據檔案
+            </a>
+        </div>
+
+        <div class="file-input">
+            <label for="fileInput"><strong>📁 或選擇備份檔案匯入：</strong></label>
+            <input type="file" id="fileInput" accept=".json" onchange="importData(event)">
+        </div>
+
+        <div style="margin: 30px 0;">
+            <button class="btn btn-danger" onclick="clearAllData()">
+                🗑️ 清空所有數據
+            </button>
+            
+            <a href="index-enhanced.html" class="btn">
+                🏠 前往主程式
+            </a>
+        </div>
+
+        <div id="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function generateQuickData() {
+            console.log('🏛️ 開始生成廣清宮測試數據...');
+            
+            // 清空現有數據
+            localStorage.removeItem('temple-records');
+            localStorage.removeItem('temple-believers');
+            localStorage.removeItem('temple-reminders');
+            
+            // 生成測試數據
+            const records = [];
+            const believers = [];
+            const reminders = [];
+            
+            // 收入類別
+            const incomeCategories = ['香油錢', '點燈費', '安太歲', '祈福金', '法會功德金', '建廟基金', '慈善捐款', '節慶捐款', '特殊法會', '其他捐款'];
+            
+            // 支出類別  
+            const expenseCategories = ['水電費', '清潔用品', '祭品採購', '維修費用', '人事費用', '法會用品', '慈善支出', '設備採購', '行政費用', '其他支出'];
+            
+            // 信眾姓名
+            const believerNames = ['王大明', '李小華', '陳美玲', '張志強', '林淑芬', '黃建國', '吳雅婷', '劉俊傑', '蔡佳蓉', '鄭文龍', '謝淑惠', '許志豪', '楊麗娟', '洪明德', '周雅雯', '朱建華', '何美珠', '呂志明', '蘇雅琪', '馬文傑'];
+            
+            let recordId = 1;
+            
+            // 生成2023年和2024年的財務記錄
+            for (let year = 2023; year <= 2024; year++) {
+                for (let month = 1; month <= 12; month++) {
+                    if (year === 2024 && month > new Date().getMonth() + 1) break;
+                    
+                    const recordCount = Math.floor(Math.random() * 8) + 12; // 12-20筆
+                    
+                    for (let i = 0; i < recordCount; i++) {
+                        const isIncome = Math.random() > 0.3;
+                        const day = Math.floor(Math.random() * 28) + 1;
+                        const date = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                        
+                        if (isIncome) {
+                            const category = incomeCategories[Math.floor(Math.random() * incomeCategories.length)];
+                            const donor = believerNames[Math.floor(Math.random() * believerNames.length)];
+                            let amount;
+                            
+                            switch (category) {
+                                case '香油錢': amount = Math.floor(Math.random() * 500) + 100; break;
+                                case '點燈費': amount = Math.floor(Math.random() * 300) + 200; break;
+                                case '安太歲': amount = Math.floor(Math.random() * 400) + 600; break;
+                                case '建廟基金': amount = Math.floor(Math.random() * 5000) + 1000; break;
+                                case '法會功德金': amount = Math.floor(Math.random() * 2000) + 500; break;
+                                default: amount = Math.floor(Math.random() * 1000) + 300;
+                            }
+                            
+                            records.push({
+                                id: recordId++,
+                                type: 'income',
+                                category: category,
+                                amount: amount,
+                                date: date,
+                                description: `${category} - ${donor}`,
+                                donor: donor,
+                                createdAt: new Date(date).toISOString()
+                            });
+                        } else {
+                            const category = expenseCategories[Math.floor(Math.random() * expenseCategories.length)];
+                            let amount;
+                            
+                            switch (category) {
+                                case '水電費': amount = Math.floor(Math.random() * 3000) + 2000; break;
+                                case '祭品採購': amount = Math.floor(Math.random() * 2000) + 1000; break;
+                                case '維修費用': amount = Math.floor(Math.random() * 5000) + 1000; break;
+                                case '人事費用': amount = Math.floor(Math.random() * 8000) + 5000; break;
+                                case '設備採購': amount = Math.floor(Math.random() * 10000) + 2000; break;
+                                default: amount = Math.floor(Math.random() * 1500) + 500;
+                            }
+                            
+                            records.push({
+                                id: recordId++,
+                                type: 'expense',
+                                category: category,
+                                amount: amount,
+                                date: date,
+                                description: `${category} - ${month}月份`,
+                                donor: '',
+                                createdAt: new Date(date).toISOString()
+                            });
+                        }
+                    }
+                }
+            }
+            
+            // 生成信眾資料
+            believerNames.forEach((name, index) => {
+                const birthYear = 1950 + Math.floor(Math.random() * 50);
+                const birthMonth = Math.floor(Math.random() * 12) + 1;
+                const birthDay = Math.floor(Math.random() * 28) + 1;
+                const birthday = `${birthYear}-${birthMonth.toString().padStart(2, '0')}-${birthDay.toString().padStart(2, '0')}`;
+                
+                const believerRecords = records.filter(r => r.donor === name && r.type === 'income');
+                const totalDonation = believerRecords.reduce((sum, r) => sum + r.amount, 0);
+                
+                believers.push({
+                    name: name,
+                    birthday: birthday,
+                    phone: `09${Math.floor(Math.random() * 100000000).toString().padStart(8, '0')}`,
+                    email: `${name.replace(/[^\w]/g, '')}@email.com`,
+                    address: `台北市${['中正區', '大同區', '中山區', '松山區', '大安區'][Math.floor(Math.random() * 5)]}某某路${Math.floor(Math.random() * 200) + 1}號`,
+                    totalDonation: totalDonation,
+                    donationCount: believerRecords.length,
+                    createdAt: new Date().toISOString()
+                });
+            });
+            
+            // 生成提醒事項
+            const reminderTitles = ['準備春節法會用品', '檢查消防設備', '更新信眾資料', '準備中元普渡', '安排年度大掃除', '檢查電器設備', '準備媽祖聖誕法會', '更新財務報表', '安排志工培訓', '檢查建築安全'];
+            
+            reminderTitles.forEach((title, index) => {
+                const dueDate = new Date();
+                dueDate.setDate(dueDate.getDate() + Math.floor(Math.random() * 90) + 1);
+                
+                reminders.push({
+                    id: index + 1,
+                    title: title,
+                    description: `${title}的詳細說明和注意事項`,
+                    dueDate: dueDate.toISOString().split('T')[0],
+                    repeat: ['none', 'daily', 'weekly', 'monthly', 'yearly'][Math.floor(Math.random() * 5)],
+                    advanceDays: Math.floor(Math.random() * 7) + 1,
+                    completed: Math.random() > 0.7,
+                    createdAt: new Date().toISOString()
+                });
+            });
+            
+            // 保存到 localStorage
+            localStorage.setItem('temple-records', JSON.stringify(records));
+            localStorage.setItem('temple-believers', JSON.stringify(believers));
+            localStorage.setItem('temple-reminders', JSON.stringify(reminders));
+            
+            const totalIncome = records.filter(r => r.type === 'income').reduce((sum, r) => sum + r.amount, 0);
+            const totalExpense = records.filter(r => r.type === 'expense').reduce((sum, r) => sum + r.amount, 0);
+            
+            showResult(`
+                <h3>✅ 測試數據生成完成！</h3>
+                <div class="data-preview">
+                📊 財務記錄: <strong>${records.length}</strong> 筆<br>
+                👥 信眾資料: <strong>${believers.length}</strong> 筆<br>
+                ⏰ 提醒事項: <strong>${reminders.length}</strong> 筆<br>
+                💰 總收入: <strong>${totalIncome.toLocaleString()}</strong> 元<br>
+                💸 總支出: <strong>${totalExpense.toLocaleString()}</strong> 元<br>
+                💵 結餘: <strong>${(totalIncome - totalExpense).toLocaleString()}</strong> 元
+                </div>
+                <p style="color: #4CAF50; font-weight: bold;">
+                    🎯 數據已成功載入！現在可以前往主程式測試列印功能了。
+                </p>
+            `);
+        }
+        
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const backupData = JSON.parse(e.target.result);
+                    
+                    if (!backupData.data) {
+                        throw new Error('無效的備份檔案格式');
+                    }
+                    
+                    // 恢復資料
+                    if (backupData.data.records) {
+                        localStorage.setItem('temple-records', JSON.stringify(backupData.data.records));
+                    }
+                    if (backupData.data.believers) {
+                        localStorage.setItem('temple-believers', JSON.stringify(backupData.data.believers));
+                    }
+                    if (backupData.data.reminders) {
+                        localStorage.setItem('temple-reminders', JSON.stringify(backupData.data.reminders));
+                    }
+                    
+                    const recordsCount = backupData.data.records ? backupData.data.records.length : 0;
+                    const believersCount = backupData.data.believers ? backupData.data.believers.length : 0;
+                    const remindersCount = backupData.data.reminders ? backupData.data.reminders.length : 0;
+                    
+                    showResult(`
+                        <h3>✅ 數據匯入成功！</h3>
+                        <div class="data-preview">
+                        📊 財務記錄: <strong>${recordsCount}</strong> 筆<br>
+                        👥 信眾資料: <strong>${believersCount}</strong> 筆<br>
+                        ⏰ 提醒事項: <strong>${remindersCount}</strong> 筆
+                        </div>
+                        <p style="color: #4CAF50; font-weight: bold;">
+                            🎯 數據已成功載入！現在可以前往主程式測試列印功能了。
+                        </p>
+                    `);
+                    
+                    event.target.value = '';
+                    
+                } catch (error) {
+                    showResult(`
+                        <h3>❌ 匯入失敗</h3>
+                        <p style="color: #f44336;">錯誤：${error.message}</p>
+                        <p>請確認檔案格式正確。</p>
+                    `);
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        function clearAllData() {
+            if (confirm('確定要清空所有數據嗎？此操作無法復原！')) {
+                localStorage.removeItem('temple-records');
+                localStorage.removeItem('temple-believers');
+                localStorage.removeItem('temple-reminders');
+                localStorage.removeItem('temple-inventory');
+                localStorage.removeItem('temple-stock-movements');
+                localStorage.removeItem('temple-events');
+                
+                showResult(`
+                    <h3>🗑️ 所有數據已清空</h3>
+                    <p>本地存儲中的所有數據已被清除。</p>
+                `);
+            }
+        }
+        
+        function showResult(html) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

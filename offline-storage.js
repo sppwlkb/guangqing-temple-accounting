@@ -1,0 +1,806 @@
+/**
+ * 廣清宮記帳軟體 - 離線存儲系統
+ * 使用 IndexedDB 提供強大的離線資料庫功能
+ */
+
+class OfflineStorageService {
+    constructor() {
+        this.dbName = 'GuangqingTempleDB';
+        this.dbVersion = 2; // 升級版本以應用新索引
+        this.db = null;
+        this.isInitialized = false;
+        
+        // 資料表定義
+        this.stores = {
+            records: {
+                keyPath: 'id',
+                indexes: [
+                    { name: 'type', keyPath: 'type' },
+                    { name: 'category', keyPath: 'category' },
+                    { name: 'date', keyPath: 'date' },
+                    { name: 'amount', keyPath: 'amount' },
+                    { name: 'createdAt', keyPath: 'createdAt' }
+                ]
+            },
+            believers: {
+                keyPath: 'id',
+                indexes: [
+                    { name: 'name', keyPath: 'name' },
+                    { name: 'phone', keyPath: 'phone' },
+                    { name: 'email', keyPath: 'email' },
+                    { name: 'totalDonation', keyPath: 'totalDonation' }
+                ]
+            },
+            reminders: {
+                keyPath: 'id',
+                indexes: [
+                    { name: 'dueDate', keyPath: 'dueDate' },
+                    { name: 'completed', keyPath: 'completed' },
+                    { name: 'repeat', keyPath: 'repeat' }
+                ]
+            },
+            categories: {
+                keyPath: 'id',
+                indexes: [
+                    { name: 'type', keyPath: 'type' },
+                    { name: 'name', keyPath: 'name' }
+                ]
+            },
+            syncQueue: {
+                keyPath: 'id',
+                indexes: [
+                    { name: 'action', keyPath: 'action' },
+                    { name: 'table', keyPath: 'table' },
+                    { name: 'timestamp', keyPath: 'timestamp' },
+                    { name: 'synced', keyPath: 'synced' }
+                ]
+            },
+            settings: {
+                keyPath: 'key'
+            }
+        };
+        
+        this.initDB();
+    }
+
+    /**
+     * 初始化 IndexedDB
+     */
+    async initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.dbName, this.dbVersion);
+            
+            request.onerror = () => {
+                console.error('IndexedDB 開啟失敗:', request.error);
+                reject(request.error);
+            };
+            
+            request.onsuccess = (event) => {
+                this.db = event.target.result;
+                this.isInitialized = true;
+                console.log('IndexedDB 初始化成功');
+                resolve(this.db);
+            };
+            
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                
+                // 創建物件存儲
+                Object.keys(this.stores).forEach(storeName => {
+                    const storeConfig = this.stores[storeName];
+                    
+                    // 如果存儲已存在，先刪除
+                    if (db.objectStoreNames.contains(storeName)) {
+                        db.deleteObjectStore(storeName);
+                    }
+                    
+                    // 創建新的存儲
+                    const store = db.createObjectStore(storeName, {
+                        keyPath: storeConfig.keyPath,
+                        autoIncrement: storeConfig.keyPath === 'id'
+                    });
+                    
+                    // 創建索引
+                    if (storeConfig.indexes) {
+                        storeConfig.indexes.forEach(index => {
+                            store.createIndex(index.name, index.keyPath, { unique: false });
+                        });
+                    }
+                });
+                
+                console.log('IndexedDB 結構升級完成');
+            };
+        });
+    }
+
+    /**
+     * 確保資料庫已初始化
+     */
+    async ensureInitialized() {
+        if (!this.isInitialized) {
+            await this.initDB();
+        }
+    }
+
+    /**
+     * 新增資料
+     */
+    async add(storeName, data) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            
+            // 添加時間戳
+            const dataWithTimestamp = {
+                ...data,
+                createdAt: data.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            const request = store.add(dataWithTimestamp);
+            
+            request.onsuccess = () => {
+                // 添加到同步佇列
+                this.addToSyncQueue('create', storeName, dataWithTimestamp);
+                resolve(request.result);
+            };
+            
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    /**
+     * 更新資料
+     */
+    async update(storeName, data) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            
+            // 添加更新時間戳
+            const dataWithTimestamp = {
+                ...data,
+                updatedAt: new Date().toISOString()
+            };
+            
+            const request = store.put(dataWithTimestamp);
+            
+            request.onsuccess = () => {
+                // 添加到同步佇列
+                this.addToSyncQueue('update', storeName, dataWithTimestamp);
+                resolve(request.result);
+            };
+            
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    /**
+     * 刪除資料
+     */
+    async delete(storeName, id) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            
+            const request = store.delete(id);
+            
+            request.onsuccess = () => {
+                // 添加到同步佇列
+                this.addToSyncQueue('delete', storeName, { id });
+                resolve(request.result);
+            };
+            
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    /**
+     * 根據 ID 獲取單筆資料
+     */
+    async get(storeName, id) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.get(id);
+            
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
+            
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    /**
+     * 獲取所有資料
+     */
+    async getAll(storeName) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const request = store.getAll();
+            
+            // 設置較短的超時時間，避免長時間阻塞
+            const timeout = setTimeout(() => {
+                transaction.abort();
+                reject(new Error(`getAll operation timed out for ${storeName}`));
+            }, 10000); // 10秒超時
+            
+            request.onsuccess = () => {
+                clearTimeout(timeout);
+                resolve(request.result);
+            };
+            
+            request.onerror = () => {
+                clearTimeout(timeout);
+                reject(request.error);
+            };
+            
+            transaction.onabort = () => {
+                clearTimeout(timeout);
+                reject(new Error(`Transaction aborted for ${storeName}`));
+            };
+        });
+    }
+
+    /**
+     * 根據索引查詢資料
+     */
+    async getByIndex(storeName, indexName, value) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                
+                let request;
+                try {
+                    // 檢查索引是否存在且值有效
+                    if (store.indexNames.contains(indexName) && this.isValidKey(value)) {
+                        const index = store.index(indexName);
+                        request = index.getAll(value);
+                    } else {
+                        if (!store.indexNames.contains(indexName)) {
+                            console.warn(`索引 ${indexName} 不存在於 ${storeName}，使用全部資料篩選`);
+                        } else {
+                            console.warn(`索引 ${indexName} 的值無效，使用全部資料篩選`);
+                        }
+                        // 降級到取得所有資料然後手動篩選
+                        request = store.getAll();
+                    }
+                } catch (indexError) {
+                    console.warn(`索引訪問失敗，降級到手動篩選:`, indexError);
+                    request = store.getAll();
+                }
+                
+                request.onsuccess = () => {
+                    let result = request.result;
+                    
+                    // 如果是降級模式或索引不存在，手動篩選
+                    if (indexName && value !== undefined && 
+                        (!store.indexNames.contains(indexName) || !this.isValidKey(value))) {
+                        result = result.filter(item => {
+                            try {
+                                return item[indexName] === value;
+                            } catch (e) {
+                                return false;
+                            }
+                        });
+                    }
+                    
+                    resolve(result);
+                };
+                
+                request.onerror = () => {
+                    console.warn(`getByIndex 操作失敗，返回空結果`);
+                    resolve([]);
+                };
+                
+                transaction.onerror = () => {
+                    console.warn(`getByIndex 交易失敗，返回空結果`);
+                    resolve([]);
+                };
+            } catch (error) {
+                console.error(`getByIndex 方法失敗:`, error);
+                resolve([]); // 返回空陣列而不是錯誤
+            }
+        });
+    }
+
+    /**
+     * 範圍查詢
+     */
+    async getByRange(storeName, indexName, lowerBound, upperBound) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readonly');
+            const store = transaction.objectStore(storeName);
+            const index = store.index(indexName);
+            const range = IDBKeyRange.bound(lowerBound, upperBound);
+            const request = index.getAll(range);
+            
+            request.onsuccess = () => {
+                resolve(request.result);
+            };
+            
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    /**
+     * 複雜查詢（支援多條件篩選）
+     */
+    async query(storeName, conditions = {}) {
+        const allData = await this.getAll(storeName);
+        
+        return allData.filter(item => {
+            return Object.keys(conditions).every(key => {
+                const condition = conditions[key];
+                const value = item[key];
+                
+                if (typeof condition === 'object' && condition !== null) {
+                    // 範圍查詢 { min: value, max: value }
+                    if (condition.min !== undefined && value < condition.min) return false;
+                    if (condition.max !== undefined && value > condition.max) return false;
+                    // 包含查詢 { includes: value }
+                    if (condition.includes !== undefined && !value?.toString().toLowerCase().includes(condition.includes.toLowerCase())) return false;
+                    return true;
+                } else {
+                    // 精確匹配
+                    return value === condition;
+                }
+            });
+        });
+    }
+
+    /**
+     * 統計查詢
+     */
+    async count(storeName, indexName = null, value = null) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                
+                let request;
+                if (indexName && value !== null && value !== undefined) {
+                    try {
+                        // 檢查索引是否存在
+                        if (store.indexNames.contains(indexName)) {
+                            // 進一步檢查值是否有效
+                            if (this.isValidKey(value)) {
+                                const index = store.index(indexName);
+                                try {
+                                    request = index.count(value);
+                                } catch (countError) {
+                                    console.warn(`計數操作失敗，使用全部計數:`, countError);
+                                    request = store.count();
+                                }
+                            } else {
+                                console.warn(`索引 ${indexName} 的值無效 (${typeof value}: ${value})，使用全部計數`);
+                                request = store.count();
+                            }
+                        } else {
+                            console.warn(`索引 ${indexName} 不存在，使用全部計數`);
+                            request = store.count();
+                        }
+                    } catch (error) {
+                        console.warn(`索引 ${indexName} 訪問失敗，使用全部計數:`, error);
+                        request = store.count();
+                    }
+                } else {
+                    request = store.count();
+                }
+                
+                request.onsuccess = () => {
+                    resolve(request.result);
+                };
+                
+                request.onerror = () => {
+                    console.warn(`計數操作失敗，返回 0`);
+                    resolve(0); // 返回 0 而不是拋出錯誤
+                };
+                
+                transaction.onerror = () => {
+                    console.warn(`交易失敗，返回 0`);
+                    resolve(0);
+                };
+            } catch (error) {
+                console.error(`count 方法失敗:`, error);
+                resolve(0);
+            }
+        });
+    }
+    
+    /**
+     * 檢查值是否為有效的 IndexedDB 鍵
+     */
+    isValidKey(value) {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return true;
+        if (value instanceof Date) return true;
+        if (Array.isArray(value)) return value.every(v => this.isValidKey(v));
+        return false;
+    }
+
+    /**
+     * 批次操作
+     */
+    async batch(operations) {
+        await this.ensureInitialized();
+        
+        // 如果操作數量太大，分批處理以避免性能問題
+        if (operations.length > 500) {
+            console.log(`批次操作數量 ${operations.length} 過大，分批處理...`);
+            const batchSize = 100;
+            const results = [];
+            
+            for (let i = 0; i < operations.length; i += batchSize) {
+                const batch = operations.slice(i, i + batchSize);
+                const batchResult = await this.executeBatch(batch);
+                results.push(...batchResult);
+            }
+            
+            return results;
+        }
+        
+        return this.executeBatch(operations);
+    }
+
+    async executeBatch(operations) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(
+                [...new Set(operations.map(op => op.storeName))], 
+                'readwrite'
+            );
+            
+            const results = [];
+            let completed = 0;
+            let hasError = false;
+            
+            transaction.oncomplete = () => {
+                if (!hasError) {
+                    resolve(results);
+                }
+            };
+            
+            transaction.onerror = () => {
+                hasError = true;
+                reject(transaction.error);
+            };
+            
+            transaction.onabort = () => {
+                hasError = true;
+                reject(new Error('Transaction aborted'));
+            };
+            
+            operations.forEach((operation, index) => {
+                const store = transaction.objectStore(operation.storeName);
+                let request;
+                
+                switch (operation.type) {
+                    case 'add':
+                        request = store.add({
+                            ...operation.data,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        });
+                        break;
+                    case 'update':
+                        request = store.put({
+                            ...operation.data,
+                            updatedAt: new Date().toISOString()
+                        });
+                        break;
+                    case 'delete':
+                        request = store.delete(operation.id);
+                        break;
+                }
+                
+                request.onsuccess = () => {
+                    results[index] = request.result;
+                    completed++;
+                    
+                    // 添加到同步佇列
+                    this.addToSyncQueue(operation.type, operation.storeName, 
+                        operation.type === 'delete' ? { id: operation.id } : operation.data);
+                };
+            });
+        });
+    }
+
+    /**
+     * 添加到同步佇列
+     */
+    async addToSyncQueue(action, table, data) {
+        if (!this.isInitialized) return;
+        
+        const queueItem = {
+            id: Date.now() + Math.random(),
+            action: action,
+            table: table,
+            data: data,
+            timestamp: Date.now(),
+            synced: false
+        };
+        
+        try {
+            const transaction = this.db.transaction(['syncQueue'], 'readwrite');
+            const store = transaction.objectStore('syncQueue');
+            store.add(queueItem);
+        } catch (error) {
+            console.warn('添加同步佇列失敗:', error);
+        }
+    }
+
+    /**
+     * 獲取未同步的項目
+     */
+    async getPendingSyncItems() {
+        try {
+            return await this.getByIndex('syncQueue', 'synced', false);
+        } catch (error) {
+            console.warn('獲取未同步項目失敗，返回空結果:', error);
+            return [];
+        }
+    }
+
+    /**
+     * 標記同步項目為已同步
+     */
+    async markSyncItemCompleted(id) {
+        const item = await this.get('syncQueue', id);
+        if (item) {
+            item.synced = true;
+            item.syncedAt = new Date().toISOString();
+            await this.update('syncQueue', item);
+        }
+    }
+
+    /**
+     * 清理已同步的項目
+     */
+    async cleanupSyncQueue() {
+        try {
+            const syncedItems = await this.getByIndex('syncQueue', 'synced', true);
+            const cutoffTime = Date.now() - (7 * 24 * 60 * 60 * 1000); // 7天前
+            
+            for (const item of syncedItems) {
+                if (item.timestamp < cutoffTime) {
+                    await this.delete('syncQueue', item.id);
+                }
+            }
+        } catch (error) {
+            console.warn('清理同步佇列失敗:', error);
+        }
+    }
+
+    /**
+     * 資料庫統計資訊
+     */
+    async getStats() {
+        const stats = {};
+        
+        try {
+            for (const storeName of Object.keys(this.stores)) {
+                if (storeName !== 'syncQueue') {
+                    stats[storeName] = await this.count(storeName);
+                }
+            }
+            
+            // 手動獲取待同步數量，不依賴索引
+            try {
+                const allSyncItems = await this.getAll('syncQueue');
+                stats.pendingSync = allSyncItems.filter(item => item.synced === false).length;
+            } catch (error) {
+                console.warn('無法獲取待同步數量，設為 0:', error);
+                stats.pendingSync = 0;
+            }
+            
+            stats.dbSize = await this.getDBSize();
+        } catch (error) {
+            console.error('獲取資料庫統計失敗:', error);
+            // 返回基本統計信息
+            stats.pendingSync = 0;
+            stats.dbSize = null;
+        }
+        
+        return stats;
+    }
+
+    /**
+     * 獲取資料庫大小估算
+     */
+    async getDBSize() {
+        if ('storage' in navigator && 'estimate' in navigator.storage) {
+            const estimate = await navigator.storage.estimate();
+            return {
+                used: estimate.usage,
+                available: estimate.quota,
+                usedMB: Math.round(estimate.usage / 1024 / 1024 * 100) / 100,
+                availableMB: Math.round(estimate.quota / 1024 / 1024 * 100) / 100
+            };
+        }
+        return null;
+    }
+
+    /**
+     * 匯出所有資料
+     */
+    async exportAllData() {
+        const exportData = {};
+        
+        for (const storeName of Object.keys(this.stores)) {
+            if (storeName !== 'syncQueue') {
+                exportData[storeName] = await this.getAll(storeName);
+            }
+        }
+        
+        exportData.exportedAt = new Date().toISOString();
+        exportData.version = this.dbVersion;
+        
+        return exportData;
+    }
+
+    /**
+     * 匯入資料
+     */
+    async importData(data) {
+        const operations = [];
+        
+        for (const storeName of Object.keys(data)) {
+            if (storeName !== 'exportedAt' && storeName !== 'version' && this.stores[storeName]) {
+                // 清空現有資料
+                await this.clear(storeName);
+                
+                // 準備匯入操作
+                data[storeName].forEach(item => {
+                    operations.push({
+                        type: 'add',
+                        storeName: storeName,
+                        data: item
+                    });
+                });
+            }
+        }
+        
+        // 批次匯入
+        await this.batch(operations);
+        
+        return {
+            success: true,
+            imported: operations.length,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    /**
+     * 清空資料表
+     */
+    async clear(storeName) {
+        await this.ensureInitialized();
+        
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction([storeName], 'readwrite');
+            const store = transaction.objectStore(storeName);
+            const request = store.clear();
+            
+            request.onsuccess = () => {
+                resolve();
+            };
+            
+            request.onerror = () => {
+                reject(request.error);
+            };
+        });
+    }
+
+    /**
+     * 備份資料庫
+     */
+    async backup() {
+        const data = await this.exportAllData();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `廣清宮記帳備份_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        return {
+            success: true,
+            message: '資料庫備份完成',
+            timestamp: new Date().toLocaleString('zh-TW')
+        };
+    }
+
+    /**
+     * 從 localStorage 遷移資料
+     */
+    async migrateFromLocalStorage() {
+        const migrationData = {
+            records: JSON.parse(localStorage.getItem('temple-records') || '[]'),
+            believers: JSON.parse(localStorage.getItem('temple-believers') || '[]'),
+            reminders: JSON.parse(localStorage.getItem('temple-reminders') || '[]')
+        };
+        
+        let migratedCount = 0;
+        
+        for (const [storeName, data] of Object.entries(migrationData)) {
+            if (data.length > 0) {
+                const operations = data.map(item => ({
+                    type: 'add',
+                    storeName: storeName,
+                    data: item
+                }));
+                
+                await this.batch(operations);
+                migratedCount += data.length;
+            }
+        }
+        
+        // 遷移自定義類別
+        const customIncomeCategories = JSON.parse(localStorage.getItem('custom-income-categories') || '[]');
+        const customExpenseCategories = JSON.parse(localStorage.getItem('custom-expense-categories') || '[]');
+        
+        const categoryOperations = [];
+        customIncomeCategories.forEach(category => {
+            categoryOperations.push({
+                type: 'add',
+                storeName: 'categories',
+                data: { ...category, type: 'income' }
+            });
+        });
+        
+        customExpenseCategories.forEach(category => {
+            categoryOperations.push({
+                type: 'add',
+                storeName: 'categories',
+                data: { ...category, type: 'expense' }
+            });
+        });
+        
+        if (categoryOperations.length > 0) {
+            await this.batch(categoryOperations);
+            migratedCount += categoryOperations.length;
+        }
+        
+        return {
+            success: true,
+            migrated: migratedCount,
+            message: `成功遷移 ${migratedCount} 筆資料到 IndexedDB`
+        };
+    }
+}
+
+// 創建全域實例
+window.offlineStorage = new OfflineStorageService(); 

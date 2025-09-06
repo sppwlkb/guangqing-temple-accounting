@@ -1,0 +1,298 @@
+/* CSS 變數定義 - 統一設計標準 */
+
+:root {
+  /* 主要顏色 */
+  --primary-color: #409eff;
+  --primary-light: #79bbff;
+  --primary-dark: #337ecc;
+  
+  /* 成功/收入顏色 */
+  --success-color: #67c23a;
+  --success-light: #95d475;
+  --success-dark: #529b2e;
+  --income-color: var(--success-color);
+  
+  /* 警告顏色 */
+  --warning-color: #e6a23c;
+  --warning-light: #ebb563;
+  --warning-dark: #b88230;
+  
+  /* 危險/支出顏色 */
+  --danger-color: #f56c6c;
+  --danger-light: #f78989;
+  --danger-dark: #c45656;
+  --expense-color: var(--danger-color);
+  
+  /* 資訊顏色 */
+  --info-color: #909399;
+  --info-light: #a6a9ad;
+  --info-dark: #73767a;
+  
+  /* 文字顏色 */
+  --text-primary: #303133;
+  --text-regular: #606266;
+  --text-secondary: #909399;
+  --text-placeholder: #c0c4cc;
+  --text-disabled: #c0c4cc;
+  
+  /* 背景顏色 */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --bg-tertiary: #f5f7fa;
+  --bg-disabled: #f5f7fa;
+  
+  /* 邊框顏色 */
+  --border-base: #dcdfe6;
+  --border-light: #e4e7ed;
+  --border-lighter: #ebeef5;
+  --border-extra-light: #f2f6fc;
+  
+  /* 陰影 */
+  --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  --shadow-light: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  --shadow-dark: 0 4px 20px rgba(0, 0, 0, 0.15);
+  
+  /* 圓角 */
+  --border-radius-base: 4px;
+  --border-radius-small: 2px;
+  --border-radius-large: 8px;
+  --border-radius-round: 20px;
+  --border-radius-circle: 50%;
+  
+  /* 間距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-xxl: 24px;
+  
+  /* 字體大小 */
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-xxl: 24px;
+  --font-size-xxxl: 32px;
+  
+  /* 字體粗細 */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  /* 行高 */
+  --line-height-base: 1.5;
+  --line-height-small: 1.2;
+  --line-height-large: 1.8;
+  
+  /* 字體家族 */
+  --font-family-base: 'Microsoft JhengHei', 'PingFang TC', 'Helvetica Neue', Arial, sans-serif;
+  --font-family-mono: 'Courier New', 'Monaco', 'Consolas', monospace;
+  
+  /* Z-index */
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  
+  /* 動畫時間 */
+  --transition-base: 0.3s;
+  --transition-fast: 0.2s;
+  --transition-slow: 0.5s;
+  
+  /* 動畫函數 */
+  --ease-base: ease;
+  --ease-in: ease-in;
+  --ease-out: ease-out;
+  --ease-in-out: ease-in-out;
+  
+  /* 表格相關 */
+  --table-header-bg: #f8f9fa;
+  --table-row-hover-bg: #f5f7fa;
+  --table-border-color: var(--border-lighter);
+  
+  /* 表單相關 */
+  --form-item-margin-bottom: var(--spacing-lg);
+  --form-label-color: var(--text-regular);
+  --form-input-border-color: var(--border-base);
+  --form-input-focus-border-color: var(--primary-color);
+  
+  /* 按鈕相關 */
+  --button-padding-vertical: 10px;
+  --button-padding-horizontal: 20px;
+  --button-border-radius: var(--border-radius-base);
+  --button-font-weight: var(--font-weight-medium);
+  
+  /* 卡片相關 */
+  --card-padding: var(--spacing-xl);
+  --card-margin-bottom: var(--spacing-xxl);
+  --card-border-radius: var(--border-radius-large);
+  --card-shadow: var(--shadow-light);
+  --card-header-border-color: var(--border-lighter);
+  
+  /* 統計卡片漸變 */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-income: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --gradient-expense: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --gradient-balance: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  
+  /* 響應式斷點 */
+  --breakpoint-xs: 480px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 992px;
+  --breakpoint-lg: 1200px;
+  --breakpoint-xl: 1920px;
+}
+
+/* 深色模式變數（預留） */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: #e4e7ed;
+    --text-regular: #cfd3dc;
+    --text-secondary: #a4a7b0;
+    --text-placeholder: #6c6e72;
+    --text-disabled: #6c6e72;
+    
+    --bg-primary: #1d1e1f;
+    --bg-secondary: #25262b;
+    --bg-tertiary: #2c2e33;
+    --bg-disabled: #25262b;
+    
+    --border-base: #4c4d4f;
+    --border-light: #414243;
+    --border-lighter: #363739;
+    --border-extra-light: #2b2c2e;
+    
+    --table-header-bg: #25262b;
+    --table-row-hover-bg: #2c2e33;
+  }
+}
+
+/* 工具類別 */
+.text-primary { color: var(--text-primary) !important; }
+.text-regular { color: var(--text-regular) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-placeholder { color: var(--text-placeholder) !important; }
+.text-disabled { color: var(--text-disabled) !important; }
+
+.text-success { color: var(--success-color) !important; }
+.text-warning { color: var(--warning-color) !important; }
+.text-danger { color: var(--danger-color) !important; }
+.text-info { color: var(--info-color) !important; }
+
+.bg-primary { background-color: var(--bg-primary) !important; }
+.bg-secondary { background-color: var(--bg-secondary) !important; }
+.bg-tertiary { background-color: var(--bg-tertiary) !important; }
+
+.border-base { border-color: var(--border-base) !important; }
+.border-light { border-color: var(--border-light) !important; }
+.border-lighter { border-color: var(--border-lighter) !important; }
+
+.shadow-base { box-shadow: var(--shadow-base) !important; }
+.shadow-light { box-shadow: var(--shadow-light) !important; }
+.shadow-dark { box-shadow: var(--shadow-dark) !important; }
+
+.rounded-base { border-radius: var(--border-radius-base) !important; }
+.rounded-large { border-radius: var(--border-radius-large) !important; }
+.rounded-round { border-radius: var(--border-radius-round) !important; }
+
+.font-xs { font-size: var(--font-size-xs) !important; }
+.font-sm { font-size: var(--font-size-sm) !important; }
+.font-base { font-size: var(--font-size-base) !important; }
+.font-md { font-size: var(--font-size-md) !important; }
+.font-lg { font-size: var(--font-size-lg) !important; }
+.font-xl { font-size: var(--font-size-xl) !important; }
+
+.font-light { font-weight: var(--font-weight-light) !important; }
+.font-normal { font-weight: var(--font-weight-normal) !important; }
+.font-medium { font-weight: var(--font-weight-medium) !important; }
+.font-semibold { font-weight: var(--font-weight-semibold) !important; }
+.font-bold { font-weight: var(--font-weight-bold) !important; }
+
+.m-xs { margin: var(--spacing-xs) !important; }
+.m-sm { margin: var(--spacing-sm) !important; }
+.m-md { margin: var(--spacing-md) !important; }
+.m-lg { margin: var(--spacing-lg) !important; }
+.m-xl { margin: var(--spacing-xl) !important; }
+.m-xxl { margin: var(--spacing-xxl) !important; }
+
+.p-xs { padding: var(--spacing-xs) !important; }
+.p-sm { padding: var(--spacing-sm) !important; }
+.p-md { padding: var(--spacing-md) !important; }
+.p-lg { padding: var(--spacing-lg) !important; }
+.p-xl { padding: var(--spacing-xl) !important; }
+.p-xxl { padding: var(--spacing-xxl) !important; }
+
+.mb-xs { margin-bottom: var(--spacing-xs) !important; }
+.mb-sm { margin-bottom: var(--spacing-sm) !important; }
+.mb-md { margin-bottom: var(--spacing-md) !important; }
+.mb-lg { margin-bottom: var(--spacing-lg) !important; }
+.mb-xl { margin-bottom: var(--spacing-xl) !important; }
+.mb-xxl { margin-bottom: var(--spacing-xxl) !important; }
+
+.mt-xs { margin-top: var(--spacing-xs) !important; }
+.mt-sm { margin-top: var(--spacing-sm) !important; }
+.mt-md { margin-top: var(--spacing-md) !important; }
+.mt-lg { margin-top: var(--spacing-lg) !important; }
+.mt-xl { margin-top: var(--spacing-xl) !important; }
+.mt-xxl { margin-top: var(--spacing-xxl) !important; }
+
+/* 動畫工具類別 */
+.transition-base { transition: all var(--transition-base) var(--ease-base) !important; }
+.transition-fast { transition: all var(--transition-fast) var(--ease-base) !important; }
+.transition-slow { transition: all var(--transition-slow) var(--ease-base) !important; }
+
+/* 顯示/隱藏工具類別 */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+.d-flex { display: flex !important; }
+.d-inline-flex { display: inline-flex !important; }
+.d-grid { display: grid !important; }
+
+/* Flexbox 工具類別 */
+.flex-row { flex-direction: row !important; }
+.flex-column { flex-direction: column !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.flex-nowrap { flex-wrap: nowrap !important; }
+.justify-start { justify-content: flex-start !important; }
+.justify-center { justify-content: center !important; }
+.justify-end { justify-content: flex-end !important; }
+.justify-between { justify-content: space-between !important; }
+.justify-around { justify-content: space-around !important; }
+.align-start { align-items: flex-start !important; }
+.align-center { align-items: center !important; }
+.align-end { align-items: flex-end !important; }
+.align-stretch { align-items: stretch !important; }
+
+/* 文字對齊 */
+.text-left { text-align: left !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.text-justify { text-align: justify !important; }
+
+/* 溢出處理 */
+.overflow-hidden { overflow: hidden !important; }
+.overflow-auto { overflow: auto !important; }
+.overflow-scroll { overflow: scroll !important; }
+.overflow-visible { overflow: visible !important; }
+
+/* 位置 */
+.position-relative { position: relative !important; }
+.position-absolute { position: absolute !important; }
+.position-fixed { position: fixed !important; }
+.position-sticky { position: sticky !important; }
+
+/* 寬度和高度 */
+.w-100 { width: 100% !important; }
+.h-100 { height: 100% !important; }
+.w-auto { width: auto !important; }
+.h-auto { height: auto !important; }

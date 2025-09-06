@@ -1,0 +1,61 @@
+{
+  "name": "廣清宮快速記帳軟體",
+  "description": "專為宮廟設計的記帳系統",
+  "repository": {
+    "owner": "sppwlkb",
+    "name": "guangqing-temple-accounting",
+    "url": "https://github.com/sppwlkb/guangqing-temple-accounting"
+  },
+  "deployment": {
+    "method": "github-pages",
+    "branch": "gh-pages",
+    "domain": "sppwlkb.github.io",
+    "path": "/guangqing-temple-accounting/",
+    "url": "https://sppwlkb.github.io/guangqing-temple-accounting/"
+  },
+  "build": {
+    "type": "static",
+    "outputDir": "dist",
+    "files": [
+      "index.html",
+      "style.css", 
+      "app.js",
+      "firebase-config.js",
+      "cloud-sync.js",
+      "offline-storage.js",
+      "manifest.json",
+      "service-worker.js"
+    ],
+    "additionalFiles": [
+      ".nojekyll"
+    ]
+  },
+  "ci": {
+    "provider": "github-actions",
+    "workflow": ".github/workflows/deploy.yml",
+    "triggers": [
+      "push:main",
+      "pull_request:main",
+      "workflow_dispatch"
+    ]
+  },
+  "scripts": {
+    "local": {
+      "windows": {
+        "bat": "auto-deploy.bat",
+        "powershell": "auto-deploy.ps1"
+      },
+      "npm": {
+        "deploy": "npm run deploy",
+        "deploy:bat": "npm run deploy:bat", 
+        "deploy:quick": "npm run deploy:quick"
+      }
+    }
+  },
+  "monitoring": {
+    "actions": "https://github.com/sppwlkb/guangqing-temple-accounting/actions",
+    "pages": "https://github.com/sppwlkb/guangqing-temple-accounting/settings/pages"
+  },
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-31"
+} 

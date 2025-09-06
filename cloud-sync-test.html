@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雲端同步功能測試</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .test-area {
+            background: white;
+            color: #333;
+            padding: 30px 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .btn-success {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-info {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .status {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏛️ 廣清宮記帳軟體</h1>
+        <h2>☁️ 雲端同步測試</h2>
+        
+        <div class="test-area">
+            <h3 style="margin-bottom: 20px;">功能測試區域</h3>
+            
+            <button class="btn btn-success" onclick="testUpload()">
+                ☁️ 測試上傳
+            </button>
+            
+            <button class="btn btn-info" onclick="testDownload()">
+                📥 測試下載
+            </button>
+            
+            <div class="status" id="status">
+                <p><strong>狀態：</strong>等待測試...</p>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    如果您能看到此頁面，表示網站已正常載入
+                </p>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <a href="./index-enhanced.html" class="btn btn-warning">
+                🚀 進入完整版軟體
+            </a>
+        </div>
+        
+        <div style="margin-top: 30px; font-size: 12px; opacity: 0.8;">
+            <p>測試時間: <span id="time"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // 顯示當前時間
+        document.getElementById('time').textContent = new Date().toLocaleString('zh-TW');
+        
+        function updateStatus(message, color = '#007bff') {
+            const status = document.getElementById('status');
+            status.innerHTML = `
+                <p><strong>狀態：</strong>${message}</p>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    測試時間: ${new Date().toLocaleString('zh-TW')}
+                </p>
+            `;
+            status.style.borderLeftColor = color;
+        }
+        
+        function testUpload() {
+            updateStatus('上傳功能測試成功！ ✅', '#4CAF50');
+            alert('🎉 恭喜！上傳功能測試成功！\n\n這表示：\n✅ 頁面正常載入\n✅ JavaScript正常運行\n✅ 按鈕點擊事件正常\n✅ 手機瀏覽器相容性良好\n\n接下來請點擊「進入完整版軟體」使用真正的雲端同步功能！');
+        }
+        
+        function testDownload() {
+            updateStatus('下載功能測試成功！ ✅', '#2196F3');
+            alert('🎉 恭喜！下載功能測試成功！\n\n請按照以下步驟使用真正的雲端同步：\n\n1. 點擊「進入完整版軟體」\n2. 點擊右上角👤圖標登入帳號\n3. 新增一些測試資料\n4. 使用真正的☁️上傳和📥下載功能');
+        }
+    </script>
+</body>
+</html>

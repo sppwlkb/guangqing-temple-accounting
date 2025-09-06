@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雲端同步測試 - 廣清宮記帳軟體</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .btn-primary {
+            background: #2196F3;
+        }
+        .btn-primary:hover {
+            background: #1976D2;
+        }
+        .btn-warning {
+            background: #ff9800;
+        }
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+        .status-box {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏛️ 廣清宮記帳軟體 - 雲端同步測試</h1>
+        
+        <div class="section">
+            <h2>📊 同步狀態</h2>
+            <div class="status-box">
+                <div id="sync-status">載入中...</div>
+            </div>
+            <button class="btn btn-primary" onclick="updateStatus()">🔄 更新狀態</button>
+        </div>
+
+        <div class="section">
+            <h2>☁️ 雲端操作</h2>
+            <button class="btn" onclick="testSyncToCloud()">📤 測試上傳到雲端</button>
+            <button class="btn btn-primary" onclick="testSyncFromCloud()">📥 測試從雲端下載</button>
+            <button class="btn btn-warning" onclick="generateTestData()">🎲 生成測試數據</button>
+        </div>
+
+        <div class="section">
+            <h2>📱 QR Code 測試</h2>
+            <button class="btn" onclick="showQRCode()">📱 顯示安裝 QR Code</button>
+            <button class="btn btn-primary" onclick="copyInstallLink()">📋 複製安裝連結</button>
+        </div>
+
+        <div class="section">
+            <h2>🧪 測試結果</h2>
+            <div id="test-results" class="test-result">等待測試...</div>
+        </div>
+
+        <div class="section">
+            <h2>🔗 快速連結</h2>
+            <a href="index-enhanced.html" class="btn">🏠 返回主程式</a>
+            <a href="import-test-data.html" class="btn btn-primary">📥 數據匯入工具</a>
+        </div>
+    </div>
+
+    <!-- 載入必要的腳本 -->
+    <script src="cloud-sync.js"></script>
+    <script src="qrcode-generator.js"></script>
+
+    <script>
+        let testResults = [];
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            testResults.push(`[${timestamp}] ${message}`);
+            document.getElementById('test-results').textContent = testResults.join('\n');
+        }
+
+        function updateStatus() {
+            if (typeof window.cloudSync !== 'undefined') {
+                const status = window.cloudSync.getSyncStatus();
+                document.getElementById('sync-status').innerHTML = `
+                    🌐 網路狀態: <span style="color: ${status.isOnline ? '#4CAF50' : '#f44336'}">${status.isOnline ? '🟢 已連線' : '🔴 離線'}</span><br>
+                    🆔 同步ID: <strong>${status.syncId || '未設定'}</strong><br>
+                    ⏰ 最後同步: <strong>${status.lastSyncTime}</strong><br>
+                    📊 雲端數據: <span style="color: ${status.hasCloudData ? '#4CAF50' : '#f44336'}">${status.hasCloudData ? '✅ 已設定' : '❌ 未設定'}</span>
+                `;
+                log('✅ 同步狀態已更新');
+            } else {
+                document.getElementById('sync-status').innerHTML = '❌ 雲端同步服務未載入';
+                log('❌ 雲端同步服務未載入');
+            }
+        }
+
+        async function testSyncToCloud() {
+            log('🚀 開始測試上傳到雲端...');
+            
+            if (typeof window.cloudSync === 'undefined') {
+                log('❌ 雲端同步服務未載入');
+                return;
+            }
+
+            try {
+                const result = await window.cloudSync.syncToCloud();
+                if (result.success) {
+                    log(`✅ 上傳成功: ${result.message}`);
+                    log(`📅 同步時間: ${result.syncTime}`);
+                    log(`🆔 同步ID: ${result.syncId}`);
+                } else {
+                    log(`❌ 上傳失敗: ${result.message}`);
+                }
+                updateStatus();
+            } catch (error) {
+                log(`❌ 上傳錯誤: ${error.message}`);
+            }
+        }
+
+        async function testSyncFromCloud() {
+            log('🚀 開始測試從雲端下載...');
+            
+            if (typeof window.cloudSync === 'undefined') {
+                log('❌ 雲端同步服務未載入');
+                return;
+            }
+
+            try {
+                const result = await window.cloudSync.syncFromCloud();
+                if (result.success) {
+                    log(`✅ 下載成功: ${result.message}`);
+                    log(`📊 財務記錄: ${result.recordsCount} 筆`);
+                    log(`👥 信眾資料: ${result.believersCount} 筆`);
+                } else {
+                    log(`❌ 下載失敗: ${result.message}`);
+                }
+                updateStatus();
+            } catch (error) {
+                log(`❌ 下載錯誤: ${error.message}`);
+            }
+        }
+
+        function generateTestData() {
+            log('🎲 生成測試數據...');
+            
+            // 生成一些測試數據
+            const testRecords = [
+                {
+                    id: Date.now(),
+                    type: 'income',
+                    category: '香油錢',
+                    amount: 500,
+                    date: new Date().toISOString().split('T')[0],
+                    description: '測試香油錢',
+                    donor: '測試信眾',
+                    createdAt: new Date().toISOString()
+                }
+            ];
+
+            const testBelievers = [
+                {
+                    name: '測試信眾',
+                    birthday: '1980-01-01',
+                    phone: '0912345678',
+                    email: 'test@example.com',
+                    address: '測試地址',
+                    totalDonation: 500,
+                    donationCount: 1,
+                    createdAt: new Date().toISOString()
+                }
+            ];
+
+            localStorage.setItem('temple-records', JSON.stringify(testRecords));
+            localStorage.setItem('temple-believers', JSON.stringify(testBelievers));
+            localStorage.setItem('temple-reminders', JSON.stringify([]));
+
+            log('✅ 測試數據已生成');
+            log(`📊 財務記錄: ${testRecords.length} 筆`);
+            log(`👥 信眾資料: ${testBelievers.length} 筆`);
+        }
+
+        function showQRCode() {
+            log('📱 顯示安裝 QR Code...');
+            
+            if (typeof window.qrGenerator !== 'undefined') {
+                window.qrGenerator.showInstallQR();
+                log('✅ QR Code 已顯示');
+            } else {
+                log('❌ QR Code 生成器未載入');
+            }
+        }
+
+        function copyInstallLink() {
+            if (typeof window.cloudSync !== 'undefined') {
+                const qrData = window.cloudSync.generateQRData();
+                navigator.clipboard.writeText(qrData.url).then(() => {
+                    log('✅ 安裝連結已複製到剪貼簿');
+                    log(`🔗 連結: ${qrData.url}`);
+                }).catch(() => {
+                    log('❌ 複製失敗');
+                });
+            } else {
+                log('❌ 雲端同步服務未載入');
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🚀 雲端同步測試頁面已載入');
+            setTimeout(updateStatus, 1000);
+        });
+    </script>
+</body>
+</html>

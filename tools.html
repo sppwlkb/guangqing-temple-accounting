@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宮廟軟體 - 修復工具組</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .tool-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .tool-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        .tool-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .tool-description {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .tool-status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .status-critical { background: #f8d7da; color: #721c24; }
+        .status-important { background: #fff3cd; color: #856404; }
+        .status-useful { background: #d4edda; color: #155724; }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        .alert {
+            background: white;
+            border-left: 4px solid #dc3545;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛠️ 宮廟軟體修復工具組</h1>
+            <p>解決所有常見問題，確保軟體正常運行</p>
+        </div>
+
+        <div class="alert">
+            <h3 style="margin-top: 0; color: #dc3545;">🚨 重要提醒</h3>
+            <p>如果您遇到任何問題，請優先使用下方對應的修復工具。所有工具都經過測試，可以安全使用。</p>
+            <p><strong>付費用戶：</strong>如果修復工具無法解決問題，請立即聯絡我們的付費支援服務。</p>
+        </div>
+
+        <div class="tools-grid">
+            <!-- IndexedDB修復工具 -->
+            <div class="tool-card">
+                <div class="tool-icon">🗄️</div>
+                <div class="tool-title">IndexedDB 修復工具</div>
+                <div class="tool-status status-critical">緊急修復</div>
+                <div class="tool-description">
+                    解決「Failed to execute 'index' on 'IDBObjectStore'」錯誤。
+                    如果系統出現資料庫相關錯誤，請立即使用此工具。
+                </div>
+                <a href="indexeddb-reset.html" class="btn btn-danger" onclick="return checkAndOpen(this)">
+                    🔧 立即修復
+                </a>
+            </div>
+
+            <!-- 發財金修復工具 -->
+            <div class="tool-card">
+                <div class="tool-icon">💰</div>
+                <div class="tool-title">發財金類別修復</div>
+                <div class="tool-status status-important">常用修復</div>
+                <div class="tool-description">
+                    專門修復「發財金」等自訂收入類別消失的問題。
+                    如果您新增的類別重新載入後不見了，請使用此工具。
+                </div>
+                <a href="facai-fix.html" class="btn btn-success" onclick="return checkAndOpen(this)">
+                    💰 修復發財金
+                </a>
+            </div>
+
+            <!-- 類別修復工具 -->
+            <div class="tool-card">
+                <div class="tool-icon">📋</div>
+                <div class="tool-title">完整類別修復工具</div>
+                <div class="tool-status status-important">全面診斷</div>
+                <div class="tool-description">
+                    診斷和修復所有類別相關問題。
+                    提供詳細的診斷報告和一鍵修復功能。
+                </div>
+                <a href="category-repair-tool.html" class="btn btn-warning" onclick="return checkAndOpen(this)">
+                    🔍 診斷修復
+                </a>
+            </div>
+
+            <!-- 系統健康檢查 -->
+            <div class="tool-card">
+                <div class="tool-icon">🏥</div>
+                <div class="tool-title">系統健康檢查</div>
+                <div class="tool-status status-useful">預防檢查</div>
+                <div class="tool-description">
+                    全面檢查系統健康狀況，預防問題發生。
+                    建議定期使用以確保系統穩定運行。
+                </div>
+                <a href="system-health-dashboard.html" class="btn btn-success" onclick="return checkAndOpen(this)">
+                    📊 健康檢查
+                </a>
+            </div>
+
+            <!-- 個資保護中心 -->
+            <div class="tool-card">
+                <div class="tool-icon">🛡️</div>
+                <div class="tool-title">個資保護中心</div>
+                <div class="tool-status status-useful">法規遵循</div>
+                <div class="tool-description">
+                    管理個人資料保護設定，確保符合個資法規範。
+                    包含隱私政策、同意書管理等功能。
+                </div>
+                <a href="privacy-quick-access.html" class="btn" onclick="return checkAndOpen(this)">
+                    🔐 個資管理
+                </a>
+            </div>
+
+            <!-- 紅包贊助功能 -->
+            <div class="tool-card">
+                <div class="tool-icon">🧧</div>
+                <div class="tool-title">紅包贊助功能</div>
+                <div class="tool-status status-useful">功能升級</div>
+                <div class="tool-description">
+                    體驗和管理紅包贊助功能，解鎖進階和專業功能。
+                    包含試用、驗證碼輸入等功能。
+                </div>
+                <a href="donation-demo.html" class="btn btn-warning" onclick="return checkAndOpen(this)">
+                    🎁 贊助功能
+                </a>
+            </div>
+        </div>
+
+        <div style="background: white; border-radius: 15px; padding: 25px; margin-top: 30px; text-align: center;">
+            <h3 style="color: #8b4513; margin-bottom: 15px;">🎯 使用指南</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; text-align: left;">
+                <div>
+                    <h4>🚨 緊急問題</h4>
+                    <p>系統錯誤、無法使用</p>
+                    <p>→ 使用 IndexedDB 修復工具</p>
+                </div>
+                <div>
+                    <h4>💰 類別問題</h4>
+                    <p>發財金等類別消失</p>
+                    <p>→ 使用發財金修復工具</p>
+                </div>
+                <div>
+                    <h4>🔍 預防檢查</h4>
+                    <p>定期系統健康檢查</p>
+                    <p>→ 使用健康檢查工具</p>
+                </div>
+                <div>
+                    <h4>📞 需要幫助</h4>
+                    <p>工具無法解決問題</p>
+                    <p>→ 聯絡付費支援服務</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="index-enhanced.html" class="btn btn-success" style="font-size: 18px; padding: 15px 30px;">
+                ← 返回主頁面
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // 檢查並開啟連結
+        function checkAndOpen(link) {
+            const href = link.getAttribute('href');
+            
+            // 嘗試訪問檔案
+            fetch(href)
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = href;
+                    } else {
+                        showFileNotFoundError(href);
+                    }
+                })
+                .catch(error => {
+                    showFileNotFoundError(href);
+                });
+            
+            return false; // 阻止預設連結行為
+        }
+
+        // 顯示檔案未找到錯誤
+        function showFileNotFoundError(filename) {
+            const errorHTML = `
+                <div id="file-error" style="
+                    position: fixed; 
+                    top: 0; left: 0; 
+                    width: 100%; height: 100%; 
+                    background: rgba(0,0,0,0.8); 
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <div style="
+                        background: white;
+                        padding: 30px; 
+                        border-radius: 15px; 
+                        max-width: 500px; 
+                        width: 90%;
+                        text-align: center;
+                    ">
+                        <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                        <h2 style="color: #dc3545; margin-bottom: 15px;">檔案暫時無法訪問</h2>
+                        
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; text-align: left;">
+                            <strong>檔案：</strong>${filename}<br>
+                            <strong>狀態：</strong>404 - 檔案未找到<br>
+                            <strong>原因：</strong>GitHub Pages 可能還在更新中
+                        </div>
+                        
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                            <strong>🔧 解決方案：</strong><br>
+                            1. 等待 3-5 分鐘讓 GitHub Pages 更新<br>
+                            2. 重新整理此頁面<br>
+                            3. 如果持續無法訪問，請聯絡技術支援
+                        </div>
+                        
+                        <div style="margin-top: 20px;">
+                            <button onclick="location.reload()" style="
+                                background: #28a745; 
+                                color: white; 
+                                border: none; 
+                                padding: 12px 25px; 
+                                border-radius: 8px; 
+                                font-weight: bold; 
+                                cursor: pointer;
+                                margin-right: 10px;
+                            ">🔄 重新載入</button>
+                            
+                            <button onclick="closeErrorDialog()" style="
+                                background: #6c757d; 
+                                color: white; 
+                                border: none; 
+                                padding: 12px 25px; 
+                                border-radius: 8px; 
+                                cursor: pointer;
+                            ">關閉</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', errorHTML);
+        }
+
+        function closeErrorDialog() {
+            const dialog = document.getElementById('file-error');
+            if (dialog) dialog.remove();
+        }
+
+        // 頁面載入時檢查所有工具的可用性
+        window.addEventListener('load', function() {
+            const tools = [
+                'indexeddb-reset.html',
+                'facai-fix.html', 
+                'category-repair-tool.html',
+                'system-health-dashboard.html',
+                'privacy-quick-access.html',
+                'donation-demo.html'
+            ];
+            
+            console.log('🔍 檢查修復工具可用性...');
+            
+            tools.forEach(tool => {
+                fetch(tool)
+                    .then(response => {
+                        if (response.ok) {
+                            console.log(`✅ ${tool} 可用`);
+                        } else {
+                            console.log(`❌ ${tool} 不可用 (${response.status})`);
+                        }
+                    })
+                    .catch(error => {
+                        console.log(`❌ ${tool} 檢查失敗:`, error);
+                    });
+            });
+        });
+    </script>
+</body>
+</html> 

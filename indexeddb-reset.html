@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IndexedDB 重置工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b6b, #ffa500);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 700px;
+            width: 100%;
+            text-align: center;
+        }
+        .header {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        .title {
+            font-size: 28px;
+            color: #dc3545;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .alert-danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">🗄️</div>
+        <div class="title">IndexedDB 重置工具</div>
+        
+        <div class="alert alert-danger">
+            <h4>⚠️ 檢測到 IndexedDB 錯誤</h4>
+            <p><strong>錯誤訊息：</strong>Failed to execute 'index' on 'IDBObjectStore': The specified index was not found.</p>
+            <p><strong>原因：</strong>資料庫結構與程式碼不匹配，缺少必要的索引。</p>
+        </div>
+
+        <div class="alert alert-warning">
+            <h4>🔧 解決方案</h4>
+            <p>重置 IndexedDB 資料庫可以解決索引錯誤問題。這個操作會：</p>
+            <ul>
+                <li>✅ 刪除舊的資料庫結構</li>
+                <li>✅ 重新創建正確的索引</li>
+                <li>✅ 保留您的重要資料到 localStorage</li>
+                <li>✅ 修復所有結構性問題</li>
+            </ul>
+        </div>
+
+        <div style="margin: 30px 0;">
+            <button class="btn btn-primary" onclick="checkDatabaseStatus()">
+                🔍 檢查資料庫狀態
+            </button>
+            <button class="btn btn-danger" onclick="resetIndexedDB()">
+                🗄️ 重置 IndexedDB
+            </button>
+            <button class="btn btn-success" onclick="backupToLocalStorage()">
+                💾 備份到 localStorage
+            </button>
+        </div>
+
+        <div id="status-log" class="log">
+            點擊上方按鈕開始診斷...
+        </div>
+
+        <div class="alert alert-success" style="display: none;" id="success-message">
+            <h4>✅ 修復完成</h4>
+            <p>IndexedDB 已成功重置，所有錯誤應該已解決。</p>
+            <p><strong>下一步：</strong>返回主頁面，系統應該正常運作。</p>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <a href="index-enhanced.html" class="btn btn-primary">
+                ← 返回主頁面
+            </a>
+            <a href="facai-fix.html" class="btn btn-success">
+                💰 修復發財金類別
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let logMessages = [];
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = {
+                'info': 'ℹ️',
+                'success': '✅',
+                'warning': '⚠️',
+                'error': '❌'
+            }[type] || 'ℹ️';
+            
+            logMessages.push(`[${timestamp}] ${prefix} ${message}`);
+            updateLogDisplay();
+        }
+        
+        function updateLogDisplay() {
+            const logElement = document.getElementById('status-log');
+            logElement.innerHTML = logMessages.slice(-20).join('<br>');
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        // 檢查資料庫狀態
+        async function checkDatabaseStatus() {
+            addLog('開始檢查 IndexedDB 狀態...', 'info');
+            
+            try {
+                // 檢查資料庫是否存在
+                const databases = await indexedDB.databases();
+                const templeDB = databases.find(db => db.name === 'GuangqingTempleDB');
+                
+                if (templeDB) {
+                    addLog(`找到資料庫：${templeDB.name} (版本 ${templeDB.version})`, 'success');
+                    
+                    // 嘗試開啟資料庫檢查結構
+                    const request = indexedDB.open('GuangqingTempleDB');
+                    request.onsuccess = (event) => {
+                        const db = event.target.result;
+                        addLog(`資料庫開啟成功，版本：${db.version}`, 'success');
+                        
+                        // 檢查物件存儲
+                        const storeNames = Array.from(db.objectStoreNames);
+                        addLog(`物件存儲：${storeNames.join(', ')}`, 'info');
+                        
+                        // 檢查 syncQueue 的索引
+                        if (storeNames.includes('syncQueue')) {
+                            const transaction = db.transaction(['syncQueue'], 'readonly');
+                            const store = transaction.objectStore('syncQueue');
+                            const indexNames = Array.from(store.indexNames);
+                            addLog(`syncQueue 索引：${indexNames.join(', ')}`, 'info');
+                            
+                            if (!indexNames.includes('synced')) {
+                                addLog('❌ 缺少 synced 索引，這是錯誤的原因！', 'error');
+                            } else {
+                                addLog('✅ synced 索引存在', 'success');
+                            }
+                        } else {
+                            addLog('❌ syncQueue 存儲不存在', 'error');
+                        }
+                        
+                        db.close();
+                    };
+                    
+                    request.onerror = () => {
+                        addLog('❌ 無法開啟資料庫', 'error');
+                    };
+                } else {
+                    addLog('未找到 GuangqingTempleDB 資料庫', 'warning');
+                }
+            } catch (error) {
+                addLog(`檢查失敗：${error.message}`, 'error');
+            }
+        }
+        
+        // 備份到 localStorage
+        async function backupToLocalStorage() {
+            addLog('開始備份資料到 localStorage...', 'info');
+            
+            try {
+                const request = indexedDB.open('GuangqingTempleDB');
+                request.onsuccess = async (event) => {
+                    const db = event.target.result;
+                    const storeNames = ['records', 'believers', 'reminders', 'categories'];
+                    
+                    for (const storeName of storeNames) {
+                        if (db.objectStoreNames.contains(storeName)) {
+                            try {
+                                const transaction = db.transaction([storeName], 'readonly');
+                                const store = transaction.objectStore(storeName);
+                                const request = store.getAll();
+                                
+                                request.onsuccess = () => {
+                                    const data = request.result;
+                                    localStorage.setItem(`indexeddb-backup-${storeName}`, JSON.stringify(data));
+                                    addLog(`✅ ${storeName} 已備份 (${data.length} 筆記錄)`, 'success');
+                                };
+                            } catch (error) {
+                                addLog(`❌ 備份 ${storeName} 失敗：${error.message}`, 'error');
+                            }
+                        }
+                    }
+                    
+                    db.close();
+                    addLog('📦 所有資料已備份到 localStorage', 'success');
+                };
+                
+                request.onerror = () => {
+                    addLog('❌ 無法開啟資料庫進行備份', 'error');
+                };
+            } catch (error) {
+                addLog(`備份失敗：${error.message}`, 'error');
+            }
+        }
+        
+        // 重置 IndexedDB
+        async function resetIndexedDB() {
+            if (!confirm('⚠️ 確定要重置 IndexedDB 嗎？\n\n這會刪除資料庫並重新創建正確的結構。\n建議先執行「備份到 localStorage」。')) {
+                return;
+            }
+            
+            addLog('🗄️ 開始重置 IndexedDB...', 'warning');
+            
+            try {
+                // 1. 先備份資料
+                await backupToLocalStorage();
+                
+                // 2. 刪除現有資料庫
+                const deleteRequest = indexedDB.deleteDatabase('GuangqingTempleDB');
+                
+                deleteRequest.onsuccess = () => {
+                    addLog('✅ 舊資料庫已刪除', 'success');
+                    
+                    // 3. 重新載入頁面讓系統重新創建資料庫
+                    setTimeout(() => {
+                        addLog('🔄 即將重新載入頁面重建資料庫...', 'info');
+                        document.getElementById('success-message').style.display = 'block';
+                        
+                        setTimeout(() => {
+                            if (confirm('IndexedDB 重置完成！\n\n是否要重新載入頁面以重建資料庫？')) {
+                                window.location.reload();
+                            }
+                        }, 2000);
+                    }, 1000);
+                };
+                
+                deleteRequest.onerror = () => {
+                    addLog('❌ 刪除資料庫失敗', 'error');
+                };
+                
+                deleteRequest.onblocked = () => {
+                    addLog('⚠️ 資料庫被其他頁面使用，請關閉所有宮廟軟體頁面後重試', 'warning');
+                };
+                
+            } catch (error) {
+                addLog(`重置失敗：${error.message}`, 'error');
+            }
+        }
+        
+        // 頁面載入時自動檢查
+        window.addEventListener('load', function() {
+            addLog('IndexedDB 重置工具已載入', 'info');
+            addLog('建議步驟：1. 檢查狀態 → 2. 備份資料 → 3. 重置資料庫', 'info');
+        });
+    </script>
+</body>
+</html> 

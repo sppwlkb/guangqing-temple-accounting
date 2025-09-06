@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宮廟軟體 - 紅包贊助功能展示</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #fff8e1, #f8f9fa);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #8b4513, #d4af37);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .feature-card.premium {
+            border-color: #d4af37;
+            background: linear-gradient(135deg, #fff8e1, #ffffff);
+        }
+        .feature-card.professional {
+            border-color: #dc3545;
+            background: linear-gradient(135deg, #fff0f0, #ffffff);
+        }
+        .tier-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tier-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .tier-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .tier-price {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .tier-description {
+            color: #666;
+            font-size: 14px;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+        .btn-free {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-premium {
+            background-color: #d4af37;
+            color: white;
+        }
+        .btn-professional {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .demo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .demo-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            border: 2px solid #d4af37;
+            border-radius: 8px;
+            background: white;
+            color: #8b4513;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .demo-button:hover {
+            background: #d4af37;
+            color: white;
+        }
+        .demo-button.locked {
+            border-color: #ccc;
+            color: #999;
+            cursor: not-allowed;
+        }
+        .demo-button.locked:hover {
+            background: white;
+            color: #999;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-free { background-color: #28a745; }
+        .status-premium { background-color: #d4af37; }
+        .status-professional { background-color: #dc3545; }
+        .status-locked { background-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧧 宮廟軟體紅包贊助計劃</h1>
+            <p>以感恩的心支持軟體發展，獲得更豐富的功能體驗</p>
+        </div>
+
+        <!-- 當前狀態顯示 -->
+        <div class="demo-section">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">📊 您的當前狀態</h2>
+            <div id="current-status">
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <span class="status-indicator status-free"></span>
+                    <strong>當前等級：</strong><span id="current-tier-name">基礎功能</span>
+                    <div style="margin-top: 10px; color: #666;">
+                        <span id="tier-description">完全免費使用基本功能</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能分級展示 -->
+        <div class="feature-grid">
+            <!-- 基礎功能 -->
+            <div class="feature-card">
+                <div class="tier-header">
+                    <div class="tier-icon">🆓</div>
+                    <div class="tier-name" style="color: #28a745;">基礎功能</div>
+                    <div class="tier-price" style="color: #28a745;">完全免費</div>
+                    <div class="tier-description">適合小型宮廟使用</div>
+                </div>
+                <ul class="feature-list">
+                    <li>✅ 基本收支記錄</li>
+                    <li>✅ 簡單分類管理</li>
+                    <li>✅ 基礎報表查看</li>
+                    <li>✅ 信眾基本資料</li>
+                    <li>✅ 個資保護功能</li>
+                    <li>✅ 本地資料儲存</li>
+                </ul>
+                <div style="color: #666; font-size: 14px; margin-top: 15px;">
+                    <strong>限制：</strong>1000筆記錄，200位信眾，1位使用者
+                </div>
+                <button class="btn btn-free" onclick="alert('基礎功能永遠免費使用！')">
+                    永遠免費 🎉
+                </button>
+            </div>
+
+            <!-- 進階功能 -->
+            <div class="feature-card premium">
+                <div class="tier-header">
+                    <div class="tier-icon">🧧</div>
+                    <div class="tier-name" style="color: #d4af37;">進階功能</div>
+                    <div class="tier-price" style="color: #d4af37;">NT$ 888 / 年</div>
+                    <div class="tier-description">適合中型宮廟使用</div>
+                </div>
+                <ul class="feature-list">
+                    <li>🌟 所有基礎功能</li>
+                    <li>📊 進階統計報表</li>
+                    <li>☁️ Firebase雲端同步</li>
+                    <li>👥 多使用者管理（5人）</li>
+                    <li>🔔 智能提醒功能</li>
+                    <li>📱 手機App功能</li>
+                    <li>💾 自動備份</li>
+                    <li>🎨 主題自訂</li>
+                </ul>
+                <div style="color: #666; font-size: 14px; margin-top: 15px;">
+                    <strong>限制：</strong>10000筆記錄，2000位信眾，5位使用者
+                </div>
+                <button class="btn btn-premium" onclick="tryPremiumFeature()">
+                    🎁 免費試用 7 天
+                </button>
+            </div>
+
+            <!-- 專業功能 -->
+            <div class="feature-card professional">
+                <div class="tier-header">
+                    <div class="tier-icon">🎊</div>
+                    <div class="tier-name" style="color: #dc3545;">專業功能</div>
+                    <div class="tier-price" style="color: #dc3545;">NT$ 1,688 / 年</div>
+                    <div class="tier-description">適合大型宮廟使用</div>
+                </div>
+                <ul class="feature-list">
+                    <li>⭐ 所有進階功能</li>
+                    <li>📈 深度數據分析</li>
+                    <li>🔗 第三方系統整合</li>
+                    <li>📋 客製化報表設計</li>
+                    <li>🛠️ 優先技術支援</li>
+                    <li>📞 專屬客服熱線</li>
+                    <li>💼 專屬客戶經理</li>
+                    <li>🎓 免費使用者培訓</li>
+                </ul>
+                <div style="color: #666; font-size: 14px; margin-top: 15px;">
+                    <strong>無限制使用</strong> - 所有功能完全開放
+                </div>
+                <button class="btn btn-professional" onclick="tryProfessionalFeature()">
+                    🎁 免費試用 7 天
+                </button>
+            </div>
+        </div>
+
+        <!-- 功能展示區 -->
+        <div class="demo-section">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">🎮 功能展示區</h2>
+            <p style="color: #666; margin-bottom: 20px;">點擊下方按鈕體驗不同功能等級的限制</p>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>🆓 基礎功能（永遠免費）</h3>
+                <button class="demo-button" onclick="demoBasicFunction('基本記帳')">基本記帳</button>
+                <button class="demo-button" onclick="demoBasicFunction('簡單報表')">簡單報表</button>
+                <button class="demo-button" onclick="demoBasicFunction('信眾管理')">信眾管理</button>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>🧧 進階功能（需要小紅包）</h3>
+                <button class="demo-button locked" onclick="demoLockedFunction('進階報表', 'premium')">📊 進階報表</button>
+                <button class="demo-button locked" onclick="demoLockedFunction('雲端同步', 'premium')">☁️ 雲端同步</button>
+                <button class="demo-button locked" onclick="demoLockedFunction('多使用者', 'premium')">👥 多使用者</button>
+                <button class="demo-button locked" onclick="demoLockedFunction('智能提醒', 'premium')">🔔 智能提醒</button>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <h3>🎊 專業功能（需要大紅包）</h3>
+                <button class="demo-button locked" onclick="demoLockedFunction('深度分析', 'professional')">📈 深度分析</button>
+                <button class="demo-button locked" onclick="demoLockedFunction('系統整合', 'professional')">🔗 系統整合</button>
+                <button class="demo-button locked" onclick="demoLockedFunction('客製報表', 'professional')">📋 客製報表</button>
+                <button class="demo-button locked" onclick="demoLockedFunction('專屬支援', 'professional')">🛠️ 專屬支援</button>
+            </div>
+        </div>
+
+        <!-- 贊助統計 -->
+        <div class="demo-section">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">📈 贊助統計</h2>
+            <div id="donation-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <!-- 統計內容將由JavaScript填入 -->
+            </div>
+        </div>
+
+        <!-- 感謝榜 -->
+        <div class="demo-section">
+            <h2 style="color: #8b4513; margin-bottom: 20px;">🙏 感謝榜</h2>
+            <div style="text-align: center; color: #666;">
+                <p>感謝以下宮廟對軟體發展的支持：</p>
+                <div id="gratitude-list" style="margin-top: 20px;">
+                    <div style="display: inline-block; margin: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-weight: bold;">🏛️ 廣清宮</div>
+                        <div style="font-size: 14px; color: #d4af37;">創始贊助者</div>
+                    </div>
+                    <div style="display: inline-block; margin: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-weight: bold;">🏛️ 示例宮廟A</div>
+                        <div style="font-size: 14px; color: #28a745;">進階功能贊助者</div>
+                    </div>
+                    <div style="display: inline-block; margin: 10px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <div style="font-weight: bold;">🏛️ 示例宮廟B</div>
+                        <div style="font-size: 14px; color: #dc3545;">專業功能贊助者</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="donation-system.js"></script>
+    <script>
+        // 展示基礎功能
+        function demoBasicFunction(featureName) {
+            alert(`✅ ${featureName} 功能\n\n這是基礎功能，永遠免費使用！\n\n您可以盡情使用所有基本的記帳和管理功能。`);
+        }
+
+        // 展示鎖定功能
+        function demoLockedFunction(featureName, requiredTier) {
+            // 這會觸發紅包邀請對話框
+            window.donationManager.showDonationInvite(featureName);
+        }
+
+        // 試用進階功能
+        function tryPremiumFeature() {
+            window.donationManager.showDonationInvite('進階功能');
+        }
+
+        // 試用專業功能
+        function tryProfessionalFeature() {
+            window.donationManager.showDonationInvite('專業功能');
+        }
+
+        // 更新當前狀態顯示
+        function updateCurrentStatus() {
+            if (!window.donationManager) return;
+            
+            const report = window.donationManager.getFeatureReport();
+            const tierNames = {
+                'free': '基礎功能',
+                'premium': '進階功能',
+                'professional': '專業功能'
+            };
+            
+            const tierColors = {
+                'free': 'status-free',
+                'premium': 'status-premium', 
+                'professional': 'status-professional'
+            };
+            
+            document.getElementById('current-tier-name').textContent = tierNames[report.currentTier];
+            document.querySelector('#current-status .status-indicator').className = 
+                `status-indicator ${tierColors[report.currentTier]}`;
+            
+            let description = `功能等級：${tierNames[report.currentTier]}`;
+            if (report.expiresAt) {
+                const expiresDate = new Date(report.expiresAt);
+                description += `，到期時間：${expiresDate.toLocaleDateString('zh-TW')}`;
+            }
+            document.getElementById('tier-description').textContent = description;
+        }
+
+        // 更新贊助統計
+        function updateDonationStats() {
+            if (!window.donationManager) return;
+            
+            const report = window.donationManager.getFeatureReport();
+            const statsElement = document.getElementById('donation-stats');
+            
+            statsElement.innerHTML = `
+                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #8b4513;">${report.totalDonations}</div>
+                    <div style="color: #666;">總贊助次數</div>
+                </div>
+                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #d4af37;">NT$ ${report.totalAmount}</div>
+                    <div style="color: #666;">累計贊助金額</div>
+                </div>
+                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-size: 24px; font-weight: bold; color: #28a745;">${report.currentTier}</div>
+                    <div style="color: #666;">當前功能等級</div>
+                </div>
+            `;
+        }
+
+        // 頁面載入完成後初始化
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                updateCurrentStatus();
+                updateDonationStats();
+            }, 1000);
+        });
+
+        // 定期更新狀態
+        setInterval(() => {
+            updateCurrentStatus();
+            updateDonationStats();
+        }, 5000);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase 連接測試</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase 連接測試</h1>
+        
+        <div class="status" id="status">等待測試...</div>
+        
+        <div>
+            <button class="btn" onclick="testFirebaseInit()">🚀 測試 Firebase 初始化</button>
+            <button class="btn" onclick="testAnonymousLogin()">👤 測試匿名登入</button>
+            <button class="btn" onclick="testDownload()">📥 測試下載資料</button>
+            <button class="btn" onclick="clearLog()">🗑️ 清除日誌</button>
+        </div>
+        
+        <div class="log" id="log">準備測試 Firebase 連接...</div>
+    </div>
+
+    <!-- 載入 Firebase 配置 -->
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        const logElement = document.getElementById('log');
+        const statusElement = document.getElementById('status');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        function setStatus(message, type = 'warning') {
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+        
+        function clearLog() {
+            logElement.textContent = '';
+        }
+        
+        async function testFirebaseInit() {
+            log('=== 開始測試 Firebase 初始化 ===');
+            
+            if (typeof window.firebaseCloud === 'undefined') {
+                log('❌ FirebaseCloudService 未載入');
+                setStatus('Firebase 服務未載入', 'error');
+                return;
+            }
+            
+            log('✅ FirebaseCloudService 已載入');
+            
+            // 檢查狀態
+            const status = window.firebaseCloud.getStatus();
+            log(`📊 Firebase 狀態:`);
+            log(`   - 已初始化: ${status.isInitialized}`);
+            log(`   - 網路狀態: ${status.isOnline}`);
+            log(`   - 本地模式: ${status.localStorageMode}`);
+            log(`   - 用戶狀態: ${status.currentUser ? '已登入' : '未登入'}`);
+            
+            if (status.isInitialized && !status.localStorageMode) {
+                setStatus('Firebase 初始化成功', 'success');
+            } else if (status.localStorageMode) {
+                setStatus('Firebase 運行在本地模式', 'warning');
+            } else {
+                setStatus('Firebase 未正確初始化', 'error');
+            }
+        }
+        
+        async function testAnonymousLogin() {
+            log('=== 開始測試匿名登入 ===');
+            
+            try {
+                const result = await window.firebaseCloud.loginAnonymously();
+                
+                if (result.success) {
+                    log(`✅ 登入成功: ${result.message}`);
+                    log(`👤 用戶 UID: ${result.user.uid}`);
+                    log(`🏷️  用戶名稱: ${result.user.displayName || '無'}`);
+                    setStatus('匿名登入成功', 'success');
+                } else {
+                    log(`❌ 登入失敗: ${result.message}`);
+                    setStatus('匿名登入失敗', 'error');
+                }
+            } catch (error) {
+                log(`❌ 登入錯誤: ${error.message}`);
+                setStatus('登入發生錯誤', 'error');
+            }
+        }
+        
+        async function testDownload() {
+            log('=== 開始測試資料下載 ===');
+            
+            try {
+                const result = await window.firebaseCloud.downloadData();
+                
+                if (result.success) {
+                    log(`✅ 下載成功: ${result.message}`);
+                    log(`📝 記錄數量: ${result.data.records?.length || 0}`);
+                    log(`👥 信眾數量: ${result.data.believers?.length || 0}`);
+                    log(`⏰ 提醒數量: ${result.data.reminders?.length || 0}`);
+                    log(`📅 下載時間: ${result.timestamp}`);
+                    setStatus('資料下載成功', 'success');
+                } else {
+                    log(`❌ 下載失敗: ${result.message}`);
+                    setStatus('資料下載失敗', 'error');
+                }
+            } catch (error) {
+                log(`❌ 下載錯誤: ${error.message}`);
+                setStatus('下載發生錯誤', 'error');
+            }
+        }
+        
+        // 頁面載入時自動執行初始化測試
+        window.addEventListener('load', () => {
+            setTimeout(testFirebaseInit, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>廣清宮快速記帳軟體</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4e73df;
+            --secondary-color: #1cc88a;
+            --accent-color: #36b9cc;
+            --danger-color: #e74a3b;
+            --warning-color: #f6c23e;
+            --dark-color: #5a5c69;
+        }
+        
+        body {
+            background-color: #f8f9fc;
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, #4e73df 0%, #224abe 100%);
+            color: white;
+            min-height: 100vh;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            font-weight: 700;
+        }
+        
+        .income-card {
+            border-left: 0.25rem solid var(--secondary-color);
+        }
+        
+        .expense-card {
+            border-left: 0.25rem solid var(--danger-color);
+        }
+        
+        .balance-card {
+            border-left: 0.25rem solid var(--accent-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-success {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .table th {
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.7rem;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h4 class="text-white"><i class="fas fa-landmark"></i> 廣清宮</h4>
+                        <p class="text-white-50 small">快速記帳系統</p>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" onclick="showSection('dashboard')">
+                                <i class="fas fa-tachometer-alt me-2"></i> 儀表板
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('income')">
+                                <i class="fas fa-arrow-down me-2 text-success"></i> 收入記錄
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('expense')">
+                                <i class="fas fa-arrow-up me-2 text-danger"></i> 支出記錄
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('reports')">
+                                <i class="fas fa-chart-line me-2"></i> 財務報表
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('analysis')">
+                                <i class="fas fa-chart-pie me-2"></i> 財務分析
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('reminders')">
+                                <i class="fas fa-bell me-2"></i> 到期提醒
+                                <span class="badge bg-warning notification-badge">3</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSection('settings')">
+                                <i class="fas fa-cog me-2"></i> 系統設定
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="page-title">儀表板</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-sync-alt"></i> 同步資料
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-cloud-download-alt"></i> 匯出
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Section -->
+                <div id="dashboard-section">
+                    <!-- Summary Cards -->
+                    <div class="row">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2 income-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                本月收入</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ 128,500</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-arrow-down fa-2x text-success"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-danger shadow h-100 py-2 expense-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                                本月支出</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ 45,200</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-arrow-up fa-2x text-danger"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-info shadow h-100 py-2 balance-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                本月結餘</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ 83,300</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-wallet fa-2x text-info"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                上期結餘</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">NT$ 245,600</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-history fa-2x text-primary"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="row">
+                        <div class="col-xl-8 col-lg-7">
+                            <div class="chart-container">
+                                <h5 class="mb-4">收入支出趨勢</h5>
+                                <canvas id="trendChart" height="100"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-5">
+                            <div class="chart-container">
+                                <h5 class="mb-4">收入構成分析</h5>
+                                <canvas id="incomeChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">近期交易記錄</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>日期</th>
+                                            <th>項目</th>
+                                            <th>類型</th>
+                                            <th>金額</th>
+                                            <th>備註</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2024-01-15</td>
+                                            <td>香油錢</td>
+                                            <td><span class="badge bg-success">收入</span></td>
+                                            <td class="text-success">NT$ 15,000</td>
+                                            <td>年初祈福活動</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-01-14</td>
+                                            <td>房租</td>
+                                            <td><span class="badge bg-danger">支出</span></td>
+                                            <td class="text-danger">NT$ 25,000</td>
+                                            <td>廟宇租金</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-01-12</td>
+                                            <td>點光明燈</td>
+                                            <td><span class="badge bg-success">收入</span></td>
+                                            <td class="text-success">NT$ 8,500</td>
+                                            <td>元宵節活動</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-01-10</td>
+                                            <td>修繕費</td>
+                                            <td><span class="badge bg-danger">支出</span></td>
+                                            <td class="text-danger">NT$ 12,000</td>
+                                            <td>屋頂維修</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-01-08</td>
+                                            <td>祝壽</td>
+                                            <td><span class="badge bg-success">收入</span></td>
+                                            <td class="text-success">NT$ 5,200</td>
+                                            <td>玉皇大帝聖誕</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Income Section -->
+                <div id="income-section" style="display: none;">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-success">收入記錄</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="income-form">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="income-date" class="form-label">日期</label>
+                                        <input type="date" class="form-control" id="income-date" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="income-type" class="form-label">收入類型</label>
+                                        <select class="form-select" id="income-type" required>
+                                            <option value="">請選擇</option>
+                                            <option value="香油錢">香油錢</option>
+                                            <option value="點光明燈">點光明燈</option>
+                                            <option value="屬名紅包">屬名紅包</option>
+                                            <option value="未屬名紅包">未屬名紅包</option>
+                                            <option value="祝壽">祝壽</option>
+                                            <option value="看風水">看風水</option>
+                                            <option value="停車費">停車費</option>
+                                            <option value="感謝神尊">感謝神尊</option>
+                                            <option value="其他">其他</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="income-amount" class="form-label">金額</label>
+                                        <input type="number" class="form-control" id="income-amount" placeholder="請輸入金額" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="income-description" class="form-label">備註</label>
+                                    <textarea class="form-control" id="income-description" rows="2" placeholder="請輸入備註"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-plus-circle me-1"></i> 新增收入
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-success">收入記錄列表</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>日期</th>
+                                            <th>收入類型</th>
+                                            <th>金額</th>
+                                            <th>備註</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2024-01-15</td>
+                                            <td>香油錢</td>
+                                            <td class="text-success">NT$ 15,000</td>
+                                            <td>年初祈福活動</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-01-12</td>
+                                            <td>點光明燈</td>
+                                            <td class="text-success">NT$ 8,500</td>
+                                            <td>元宵節活動</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense Section -->
+                <div id="expense-section" style="display: none;">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-danger">支出記錄</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="expense-form">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="expense-date" class="form-label">日期</label>
+                                        <input type="date" class="form-control" id="expense-date" required>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="expense-type" class="form-label">支出類型</label>
+                                        <select class="form-select" id="expense-type" required>
+                                            <option value="">請選擇</option>
+                                            <option value="人員薪水">人員薪水</option>
+                                            <option value="房租">房租</option>
+                                            <option value="水電費">水電費</option>
+                                            <option value="雜項開支">雜項開支</option>
+                                            <option value="參訪金">參訪金</option>
+                                            <option value="修繕費">修繕費</option>
+                                            <option value="管理費">管理費</option>
+                                            <option value="其他">其他</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="expense-amount" class="form-label">金額</label>
+                                        <input type="number" class="form-control" id="expense-amount" placeholder="請輸入金額" required>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="expense-description" class="form-label">備註</label>
+                                    <textarea class="form-control" id="expense-description" rows="2" placeholder="請輸入備註"></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-plus-circle me-1"></i> 新增支出
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-danger">支出記錄列表</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>日期</th>
+                                            <th>支出類型</th>
+                                            <th>金額</th>
+                                            <th>備註</th>
+                                            <th>操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2024-01-14</td>
+                                            <td>房租</td>
+                                            <td class="text-danger">NT$ 25,000</td>
+                                            <td>廟宇租金</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>2024-01-10</td>
+                                            <td>修繕費</td>
+                                            <td class="text-danger">NT$ 12,000</td>
+                                            <td>屋頂維修</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="fas fa-edit"></i></button>
+                                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Section -->
+                <div id="reports-section" style="display: none;">
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">月度財務報表</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>項目</th>
+                                                    <th>金額</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>總收入</td>
+                                                    <td class="text-success">NT$ 128,500</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>總支出</td>
+                                                    <td class="text-danger">NT$ 45,200</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>結餘</strong></td>
+                                                    <td><strong>NT$ 83,300</strong></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">年度財務概況</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="annualChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Section -->
+                <div id="analysis-section" style="display: none;">
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-info">收入結構分析</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="incomeStructureChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-info">支出結構分析</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="expenseStructureChart" height="250"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reminders Section -->
+                <div id="reminders-section" style="display: none;">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-warning">到期提醒</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">房租繳納提醒</h5>
+                                        <small class="text-muted">2024-02-01 到期</small>
+                                    </div>
+                                    <p class="mb-1">本月房租 NT$ 25,000 需於2月1日前繳納</p>
+                                    <small class="text-muted">提醒時間: 3天前</small>
+                                </div>
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">水電費繳納提醒</h5>
+                                        <small class="text-muted">2024-01-25 到期</small>
+                                    </div>
+                                    <p class="mb-1">本月水電費約 NT$ 8,500 需於1月25日前繳納</p>
+                                    <small class="text-muted">提醒時間: 5天前</small>
+                                </div>
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">年度財務報告</h5>
+                                        <small class="text-muted">2024-03-31 到期</small>
+                                    </div>
+                                    <p class="mb-1">準備年度財務報告及稅務申報</p>
+                                    <small class="text-muted">提醒時間: 30天前</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div id="settings-section" style="display: none;">
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">收入項目設定</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" placeholder="新增收入項目">
+                                        <button class="btn btn-outline-primary" type="button">新增</button>
+                                    </div>
+                                    <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            香油錢
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            點光明燈
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            屬名紅包
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">支出項目設定</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" placeholder="新增支出項目">
+                                        <button class="btn btn-outline-primary" type="button">新增</button>
+                                    </div>
+                                    <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            人員薪水
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            房租
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            水電費
+                                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Navigation function
+        function showSection(sectionId) {
+            // Hide all sections
+            document.getElementById('dashboard-section').style.display = 'none';
+            document.getElementById('income-section').style.display = 'none';
+            document.getElementById('expense-section').style.display = 'none';
+            document.getElementById('reports-section').style.display = 'none';
+            document.getElementById('analysis-section').style.display = 'none';
+            document.getElementById('reminders-section').style.display = 'none';
+            document.getElementById('settings-section').style.display = 'none';
+            
+            // Show selected section
+            document.getElementById(sectionId + '-section').style.display = 'block';
+            
+            // Update page title
+            const titles = {
+                'dashboard': '儀表板',
+                'income': '收入記錄',
+                'expense': '支出記錄',
+                'reports': '財務報表',
+                'analysis': '財務分析',
+                'reminders': '到期提醒',
+                'settings': '系統設定'
+            };
+            document.getElementById('page-title').textContent = titles[sectionId];
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Trend Chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['1月', '2月', '3月', '4月', '5月', '6月'],
+                    datasets: [
+                        {
+                            label: '收入',
+                            data: [128500, 135000, 142000, 120000, 158000, 165000],
+                            borderColor: '#1cc88a',
+                            backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: '支出',
+                            data: [45200, 48000, 52000, 41000, 55000, 49000],
+                            borderColor: '#e74a3b',
+                            backgroundColor: 'rgba(231, 74, 59, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Income Chart
+            const incomeCtx = document.getElementById('incomeChart').getContext('2d');
+            new Chart(incomeCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['香油錢', '點光明燈', '屬名紅包', '祝壽', '其他'],
+                    datasets: [{
+                        data: [45, 25, 15, 10, 5],
+                        backgroundColor: [
+                            '#4e73df',
+                            '#1cc88a',
+                            '#36b9cc',
+                            '#f6c23e',
+                            '#e74a3b'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Annual Chart
+            const annualCtx = document.getElementById('annualChart').getContext('2d');
+            new Chart(annualCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                    datasets: [
+                        {
+                            label: '收入',
+                            data: [385000, 420000, 450000, 520000],
+                            backgroundColor: '#1cc88a'
+                        },
+                        {
+                            label: '支出',
+                            data: [135000, 145000, 155000, 165000],
+                            backgroundColor: '#e74a3b'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Income Structure Chart
+            const incomeStructureCtx = document.getElementById('incomeStructureChart').getContext('2d');
+            new Chart(incomeStructureCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['香油錢 45%', '點光明燈 25%', '屬名紅包 15%', '祝壽 10%', '其他 5%'],
+                    datasets: [{
+                        data: [45, 25, 15, 10, 5],
+                        backgroundColor: [
+                            '#4e73df',
+                            '#1cc88a',
+                            '#36b9cc',
+                            '#f6c23e',
+                            '#e74a3b'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+
+            // Expense Structure Chart
+            const expenseStructureCtx = document.getElementById('expenseStructureChart').getContext('2d');
+            new Chart(expenseStructureCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['房租 45%', '人員薪水 25%', '水電費 15%', '修繕費 10%', '其他 5%'],
+                    datasets: [{
+                        data: [45, 25, 15, 10, 5],
+                        backgroundColor: [
+                            '#e74a3b',
+                            '#f6c23e',
+                            '#36b9cc',
+                            '#1cc88a',
+                            '#4e73df'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

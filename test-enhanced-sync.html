@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增強版雲端同步測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .status-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+        .status-card h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn.danger {
+            background: #dc3545;
+        }
+        .btn.danger:hover {
+            background: #c82333;
+        }
+        .btn.success {
+            background: #28a745;
+        }
+        .btn.success:hover {
+            background: #1e7e34;
+        }
+        .log {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .test-data {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 廣清宮記帳軟體 - 增強版雲端同步測試</h1>
+        <p>測試完善後的雲端同步上傳和下載功能</p>
+    </div>
+
+    <div class="status-section">
+        <div class="container status-card">
+            <h3>📊 系統狀態</h3>
+            <div id="systemStatus">
+                <p>⏳ 正在初始化...</p>
+            </div>
+            <button class="btn" onclick="refreshStatus()">🔄 刷新狀態</button>
+        </div>
+
+        <div class="container status-card">
+            <h3>☁️ 同步狀態</h3>
+            <div id="syncStatus">
+                <p>⏳ 檢查中...</p>
+            </div>
+            <button class="btn success" onclick="testManualSync()">🚀 手動同步</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>🔐 認證測試</h3>
+        <div class="form-group">
+            <button class="btn" onclick="testAnonymousLogin()">👤 匿名登入</button>
+            <button class="btn danger" onclick="testLogout()">🚪 登出</button>
+        </div>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="container">
+        <h3>📤 上傳測試</h3>
+        <div class="form-group">
+            <button class="btn" onclick="generateTestData()">📊 生成測試資料</button>
+            <button class="btn success" onclick="testUpload()">⬆️ 測試上傳</button>
+            <button class="btn" onclick="testBatchUpload()">📦 批次上傳測試</button>
+        </div>
+        <div id="testDataPreview" class="test-data" style="display: none;"></div>
+        <div id="uploadResult"></div>
+    </div>
+
+    <div class="container">
+        <h3>📥 下載測試</h3>
+        <div class="form-group">
+            <label for="mergeStrategy">合併策略:</label>
+            <select id="mergeStrategy">
+                <option value="timestamp">時間戳優先</option>
+                <option value="replace">完全替換</option>
+                <option value="merge">智能合併</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <button class="btn success" onclick="testDownload()">⬇️ 測試下載</button>
+            <button class="btn" onclick="testDownloadWithoutApply()">📋 僅下載不應用</button>
+            <button class="btn danger" onclick="testForceResync()">🔄 強制重新同步</button>
+        </div>
+        <div id="downloadResult"></div>
+    </div>
+
+    <div class="container">
+        <h3>💾 本地存儲測試</h3>
+        <div class="form-group">
+            <button class="btn" onclick="checkLocalStorage()">📂 檢查 LocalStorage</button>
+            <button class="btn" onclick="checkIndexedDB()">🗄️ 檢查 IndexedDB</button>
+            <button class="btn danger" onclick="clearAllLocal()">🧹 清空本地資料</button>
+        </div>
+        <div id="storageResult"></div>
+    </div>
+
+    <div class="container">
+        <h3>📋 操作日志</h3>
+        <button class="btn" onclick="clearLog()">🧹 清空日志</button>
+        <div id="logOutput" class="log"></div>
+    </div>
+
+    <!-- 載入必要的腳本 -->
+    <script src="error-fix.js"></script>
+    <script src="offline-storage.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        let testData = null;
+        
+        // 日志函數
+        function log(message, type = 'info') {
+            const logOutput = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        function clearLog() {
+            document.getElementById('logOutput').textContent = '';
+        }
+
+        // 狀態更新函數
+        async function refreshStatus() {
+            try {
+                log('正在刷新系統狀態...');
+                
+                // 檢查 Firebase 狀態
+                const firebaseStatus = window.firebaseCloud ? window.firebaseCloud.getStatus() : { isInitialized: false };
+                
+                // 檢查存儲狀態
+                let storageStatus = { isInitialized: false, dbName: 'unknown' };
+                if (window.offlineStorage) {
+                    try {
+                        storageStatus = {
+                            isInitialized: window.offlineStorage.isInitialized,
+                            dbName: window.offlineStorage.dbName || 'temple-accounting'
+                        };
+                    } catch (e) {
+                        log('獲取存儲狀態失敗: ' + e.message, 'warning');
+                    }
+                }
+
+                const systemStatusHTML = `
+                    <p><strong>Firebase:</strong> ${firebaseStatus.isInitialized ? '✅ 已初始化' : '❌ 未初始化'}</p>
+                    <p><strong>網路:</strong> ${firebaseStatus.isOnline ? '✅ 在線' : '❌ 離線'}</p>
+                    <p><strong>用戶:</strong> ${firebaseStatus.currentUser ? '✅ 已登入' : '❌ 未登入'}</p>
+                    <p><strong>存儲:</strong> ${storageStatus.isInitialized ? '✅ IndexedDB' : '❌ 未初始化'}</p>
+                    <p><strong>模式:</strong> ${firebaseStatus.localStorageMode ? '⚠️ 本地模式' : '☁️ 雲端模式'}</p>
+                `;
+                document.getElementById('systemStatus').innerHTML = systemStatusHTML;
+
+                // 更新同步狀態
+                if (window.cloudSyncManager) {
+                    const syncStatus = await window.cloudSyncManager.getSyncStatus();
+                    const syncStatusHTML = `
+                        <p><strong>最後同步:</strong> ${syncStatus.lastSyncFormatted}</p>
+                        <p><strong>待同步項目:</strong> ${syncStatus.pendingChanges}</p>
+                        <p><strong>同步中:</strong> ${syncStatus.syncInProgress ? '✅ 是' : '❌ 否'}</p>
+                        <p><strong>即時同步:</strong> ${syncStatus.isRealtime ? '✅ 啟用' : '❌ 停用'}</p>
+                    `;
+                    document.getElementById('syncStatus').innerHTML = syncStatusHTML;
+                } else {
+                    document.getElementById('syncStatus').innerHTML = '<p>⚠️ CloudSyncManager 不可用</p>';
+                }
+
+                log('系統狀態已更新', 'success');
+            } catch (error) {
+                log('刷新狀態失敗: ' + error.message, 'error');
+                document.getElementById('systemStatus').innerHTML = `<p class="error">❌ 狀態獲取失敗: ${error.message}</p>`;
+            }
+        }
+
+        // 認證測試
+        async function testAnonymousLogin() {
+            try {
+                log('正在測試匿名登入...');
+                const result = await window.firebaseCloud.loginAnonymously();
+                
+                const resultDiv = document.getElementById('authResult');
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ ${result.message}<br>用戶 UID: ${result.user.uid}</div>`;
+                    log('匿名登入成功: ' + result.user.uid, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
+                    log('匿名登入失敗: ' + result.message, 'error');
+                }
+                
+                await refreshStatus();
+            } catch (error) {
+                log('匿名登入測試失敗: ' + error.message, 'error');
+                document.getElementById('authResult').innerHTML = `<div class="error">❌ 測試失敗: ${error.message}</div>`;
+            }
+        }
+
+        async function testLogout() {
+            try {
+                log('正在測試登出...');
+                const result = await window.firebaseCloud.logout();
+                
+                const resultDiv = document.getElementById('authResult');
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ ${result.message}</div>`;
+                    log('登出成功', 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
+                    log('登出失敗: ' + result.message, 'error');
+                }
+                
+                await refreshStatus();
+            } catch (error) {
+                log('登出測試失敗: ' + error.message, 'error');
+                document.getElementById('authResult').innerHTML = `<div class="error">❌ 測試失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 生成測試資料
+        function generateTestData() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            testData = {
+                records: [
+                    {
+                        id: Date.now() + 1,
+                        date: today,
+                        type: 'income',
+                        category: '功德捐款',
+                        subcategory: '一般捐款',
+                        amount: 1000,
+                        description: '測試捐款記錄 1',
+                        believerName: '測試信眾A',
+                        location: '大殿'
+                    },
+                    {
+                        id: Date.now() + 2,
+                        date: today,
+                        type: 'expense',
+                        category: '供品費用',
+                        subcategory: '香燭',
+                        amount: 200,
+                        description: '測試支出記錄 1',
+                        believerName: '',
+                        location: '香爐'
+                    }
+                ],
+                believers: [
+                    {
+                        id: 'believer_' + Date.now(),
+                        name: '測試信眾A',
+                        phone: '0912-345-678',
+                        address: '台中市測試區',
+                        notes: '定期參與法會',
+                        totalDonation: 10000,
+                        visitCount: 15,
+                        lastVisit: today
+                    }
+                ],
+                reminders: [
+                    {
+                        id: Date.now() + 100,
+                        title: '測試提醒',
+                        description: '這是一個測試提醒項目',
+                        date: today,
+                        time: '09:00',
+                        completed: false
+                    }
+                ],
+                customCategories: {
+                    income: ['測試收入類別1', '測試收入類別2'],
+                    expense: ['測試支出類別1', '測試支出類別2']
+                }
+            };
+
+            const previewDiv = document.getElementById('testDataPreview');
+            previewDiv.style.display = 'block';
+            previewDiv.innerHTML = `
+                <h4>📊 測試資料預覽:</h4>
+                <p><strong>記錄:</strong> ${testData.records.length} 筆</p>
+                <p><strong>信眾:</strong> ${testData.believers.length} 位</p>
+                <p><strong>提醒:</strong> ${testData.reminders.length} 個</p>
+                <p><strong>自定義類別:</strong> 收入 ${testData.customCategories.income.length} 個，支出 ${testData.customCategories.expense.length} 個</p>
+            `;
+
+            log('測試資料已生成', 'success');
+        }
+
+        // 上傳測試
+        async function testUpload() {
+            if (!testData) {
+                log('請先生成測試資料', 'warning');
+                return;
+            }
+
+            try {
+                log('正在測試上傳功能...');
+                const result = await window.firebaseCloud.uploadData(testData);
+
+                const resultDiv = document.getElementById('uploadResult');
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ ${result.message}<br>
+                        上傳統計: 記錄 ${result.uploadedCounts?.records || 0} 筆, 
+                        信眾 ${result.uploadedCounts?.believers || 0} 位, 
+                        提醒 ${result.uploadedCounts?.reminders || 0} 個</div>`;
+                    log('上傳成功: ' + result.message, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
+                    log('上傳失敗: ' + result.message, 'error');
+                }
+
+                await refreshStatus();
+            } catch (error) {
+                log('上傳測試失敗: ' + error.message, 'error');
+                document.getElementById('uploadResult').innerHTML = `<div class="error">❌ 測試失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 批次上傳測試
+        async function testBatchUpload() {
+            try {
+                log('正在生成大量測試資料進行批次上傳測試...');
+                
+                const batchTestData = {
+                    records: [],
+                    believers: [],
+                    reminders: []
+                };
+
+                // 生成 100 筆記錄
+                for (let i = 0; i < 100; i++) {
+                    batchTestData.records.push({
+                        id: Date.now() + i,
+                        date: new Date().toISOString().split('T')[0],
+                        type: i % 2 === 0 ? 'income' : 'expense',
+                        category: i % 2 === 0 ? '功德捐款' : '供品費用',
+                        amount: Math.floor(Math.random() * 1000) + 100,
+                        description: `批次測試記錄 ${i + 1}`,
+                        believerName: `測試信眾${i + 1}`,
+                        location: '大殿'
+                    });
+                }
+
+                log('開始批次上傳 100 筆記錄...');
+                const result = await window.firebaseCloud.uploadData(batchTestData);
+
+                const resultDiv = document.getElementById('uploadResult');
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="success">✅ 批次上傳成功!<br>
+                        處理了 ${result.batchCount} 個批次<br>
+                        上傳統計: 記錄 ${result.uploadedCounts?.records || 0} 筆</div>`;
+                    log(`批次上傳成功: ${result.batchCount} 個批次, ${result.uploadedCounts?.records || 0} 筆記錄`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
+                    log('批次上傳失敗: ' + result.message, 'error');
+                }
+
+                await refreshStatus();
+            } catch (error) {
+                log('批次上傳測試失敗: ' + error.message, 'error');
+                document.getElementById('uploadResult').innerHTML = `<div class="error">❌ 批次上傳測試失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 下載測試
+        async function testDownload() {
+            try {
+                log('正在測試下載功能...');
+                const mergeStrategy = document.getElementById('mergeStrategy').value;
+                
+                const result = await window.firebaseCloud.downloadData({
+                    mergeStrategy: mergeStrategy,
+                    applyToLocalStorage: true
+                });
+
+                const resultDiv = document.getElementById('downloadResult');
+                if (result.success) {
+                    const stats = result.downloadStats || {};
+                    resultDiv.innerHTML = `<div class="success">✅ ${result.message}<br>
+                        下載統計: 記錄 ${stats.records || 0} 筆, 
+                        信眾 ${stats.believers || 0} 位, 
+                        提醒 ${stats.reminders || 0} 個<br>
+                        合併策略: ${mergeStrategy}</div>`;
+                    log(`下載成功: 記錄 ${stats.records || 0} 筆, 信眾 ${stats.believers || 0} 位`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
+                    log('下載失敗: ' + result.message, 'error');
+                }
+
+                await refreshStatus();
+            } catch (error) {
+                log('下載測試失敗: ' + error.message, 'error');
+                document.getElementById('downloadResult').innerHTML = `<div class="error">❌ 測試失敗: ${error.message}</div>`;
+            }
+        }
+
+        async function testDownloadWithoutApply() {
+            try {
+                log('正在測試僅下載不應用到本地...');
+                
+                const result = await window.firebaseCloud.downloadData({
+                    applyToLocalStorage: false
+                });
+
+                const resultDiv = document.getElementById('downloadResult');
+                if (result.success) {
+                    const stats = result.downloadStats || {};
+                    resultDiv.innerHTML = `<div class="success">✅ 僅下載成功 (未應用到本地)<br>
+                        下載統計: 記錄 ${stats.records || 0} 筆, 
+                        信眾 ${stats.believers || 0} 位, 
+                        提醒 ${stats.reminders || 0} 個</div>`;
+                    log(`僅下載成功: 記錄 ${stats.records || 0} 筆`, 'success');
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ ${result.message}</div>`;
+                    log('僅下載失敗: ' + result.message, 'error');
+                }
+            } catch (error) {
+                log('僅下載測試失敗: ' + error.message, 'error');
+                document.getElementById('downloadResult').innerHTML = `<div class="error">❌ 測試失敗: ${error.message}</div>`;
+            }
+        }
+
+        async function testForceResync() {
+            try {
+                if (!window.cloudSyncManager) {
+                    throw new Error('CloudSyncManager 不可用');
+                }
+
+                log('正在執行強制重新同步...');
+                await window.cloudSyncManager.forceResync();
+                
+                document.getElementById('downloadResult').innerHTML = `<div class="success">✅ 強制重新同步完成</div>`;
+                log('強制重新同步完成', 'success');
+                
+                await refreshStatus();
+            } catch (error) {
+                log('強制重新同步失敗: ' + error.message, 'error');
+                document.getElementById('downloadResult').innerHTML = `<div class="error">❌ 強制重新同步失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 手動同步測試
+        async function testManualSync() {
+            try {
+                if (window.cloudSyncManager) {
+                    log('正在執行手動同步...');
+                    await window.cloudSyncManager.manualSync();
+                    log('手動同步完成', 'success');
+                } else {
+                    log('CloudSyncManager 不可用，嘗試使用 Firebase 直接同步', 'warning');
+                    
+                    // 先收集本地資料並上傳
+                    const localData = await window.firebaseCloud.collectLocalData();
+                    const uploadResult = await window.firebaseCloud.uploadData(localData);
+                    
+                    if (uploadResult.success) {
+                        // 然後下載最新資料
+                        const downloadResult = await window.firebaseCloud.downloadData();
+                        if (downloadResult.success) {
+                            log('手動同步完成 (直接使用 Firebase)', 'success');
+                        }
+                    }
+                }
+                
+                await refreshStatus();
+            } catch (error) {
+                log('手動同步失敗: ' + error.message, 'error');
+            }
+        }
+
+        // 存儲測試
+        async function checkLocalStorage() {
+            try {
+                log('正在檢查 localStorage...');
+                
+                const records = JSON.parse(localStorage.getItem('temple-records') || '[]');
+                const believers = JSON.parse(localStorage.getItem('temple-believers') || '[]');
+                const reminders = JSON.parse(localStorage.getItem('temple-reminders') || '[]');
+                
+                const storageInfo = `
+                    <h4>📂 LocalStorage 狀態:</h4>
+                    <p><strong>記錄:</strong> ${records.length} 筆</p>
+                    <p><strong>信眾:</strong> ${believers.length} 位</p>
+                    <p><strong>提醒:</strong> ${reminders.length} 個</p>
+                    <p><strong>最後修改:</strong> ${localStorage.getItem('temple-last-modified') || '未知'}</p>
+                    <p><strong>最後同步:</strong> ${localStorage.getItem('temple-last-cloud-sync') || '未知'}</p>
+                `;
+
+                document.getElementById('storageResult').innerHTML = storageInfo;
+                log(`localStorage 檢查完成: 記錄 ${records.length} 筆, 信眾 ${believers.length} 位`, 'success');
+            } catch (error) {
+                log('檢查 localStorage 失敗: ' + error.message, 'error');
+                document.getElementById('storageResult').innerHTML = `<div class="error">❌ 檢查失敗: ${error.message}</div>`;
+            }
+        }
+
+        async function checkIndexedDB() {
+            try {
+                if (!window.offlineStorage || !window.offlineStorage.isInitialized) {
+                    throw new Error('IndexedDB 未初始化');
+                }
+
+                log('正在檢查 IndexedDB...');
+                
+                const records = await window.offlineStorage.getAll('records');
+                const believers = await window.offlineStorage.getAll('believers');
+                const reminders = await window.offlineStorage.getAll('reminders');
+                const syncQueue = await window.offlineStorage.getAll('syncQueue');
+                
+                const storageInfo = `
+                    <h4>🗄️ IndexedDB 狀態:</h4>
+                    <p><strong>記錄:</strong> ${records.length} 筆</p>
+                    <p><strong>信眾:</strong> ${believers.length} 位</p>
+                    <p><strong>提醒:</strong> ${reminders.length} 個</p>
+                    <p><strong>同步佇列:</strong> ${syncQueue.length} 項</p>
+                `;
+
+                document.getElementById('storageResult').innerHTML = storageInfo;
+                log(`IndexedDB 檢查完成: 記錄 ${records.length} 筆, 同步佇列 ${syncQueue.length} 項`, 'success');
+            } catch (error) {
+                log('檢查 IndexedDB 失敗: ' + error.message, 'error');
+                document.getElementById('storageResult').innerHTML = `<div class="error">❌ 檢查失敗: ${error.message}</div>`;
+            }
+        }
+
+        async function clearAllLocal() {
+            if (!confirm('確定要清空所有本地資料嗎？此操作無法復原！')) {
+                return;
+            }
+
+            try {
+                log('正在清空本地資料...');
+                
+                // 清空 localStorage
+                const keysToRemove = [
+                    'temple-records', 'temple-believers', 'temple-reminders',
+                    'custom-income-categories', 'custom-expense-categories',
+                    'temple-last-modified', 'temple-last-cloud-sync'
+                ];
+                
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                
+                // 清空 IndexedDB
+                if (window.offlineStorage && window.offlineStorage.isInitialized) {
+                    await Promise.all([
+                        window.offlineStorage.clear('records'),
+                        window.offlineStorage.clear('believers'),
+                        window.offlineStorage.clear('reminders'),
+                        window.offlineStorage.clear('categories'),
+                        window.offlineStorage.clear('syncQueue')
+                    ]);
+                }
+                
+                document.getElementById('storageResult').innerHTML = `<div class="success">✅ 所有本地資料已清空</div>`;
+                log('本地資料清空完成', 'success');
+                
+                await refreshStatus();
+            } catch (error) {
+                log('清空本地資料失敗: ' + error.message, 'error');
+                document.getElementById('storageResult').innerHTML = `<div class="error">❌ 清空失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            log('🚀 增強版雲端同步測試工具已啟動');
+            
+            // 等待服務初始化
+            let initCount = 0;
+            const maxWait = 50;
+            
+            while ((!window.firebaseCloud || !window.firebaseCloud.isInitialized) && initCount < maxWait) {
+                await new Promise(resolve => setTimeout(resolve, 200));
+                initCount++;
+            }
+            
+            if (initCount >= maxWait) {
+                log('服務初始化超時，部分功能可能不可用', 'warning');
+            } else {
+                log('服務初始化完成', 'success');
+            }
+            
+            await refreshStatus();
+            
+            // 監聽同步狀態更新
+            window.addEventListener('syncStatusUpdated', function(event) {
+                log('同步狀態已更新: ' + JSON.stringify(event.detail), 'info');
+                refreshStatus();
+            });
+
+            window.addEventListener('dataUpdated', function(event) {
+                log('資料已更新: ' + event.detail.source, 'info');
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="192" height="192" fill="#667eea" rx="24"/>
+  
+  <!-- 宮廟建築 -->
+  <g transform="translate(32, 40)">
+    <!-- 屋頂 -->
+    <path d="M0 40 L64 10 L128 40 L128 50 L0 50 Z" fill="#f39c12" stroke="#e67e22" stroke-width="2"/>
+    
+    <!-- 主體建築 -->
+    <rect x="10" y="50" width="108" height="80" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
+    
+    <!-- 門 -->
+    <rect x="44" y="90" width="40" height="40" fill="#8b4513" stroke="#654321" stroke-width="2"/>
+    
+    <!-- 窗戶 -->
+    <rect x="20" y="70" width="15" height="15" fill="#f1c40f" stroke="#f39c12" stroke-width="1"/>
+    <rect x="93" y="70" width="15" height="15" fill="#f1c40f" stroke="#f39c12" stroke-width="1"/>
+    
+    <!-- 柱子 -->
+    <rect x="15" y="50" width="8" height="80" fill="#8b4513"/>
+    <rect x="105" y="50" width="8" height="80" fill="#8b4513"/>
+    
+    <!-- 裝飾 -->
+    <circle cx="64" cy="30" r="8" fill="#f1c40f" stroke="#f39c12" stroke-width="2"/>
+  </g>
+  
+  <!-- 錢幣圖標 -->
+  <g transform="translate(140, 140)">
+    <circle cx="16" cy="16" r="16" fill="#f1c40f" stroke="#f39c12" stroke-width="2"/>
+    <text x="16" y="20" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#8b4513">$</text>
+  </g>
+  
+  <!-- 標題文字 -->
+  <text x="96" y="180" text-anchor="middle" font-family="Arial" font-size="12" font-weight="bold" fill="white">廣清宮記帳</text>
+</svg>

@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>廣清宮智能記帳系統 - 預算版</title>
+    
+    <!-- PWA支援 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- ECharts -->
+    <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
+    
+    <!-- Day.js -->
+    <script src="https://unpkg.com/dayjs@1.11.9/dayjs.min.js"></script>
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3.3.4/dist/vue.global.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f7fa;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        .app-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .app-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .app-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #f56c6c;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .bottom-nav {
+            background: white;
+            border-top: 1px solid #ebeef5;
+            padding: 8px 0;
+            display: flex;
+            justify-content: space-around;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            min-width: 60px;
+        }
+        
+        .nav-item.active {
+            color: #409eff;
+        }
+        
+        .nav-item:hover {
+            color: #409eff;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 12px;
+        }
+        
+        .app-main {
+            flex: 1;
+            padding: 20px 20px 80px 20px;
+            overflow-y: auto;
+        }
+        
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-card.income {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .stat-card.expense {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        
+        .stat-card.balance {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #303133;
+        }
+        
+        .stat-card.analysis {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .stat-trend {
+            font-size: 12px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .trend-up {
+            color: #67c23a;
+        }
+        
+        .trend-down {
+            color: #f56c6c;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .action-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            touch-action: manipulation;
+        }
+        
+        .action-card:hover, .action-card:active {
+            border-color: #409eff;
+            transform: translateY(-2px);
+        }
+        
+        .action-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            color: #409eff;
+        }
+        
+        .action-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .records-section, .reminders-section, .analysis-section, .budget-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #303133;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .analysis-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid #409eff;
+        }
+        
+        .analysis-title {
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 8px;
+        }
+        
+        .analysis-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #409eff;
+            margin-bottom: 4px;
+        }
+        
+        .analysis-desc {
+            font-size: 12px;
+            color: #909399;
+        }
+        
+        .record-item, .reminder-item, .budget-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #ebeef5;
+        }
+        
+        .record-item:last-child, .reminder-item:last-child, .budget-item:last-child {
+            border-bottom: none;
+        }
+        
+        .record-info, .reminder-info, .budget-info {
+            flex: 1;
+        }
+        
+        .record-category, .reminder-title, .budget-category {
+            font-weight: 500;
+            color: #303133;
+        }
+        
+        .record-description, .reminder-description {
+            font-size: 12px;
+            color: #909399;
+            margin-top: 4px;
+        }
+        
+        .record-amount {
+            font-weight: 600;
+            font-family: monospace;
+        }
+        
+        .record-amount.income {
+            color: #67c23a;
+        }
+        
+        .record-amount.expense {
+            color: #f56c6c;
+        }
+        
+        .reminder-date {
+            font-size: 12px;
+            color: #f56c6c;
+            font-weight: 500;
+        }
+        
+        .reminder-item.urgent {
+            background: #fef0f0;
+            border-left: 4px solid #f56c6c;
+            padding-left: 16px;
+        }
+        
+        .reminder-item.warning {
+            background: #fdf6ec;
+            border-left: 4px solid #e6a23c;
+            padding-left: 16px;
+        }
+        
+        .budget-progress {
+            width: 100%;
+            height: 8px;
+            background-color: #ebeef5;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: #67c23a;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-bar.warning {
+            background-color: #e6a23c;
+        }
+        
+        .progress-bar.danger {
+            background-color: #f56c6c;
+        }
+        
+        .budget-details {
+            font-size: 12px;
+            color: #909399;
+            margin-top: 4px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #303133;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #909399;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #303133;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 16px;
+            -webkit-appearance: none;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #409eff;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+        
+        .btn-primary {
+            background: #409eff;
+            color: white;
+        }
+        
+        .btn-primary:hover, .btn-primary:active {
+            background: #337ecc;
+        }
+        
+        .btn-secondary {
+            background: #909399;
+            color: white;
+            margin-right: 12px;
+        }
+        
+        .btn-secondary:hover, .btn-secondary:active {
+            background: #73767a;
+        }
+        
+        .btn-danger {
+            background: #f56c6c;
+            color: white;
+        }
+        
+        .btn-danger:hover, .btn-danger:active {
+            background: #f23030;
+        }
+        
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #909399;
+        }
+        
+        .notification-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #f56c6c;
+            z-index: 3000;
+            max-width: 300px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .notification-title {
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 8px;
+        }
+        
+        .notification-message {
+            color: #606266;
+            font-size: 14px;
+        }
+        
+        .page-content {
+            display: none;
+        }
+        
+        .page-content.active {
+            display: block;
+        }
+        
+        .reminder-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .time-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn.active {
+            background: #409eff;
+            color: white;
+            border-color: #409eff;
+        }
+        
+        .suggestion-card {
+            background: #f0f9ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+        
+        .suggestion-desc {
+            color: #3730a3;
+            font-size: 14px;
+        }
+        
+        /* 手機優化 */
+        @media (max-width: 768px) {
+            .app-main {
+                padding: 15px 15px 80px 15px;
+            }
+            
+            .dashboard-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal {
+                padding: 10px;
+            }
+            
+            .modal-content {
+                padding: 20px;
+            }
+            
+            .form-input, .form-select, .form-textarea {
+                font-size: 16px; /* 防止iOS縮放 */
+            }
+            
+            .time-filter {
+                justify-content: center;
+            }
+        }
+        
+        /* PWA樣式 */
+        @media (display-mode: standalone) {
+            .app-header {
+                padding-top: env(safe-area-inset-top);
+            }
+            
+            .bottom-nav {
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- 頂部標題 -->
+            <div class="app-header">
+                <div class="app-title">廣清宮智能記帳系統</div>
+                <div class="header-actions">
+                    <button class="btn btn-primary" @click="showAddModal = true" style="padding: 8px 12px; font-size: 14px;">
+                        快速記帳
+                    </button>
+                    <div style="position: relative;">
+                        <button class="btn btn-secondary" @click="showNotifications" style="padding: 8px 12px; font-size: 14px;">
+                            🔔
+                        </button>
+                        <div v-if="urgentReminders.length > 0" class="notification-badge">
+                            {{ urgentReminders.length }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 主要內容 -->
+            <div class="app-main">
+                <!-- 儀表板頁面 -->
+                <div class="page-content active" id="dashboard">
+                    <!-- 緊急提醒 -->
+                    <div v-if="urgentReminders.length > 0" class="reminders-section">
+                        <div class="section-title">
+                            🚨 緊急提醒
+                        </div>
+                        <div v-for="reminder in urgentReminders" :key="reminder.id" :class="['reminder-item', reminder.urgency]">
+                            <div class="reminder-info">
+                                <div class="reminder-title">{{ reminder.title }}</div>
+                                <div class="reminder-description">{{ reminder.description }}</div>
+                                <div class="reminder-date">{{ formatReminderDate(reminder.dueDate) }}</div>
+                                <div class="reminder-actions">
+                                    <button class="btn btn-primary btn-small" @click="markReminderDone(reminder.id)">
+                                        完成
+                                    </button>
+                                    <button class="btn btn-secondary btn-small" @click="snoozeReminder(reminder.id)">
+                                        稍後提醒
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 統計卡片 -->
+                    <div class="dashboard-cards">
+                        <div class="stat-card income">
+                            <div class="stat-value">{{ formatCurrency(totalIncome) }}</div>
+                            <div class="stat-label">總收入</div>
+                            <div class="stat-trend">
+                                <span :class="incomeTrend.direction === 'up' ? 'trend-up' : 'trend-down'">
+                                    {{ incomeTrend.direction === 'up' ? '↗' : '↘' }} {{ incomeTrend.percentage }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="stat-card expense">
+                            <div class="stat-value">{{ formatCurrency(totalExpense) }}</div>
+                            <div class="stat-label">總支出</div>
+                            <div class="stat-trend">
+                                <span :class="expenseTrend.direction === 'up' ? 'trend-down' : 'trend-up'">
+                                    {{ expenseTrend.direction === 'up' ? '↗' : '↘' }} {{ expenseTrend.percentage }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="stat-card balance">
+                            <div class="stat-value">{{ formatCurrency(totalBalance) }}</div>
+                            <div class="stat-label">結餘</div>
+                            <div class="stat-trend">
+                                <span :class="balanceTrend.direction === 'up' ? 'trend-up' : 'trend-down'">
+                                    {{ balanceTrend.direction === 'up' ? '↗' : '↘' }} {{ balanceTrend.percentage }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="stat-card analysis">
+                            <div class="stat-value">{{ healthScore }}分</div>
+                            <div class="stat-label">財務健康度</div>
+                            <div class="stat-trend">
+                                <span class="trend-up">{{ healthStatus }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 快速操作 -->
+                    <div class="quick-actions">
+                        <div class="action-card" @click="openAddModal('income')">
+                            <div class="action-icon">💰</div>
+                            <div class="action-title">新增收入</div>
+                        </div>
+                        <div class="action-card" @click="openAddModal('expense')">
+                            <div class="action-icon">💸</div>
+                            <div class="action-title">新增支出</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 圖表分析 -->
+                    <div class="analysis-section">
+                        <div class="section-title">
+                            📊 收支趨勢分析
+                            <button class="btn btn-secondary btn-small" @click="switchPage('analysis')">
+                                查看詳細
+                            </button>
+                        </div>
+                        <div class="chart-container" id="dashboardChart"></div>
+                    </div>
+                    
+                    <!-- 智能分析 -->
+                    <div class="analysis-section">
+                        <div class="section-title">🤖 智能財務分析</div>
+                        <div class="analysis-grid">
+                            <div class="analysis-card">
+                                <div class="analysis-title">��支比例</div>
+                                <div class="analysis-value">{{ incomeExpenseRatio }}%</div>
+                                <div class="analysis-desc">{{ incomeExpenseAnalysis }}</div>
+                            </div>
+                            <div class="analysis-card">
+                                <div class="analysis-title">平均日收入</div>
+                                <div class="analysis-value">{{ formatCurrency(avgDailyIncome) }}</div>
+                                <div class="analysis-desc">{{ avgIncomeAnalysis }}</div>
+                            </div>
+                            <div class="analysis-card">
+                                <div class="analysis-title">最大支出類別</div>
+                                <div class="analysis-value">{{ topExpenseCategory.name }}</div>
+                                <div class="analysis-desc">佔總支出 {{ topExpenseCategory.percentage }}%</div>
+                            </div>
+                            <div class="analysis-card">
+                                <div class="analysis-title">預測結餘</div>
+                                <div class="analysis-value">{{ formatCurrency(predictedBalance) }}</div>
+                                <div class="analysis-desc">{{ balancePrediction }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 最近記錄 -->
+                    <div class="records-section">
+                        <div class="section-title">最近記錄</div>
+                        <div v-if="recentRecords.length === 0" class="empty-state">
+                            <div>暫無記錄</div>
+                            <div style="margin-top: 8px; font-size: 12px;">點擊上方按鈕開始記帳</div>
+                        </div>
+                        <div v-else>
+                            <div v-for="record in recentRecords" :key="record.id" class="record-item">
+                                <div class="record-info">
+                                    <div class="record-category">{{ record.category }}</div>
+                                    <div class="record-description">
+                                        {{ record.description }} - {{ formatDate(record.date) }}
+                                    </div>
+                                </div>
+                                <div :class="['record-amount', record.type]">
+                                    {{ record.type === 'income' ? '+' : '-' }}{{ formatCurrency(record.amount) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 分析頁面 -->
+                <div class="page-content" id="analysis">
+                    <div class="analysis-section">
+                        <div class="section-title">
+                            📈 深度財務分析
+                        </div>
+                        
+                        <!-- 時間篩選 -->
+                        <div class="time-filter">
+                            <button 
+                                v-for="filter in timeFilters" 
+                                :key="filter.key"
+                                :class="['filter-btn', { active: selectedTimeFilter === filter.key }]"
+                                @click="selectedTimeFilter = filter.key; updateCharts()"
+                            >
+                                {{ filter.label }}
+                            </button>
+                        </div>
+                        
+                        <!-- 收支趨勢圖 -->
+                        <div class="chart-container" id="trendChart"></div>
+                        
+                        <!-- 類別分析圖 -->
+                        <div class="chart-container" id="categoryChart"></div>
+                        
+                        <!-- 月度對比圖 -->
+                        <div class="chart-container" id="monthlyChart"></div>
+                        
+                        <!-- 財務建議 -->
+                        <div class="section-title" style="margin-top: 30px;">💡 智能財務建議</div>
+                        <div v-for="suggestion in financialSuggestions" :key="suggestion.id" class="suggestion-card">
+                            <div class="suggestion-title">{{ suggestion.title }}</div>
+                            <div class="suggestion-desc">{{ suggestion.description }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 預算頁面 -->
+                <div class="page-content" id="budget">
+                    <div class="budget-section">
+                        <div class="section-title">
+                            💰 預算管理
+                            <button class="btn btn-secondary btn-small" @click="copyLastMonthBudget">複製上月預算</button>
+                        </div>
+                        
+                        <div class="analysis-grid">
+                            <div class="analysis-card">
+                                <div class="analysis-title">總預算</div>
+                                <div class="analysis-value">{{ formatCurrency(totalBudget) }}</div>
+                                <div class="analysis-desc">本月支出總預算</div>
+                            </div>
+                            <div class="analysis-card">
+                                <div class="analysis-title">總支出</div>
+                                <div class="analysis-value">{{ formatCurrency(totalExpenseForMonth) }}</div>
+                                <div class="analysis-desc">本月已支出</div>
+                            </div>
+                            <div class="analysis-card">
+                                <div class="analysis-title">剩餘預算</div>
+                                <div class="analysis-value">{{ formatCurrency(remainingBudget) }}</div>
+                                <div class="analysis-desc">{{ budgetStatus }}</div>
+                            </div>
+                        </div>
+                        
+                        <div v-for="item in budgetSummary" :key="item.category" class="budget-item">
+                            <div class="budget-info">
+                                <div class="budget-category">{{ item.category }}</div>
+                                <div class="budget-progress">
+                                    <div 
+                                        class="progress-bar" 
+                                        :class="{ warning: item.percentage > 75 && item.percentage <= 100, danger: item.percentage > 100 }"
+                                        :style="{ width: Math.min(item.percentage, 100) + '%' }"
+                                    ></div>
+                                </div>
+                                <div class="budget-details">
+                                    已用: {{ formatCurrency(item.spent) }} / 預算: {{ formatCurrency(item.budget) }}
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-small" @click="openBudgetModal(item.category, item.budget)">
+                                設定
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 提醒頁面 -->
+                <div class="page-content" id="reminders">
+                    <div class="reminders-section">
+                        <div class="section-title">
+                            提醒管理
+                            <button class="btn btn-primary btn-small" @click="showReminderModal = true">
+                                新增提醒
+                            </button>
+                        </div>
+                        <div v-if="allReminders.length === 0" class="empty-state">
+                            <div>暫無提醒</div>
+                            <div style="margin-top: 8px; font-size: 12px;">點擊上方按鈕新增提醒</div>
+                        </div>
+                        <div v-else>
+                            <div v-for="reminder in allReminders" :key="reminder.id" :class="['reminder-item', reminder.urgency]">
+                                <div class="reminder-info">
+                                    <div class="reminder-title">{{ reminder.title }}</div>
+                                    <div class="reminder-description">{{ reminder.description }}</div>
+                                    <div class="reminder-date">{{ formatReminderDate(reminder.dueDate) }}</div>
+                                    <div class="reminder-actions">
+                                        <button class="btn btn-primary btn-small" @click="markReminderDone(reminder.id)">
+                                            完成
+                                        </button>
+                                        <button class="btn btn-secondary btn-small" @click="editReminder(reminder)">
+                                            編輯
+                                        </button>
+                                        <button class="btn btn-danger btn-small" @click="deleteReminder(reminder.id)">
+                                            刪除
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 報表頁面 -->
+                <div class="page-content" id="reports">
+                    <div class="records-section">
+                        <div class="section-title">
+                            財務報表
+                            <button class="btn btn-primary btn-small" @click="exportData">
+                                匯出CSV
+                            </button>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px;">
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 20px; font-weight: bold; color: #67c23a;">{{ records.filter(r => r.type === 'income').length }}</div>
+                                    <div style="font-size: 12px; color: #909399;">收入筆數</div>
+                                </div>
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                                    <div style="font-size: 20px; font-weight: bold; color: #f56c6c;">{{ records.filter(r => r.type === 'expense').length }}</div>
+                                    <div style="font-size: 12px; color: #909399;">支出筆數</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="records.length === 0" class="empty-state">
+                            <div>暫無資料</div>
+                        </div>
+                        <div v-else>
+                            <div v-for="record in records" :key="record.id" class="record-item">
+                                <div class="record-info">
+                                    <div class="record-category">{{ record.category }}</div>
+                                    <div class="record-description">
+                                        {{ record.description }} - {{ formatDate(record.date) }}
+                                    </div>
+                                </div>
+                                <div :class="['record-amount', record.type]">
+                                    {{ record.type === 'income' ? '+' : '-' }}{{ formatCurrency(record.amount) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 設定頁面 -->
+                <div class="page-content" id="settings">
+                    <div class="records-section">
+                        <div class="section-title">系統設定</div>
+                        <div class="quick-actions" style="grid-template-columns: 1fr;">
+                            <div class="action-card" @click="exportData">
+                                <div class="action-icon">📊</div>
+                                <div class="action-title">匯出資料</div>
+                            </div>
+                            <div class="action-card" @click="generateTestData">
+                                <div class="action-icon">🎲</div>
+                                <div class="action-title">生成測試資料</div>
+                            </div>
+                            <div class="action-card" @click="clearAllData">
+                                <div class="action-icon">🗑️</div>
+                                <div class="action-title">清除所有資料</div>
+                            </div>
+                            <div class="action-card" @click="installApp">
+                                <div class="action-icon">📱</div>
+                                <div class="action-title">安裝到手機</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h4 style="margin-bottom: 10px;">功能特色</h4>
+                            <ul style="padding-left: 20px; color: #606266; font-size: 14px; line-height: 1.6;">
+                                <li>💰 預算管理，有效控制開支</li>
+                                <li>📊 智能財務分析，AI評分系統</li>
+                                <li>📈 趨勢預測，幫助財務規劃</li>
+                                <li>🔔 智能提醒，週末自動調整</li>
+                                <li>📱 PWA應用，可安裝到手機桌面</li>
+                                <li>💡 個性化財務建議</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 底部導航 -->
+            <div class="bottom-nav">
+                <div class="nav-item active" @click="switchPage('dashboard')">
+                    <div class="nav-icon">🏠</div>
+                    <div class="nav-label">首頁</div>
+                </div>
+                <div class="nav-item" @click="switchPage('analysis')">
+                    <div class="nav-icon">📊</div>
+                    <div class="nav-label">分析</div>
+                </div>
+                <div class="nav-item" @click="switchPage('budget')">
+                    <div class="nav-icon">💰</div>
+                    <div class="nav-label">預算</div>
+                </div>
+                <div class="nav-item" @click="switchPage('reminders')">
+                    <div class="nav-icon">🔔</div>
+                    <div class="nav-label">提醒</div>
+                </div>
+                <div class="nav-item" @click="switchPage('settings')">
+                    <div class="nav-icon">⚙️</div>
+                    <div class="nav-label">設定</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新增記錄對話框 -->
+        <div v-if="showAddModal" class="modal" @click.self="closeAddModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">{{ modalTitle }}</div>
+                    <button class="close-btn" @click="closeAddModal">&times;</button>
+                </div>
+                
+                <form @submit.prevent="saveRecord">
+                    <div class="form-group">
+                        <label class="form-label">類型</label>
+                        <select v-model="form.type" class="form-select" @change="updateCategories">
+                            <option value="income">收入</option>
+                            <option value="expense">支出</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">類別</label>
+                        <select v-model="form.category" class="form-select" required>
+                            <option value="">請選擇類別</option>
+                            <option v-for="category in currentCategories" :key="category" :value="category">
+                                {{ category }}
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">金額</label>
+                        <input 
+                            v-model.number="form.amount" 
+                            type="number" 
+                            class="form-input" 
+                            placeholder="請輸入金額"
+                            min="1"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">日期</label>
+                        <input 
+                            v-model="form.date" 
+                            type="date" 
+                            class="form-input"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">說明</label>
+                        <input 
+                            v-model="form.description" 
+                            type="text" 
+                            class="form-input" 
+                            placeholder="請輸入說明"
+                        >
+                    </div>
+                    
+                    <div class="form-group" v-if="form.type === 'income'">
+                        <label class="form-label">捐款人</label>
+                        <input 
+                            v-model="form.donor" 
+                            type="text" 
+                            class="form-input" 
+                            placeholder="請輸入捐款人姓名（選填）"
+                        >
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" @click="closeAddModal">
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            儲存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 新增提醒對話框 -->
+        <div v-if="showReminderModal" class="modal" @click.self="closeReminderModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">{{ reminderModalTitle }}</div>
+                    <button class="close-btn" @click="closeReminderModal">&times;</button>
+                </div>
+                
+                <form @submit.prevent="saveReminder">
+                    <div class="form-group">
+                        <label class="form-label">提醒標題</label>
+                        <input 
+                            v-model="reminderForm.title" 
+                            type="text" 
+                            class="form-input" 
+                            placeholder="例如：繳房租"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">提醒內容</label>
+                        <textarea 
+                            v-model="reminderForm.description" 
+                            class="form-textarea" 
+                            placeholder="例如：每月25號要繳房租給房東"
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">到期日期</label>
+                        <input 
+                            v-model="reminderForm.dueDate" 
+                            type="date" 
+                            class="form-input"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">重複週期</label>
+                        <select v-model="reminderForm.repeat" class="form-select">
+                            <option value="none">不重複</option>
+                            <option value="monthly">每月</option>
+                            <option value="yearly">每年</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">提前提醒天數</label>
+                        <select v-model="reminderForm.advanceDays" class="form-select">
+                            <option value="1">1天前</option>
+                            <option value="2">2天前</option>
+                            <option value="3">3天前</option>
+                            <option value="7">7天前</option>
+                        </select>
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" @click="closeReminderModal">
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            儲存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 設定預算對話框 -->
+        <div v-if="showBudgetModal" class="modal" @click.self="showBudgetModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">設定預算 - {{ budgetForm.category }}</div>
+                    <button class="close-btn" @click="showBudgetModal = false">&times;</button>
+                </div>
+                
+                <form @submit.prevent="saveBudget">
+                    <div class="form-group">
+                        <label class="form-label">預算金額</label>
+                        <input 
+                            v-model.number="budgetForm.amount" 
+                            type="number" 
+                            class="form-input" 
+                            placeholder="請輸入預算金額"
+                            min="0"
+                            required
+                        >
+                    </div>
+                    
+                    <div style="text-align: right; margin-top: 24px;">
+                        <button type="button" class="btn btn-secondary" @click="showBudgetModal = false">
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            儲存預算
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 通知彈窗 -->
+        <div v-if="showNotificationPopup" class="notification-popup">
+            <div class="notification-title">{{ currentNotification.title }}</div>
+            <div class="notification-message">{{ currentNotification.message }}</div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+        
+        createApp({
+            setup() {
+                // 響應式資料
+                const showAddModal = ref(false);
+                const showReminderModal = ref(false);
+                const showBudgetModal = ref(false);
+                const showNotificationPopup = ref(false);
+                const currentPage = ref('dashboard');
+                const records = ref([]);
+                const reminders = ref([]);
+                const budgets = ref({});
+                const editingReminder = ref(null);
+                const currentNotification = ref({});
+                const selectedTimeFilter = ref('3months');
+                
+                const form = ref({
+                    type: 'income',
+                    category: '',
+                    amount: null,
+                    date: new Date().toISOString().split('T')[0],
+                    description: '',
+                    donor: ''
+                });
+                
+                const reminderForm = ref({
+                    title: '',
+                    description: '',
+                    dueDate: '',
+                    repeat: 'none',
+                    advanceDays: 2
+                });
+                
+                const budgetForm = ref({
+                    category: '',
+                    amount: null
+                });
+                
+                // 時間篩選選項
+                const timeFilters = [
+                    { key: '1month', label: '近1個月' },
+                    { key: '3months', label: '近3個月' },
+                    { key: '6months', label: '近6個月' },
+                    { key: '1year', label: '近1年' },
+                    { key: 'all', label: '全部' }
+                ];
+                
+                // 類別定義
+                const incomeCategories = [
+                    '香油錢', '點光明燈', '屬名紅包', '未屬名紅包', 
+                    '祝壽', '看風水', '停車費', '感謝神尊', '其他'
+                ];
+                
+                const expenseCategories = [
+                    '人員薪水', '房租', '水電費', '雜項開支', 
+                    '參訪金', '修繕費', '管理費', '其他'
+                ];
+                
+                // 計算屬性
+                const currentCategories = computed(() => {
+                    return form.value.type === 'income' ? incomeCategories : expenseCategories;
+                });
+                
+                const modalTitle = computed(() => {
+                    return form.value.type === 'income' ? '新增收入' : '新增支出';
+                });
+                
+                const reminderModalTitle = computed(() => {
+                    return editingReminder.value ? '編輯提醒' : '新增提醒';
+                });
+                
+                // 根據時間篩選獲取記錄
+                const filteredRecords = computed(() => {
+                    if (selectedTimeFilter.value === 'all') {
+                        return records.value;
+                    }
+                    
+                    const now = new Date();
+                    let startDate = new Date();
+                    
+                    switch (selectedTimeFilter.value) {
+                        case '1month':
+                            startDate.setMonth(now.getMonth() - 1);
+                            break;
+                        case '3months':
+                            startDate.setMonth(now.getMonth() - 3);
+                            break;
+                        case '6months':
+                            startDate.setMonth(now.getMonth() - 6);
+                            break;
+                        case '1year':
+                            startDate.setFullYear(now.getFullYear() - 1);
+                            break;
+                    }
+                    
+                    return records.value.filter(record => {
+                        const recordDate = new Date(record.date);
+                        return recordDate >= startDate;
+                    });
+                });
+                
+                const totalIncome = computed(() => {
+                    return filteredRecords.value
+                        .filter(r => r.type === 'income')
+                        .reduce((sum, r) => sum + r.amount, 0);
+                });
+                
+                const totalExpense = computed(() => {
+                    return filteredRecords.value
+                        .filter(r => r.type === 'expense')
+                        .reduce((sum, r) => sum + r.amount, 0);
+                });
+                
+                const totalBalance = computed(() => {
+                    return totalIncome.value - totalExpense.value;
+                });
+                
+                const recentRecords = computed(() => {
+                    return records.value
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))
+                        .slice(0, 10);
+                });
+                
+                const allReminders = computed(() => {
+                    return reminders.value
+                        .filter(r => !r.completed)
+                        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                });
+                
+                const urgentReminders = computed(() => {
+                    const today = new Date();
+                    return allReminders.value.filter(reminder => {
+                        const dueDate = new Date(reminder.dueDate);
+                        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                        
+                        if (diffDays <= reminder.advanceDays) {
+                            const dayOfWeek = dueDate.getDay();
+                            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                                const fridayBefore = new Date(dueDate);
+                                fridayBefore.setDate(dueDate.getDate() - (dayOfWeek === 0 ? 2 : 1));
+                                const fridayDiff = Math.ceil((fridayBefore - today) / (1000 * 60 * 60 * 24));
+                                if (fridayDiff <= reminder.advanceDays) {
+                                    reminder.urgency = diffDays <= 1 ? 'urgent' : 'warning';
+                                    return true;
+                                }
+                            } else {
+                                reminder.urgency = diffDays <= 1 ? 'urgent' : 'warning';
+                                return true;
+                            }
+                        }
+                        return false;
+                    });
+                });
+                
+                // 智能分析計算
+                const incomeTrend = computed(() => {
+                    const thisMonth = records.value.filter(r => 
+                        r.type === 'income' && 
+                        new Date(r.date).getMonth() === new Date().getMonth()
+                    ).reduce((sum, r) => sum + r.amount, 0);
+                    
+                    const lastMonth = records.value.filter(r => 
+                        r.type === 'income' && 
+                        new Date(r.date).getMonth() === new Date().getMonth() - 1
+                    ).reduce((sum, r) => sum + r.amount, 0);
+                    
+                    const percentage = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth * 100).toFixed(1) : 0;
+                    return {
+                        direction: thisMonth >= lastMonth ? 'up' : 'down',
+                        percentage: Math.abs(percentage)
+                    };
+                });
+                
+                const expenseTrend = computed(() => {
+                    const thisMonth = records.value.filter(r => 
+                        r.type === 'expense' && 
+                        new Date(r.date).getMonth() === new Date().getMonth()
+                    ).reduce((sum, r) => sum + r.amount, 0);
+                    
+                    const lastMonth = records.value.filter(r => 
+                        r.type === 'expense' && 
+                        new Date(r.date).getMonth() === new Date().getMonth() - 1
+                    ).reduce((sum, r) => sum + r.amount, 0);
+                    
+                    const percentage = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth * 100).toFixed(1) : 0;
+                    return {
+                        direction: thisMonth >= lastMonth ? 'up' : 'down',
+                        percentage: Math.abs(percentage)
+                    };
+                });
+                
+                const balanceTrend = computed(() => {
+                    const thisMonthBalance = totalIncome.value - totalExpense.value;
+                    const lastMonthIncome = records.value.filter(r => 
+                        r.type === 'income' && 
+                        new Date(r.date).getMonth() === new Date().getMonth() - 1
+                    ).reduce((sum, r) => sum + r.amount, 0);
+                    
+                    const lastMonthExpense = records.value.filter(r => 
+                        r.type === 'expense' && 
+                        new Date(r.date).getMonth() === new Date().getMonth() - 1
+                    ).reduce((sum, r) => sum + r.amount, 0);
+                    
+                    const lastMonthBalance = lastMonthIncome - lastMonthExpense;
+                    const percentage = lastMonthBalance !== 0 ? ((thisMonthBalance - lastMonthBalance) / Math.abs(lastMonthBalance) * 100).toFixed(1) : 0;
+                    
+                    return {
+                        direction: thisMonthBalance >= lastMonthBalance ? 'up' : 'down',
+                        percentage: Math.abs(percentage)
+                    };
+                });
+                
+                const healthScore = computed(() => {
+                    let score = 50; // 基礎分數
+                    
+                    // 收支比例評分
+                    const ratio = totalExpense.value > 0 ? totalIncome.value / totalExpense.value : 1;
+                    if (ratio > 1.5) score += 30;
+                    else if (ratio > 1.2) score += 20;
+                    else if (ratio > 1) score += 10;
+                    else score -= 20;
+                    
+                    // 結餘穩定性評分
+                    if (totalBalance.value > 0) score += 20;
+                    else score -= 30;
+                    
+                    return Math.max(0, Math.min(100, score));
+                });
+                
+                const healthStatus = computed(() => {
+                    if (healthScore.value >= 80) return '優秀';
+                    if (healthScore.value >= 60) return '良好';
+                    if (healthScore.value >= 40) return '一般';
+                    return '需改善';
+                });
+                
+                const incomeExpenseRatio = computed(() => {
+                    return totalExpense.value > 0 ? (totalIncome.value / totalExpense.value * 100).toFixed(1) : 100;
+                });
+                
+                const incomeExpenseAnalysis = computed(() => {
+                    const ratio = parseFloat(incomeExpenseRatio.value);
+                    if (ratio > 150) return '收入遠超支出，財務狀況優秀';
+                    if (ratio > 120) return '收入超過支出，財務狀況良好';
+                    if (ratio > 100) return '收入略超支出，需注意控制';
+                    return '支出超過收入，需要調整財務';
+                });
+                
+                const avgDailyIncome = computed(() => {
+                    const days = Math.max(1, Math.ceil((new Date() - new Date(new Date().getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)));
+                    return totalIncome.value / days;
+                });
+                
+                const avgIncomeAnalysis = computed(() => {
+                    if (avgDailyIncome.value > 1000) return '日均收入表現優秀';
+                    if (avgDailyIncome.value > 500) return '日均收入表現良好';
+                    if (avgDailyIncome.value > 200) return '日均收入表現一般';
+                    return '建議增加收入來源';
+                });
+                
+                const topExpenseCategory = computed(() => {
+                    const categoryStats = {};
+                    filteredRecords.value.filter(r => r.type === 'expense').forEach(record => {
+                        categoryStats[record.category] = (categoryStats[record.category] || 0) + record.amount;
+                    });
+                    
+                    const sortedCategories = Object.entries(categoryStats).sort((a, b) => b[1] - a[1]);
+                    if (sortedCategories.length === 0) return { name: '無', percentage: 0 };
+                    
+                    const topCategory = sortedCategories[0];
+                    const percentage = totalExpense.value > 0 ? (topCategory[1] / totalExpense.value * 100).toFixed(1) : 0;
+                    
+                    return {
+                        name: topCategory[0],
+                        percentage: percentage
+                    };
+                });
+                
+                const predictedBalance = computed(() => {
+                    const monthlyIncome = totalIncome.value;
+                    const monthlyExpense = totalExpense.value;
+                    const trend = monthlyIncome - monthlyExpense;
+                    return totalBalance.value + trend;
+                });
+                
+                const balancePrediction = computed(() => {
+                    const predicted = predictedBalance.value;
+                    if (predicted > totalBalance.value) return '預計下月結餘增加';
+                    if (predicted < totalBalance.value) return '預計下月結餘減少';
+                    return '預計下月結餘持平';
+                });
+                
+                const financialSuggestions = computed(() => {
+                    const suggestions = [];
+                    
+                    if (totalExpense.value > totalIncome.value) {
+                        suggestions.push({
+                            id: 1,
+                            title: '支出控制建議',
+                            description: '當前支出超過收入，建議檢視並削減非必要支出項目，特別是雜項開支和管理費用。'
+                        });
+                    }
+                    
+                    if (topExpenseCategory.value.percentage > 50) {
+                        suggestions.push({
+                            id: 2,
+                            title: '支出結構優化',
+                            description: `${topExpenseCategory.value.name}佔支出比例過高（${topExpenseCategory.value.percentage}%），建議分散支出風險，避免過度依賴單一支出類別。`
+                        });
+                    }
+                    
+                    if (healthScore.value < 60) {
+                        suggestions.push({
+                            id: 3,
+                            title: '財務健康改善',
+                            description: '財務健康度偏低，建議：1) 增加香油錢等穩定收入來源 2) 控制人員薪水和房租等固定支出 3) 建立緊急備用金。'
+                        });
+                    }
+                    
+                    const incomeVariance = calculateIncomeVariance();
+                    if (incomeVariance > 0.5) {
+                        suggestions.push({
+                            id: 4,
+                            title: '收入穩定性提升',
+                            description: '收入波動較大，建議多元化收入來源，如增加光明燈、看風水等服務項目，減少對單一收入的依賴。'
+                        });
+                    }
+                    
+                    if (suggestions.length === 0) {
+                        suggestions.push({
+                            id: 5,
+                            title: '財務狀況良好',
+                            description: '目前財務狀況穩定，建議繼續保持良好的收支管理習慣，可考慮設立發展基金為未來擴展做準備。'
+                        });
+                    }
+                    
+                    return suggestions;
+                });
+                
+                // 預算相關計算屬性
+                const budgetSummary = computed(() => {
+                    const currentMonth = new Date().toISOString().slice(0, 7);
+                    const monthBudgets = budgets.value[currentMonth] || {};
+                    
+                    const summary = expenseCategories.map(category => {
+                        const budget = monthBudgets[category] || 0;
+                        const spent = records.value
+                            .filter(r => r.type === 'expense' && r.category === category && r.date.startsWith(currentMonth))
+                            .reduce((sum, r) => sum + r.amount, 0);
+                        
+                        const percentage = budget > 0 ? (spent / budget) * 100 : 0;
+                        
+                        return {
+                            category,
+                            budget,
+                            spent,
+                            remaining: budget - spent,
+                            percentage
+                        };
+                    });
+                    
+                    return summary;
+                });
+                
+                const totalBudget = computed(() => {
+                    return budgetSummary.value.reduce((sum, item) => sum + item.budget, 0);
+                });
+                
+                const totalExpenseForMonth = computed(() => {
+                    return budgetSummary.value.reduce((sum, item) => sum + item.spent, 0);
+                });
+                
+                const remainingBudget = computed(() => {
+                    return totalBudget.value - totalExpenseForMonth.value;
+                });
+                
+                const budgetStatus = computed(() => {
+                    if (totalBudget.value === 0) return '尚未設定預算';
+                    const percentage = (totalExpenseForMonth.value / totalBudget.value) * 100;
+                    if (percentage > 100) return `已超支 ${((percentage - 100).toFixed(1))}%`;
+                    return `剩餘 ${(100 - percentage).toFixed(1)}%`;
+                });
+                
+                // 計算收入變異係數
+                const calculateIncomeVariance = () => {
+                    const monthlyIncomes = {};
+                    filteredRecords.value.filter(r => r.type === 'income').forEach(record => {
+                        const month = new Date(record.date).toISOString().slice(0, 7);
+                        monthlyIncomes[month] = (monthlyIncomes[month] || 0) + record.amount;
+                    });
+                    
+                    const incomes = Object.values(monthlyIncomes);
+                    if (incomes.length < 2) return 0;
+                    
+                    const mean = incomes.reduce((a, b) => a + b, 0) / incomes.length;
+                    const variance = incomes.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / incomes.length;
+                    const stdDev = Math.sqrt(variance);
+                    
+                    return mean > 0 ? stdDev / mean : 0;
+                };
+                
+                // 方法
+                const formatCurrency = (amount) => {
+                    return new Intl.NumberFormat('zh-TW', {
+                        style: 'currency',
+                        currency: 'TWD',
+                        minimumFractionDigits: 0
+                    }).format(amount);
+                };
+                
+                const formatDate = (date) => {
+                    return new Date(date).toLocaleDateString('zh-TW');
+                };
+                
+                const formatReminderDate = (date) => {
+                    const dueDate = new Date(date);
+                    const today = new Date();
+                    const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays < 0) {
+                        return `已過期 ${Math.abs(diffDays)} 天`;
+                    } else if (diffDays === 0) {
+                        return '今天到期';
+                    } else if (diffDays === 1) {
+                        return '明天到期';
+                    } else {
+                        return `${diffDays} 天後到期 (${formatDate(date)})`;
+                    }
+                };
+                
+                const switchPage = (page) => {
+                    document.querySelectorAll('.page-content').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    document.querySelectorAll('.nav-item').forEach(el => {
+                        el.classList.remove('active');
+                    });
+                    
+                    document.getElementById(page).classList.add('active');
+                    event.currentTarget.classList.add('active');
+                    
+                    currentPage.value = page;
+                    
+                    // 初始化圖表
+                    if (page === 'analysis') {
+                        nextTick(() => {
+                            initAnalysisCharts();
+                        });
+                    } else if (page === 'dashboard') {
+                        nextTick(() => {
+                            initDashboardChart();
+                        });
+                    }
+                };
+                
+                const openAddModal = (type) => {
+                    form.value.type = type;
+                    form.value.category = '';
+                    showAddModal.value = true;
+                };
+                
+                const closeAddModal = () => {
+                    showAddModal.value = false;
+                    resetForm();
+                };
+                
+                const resetForm = () => {
+                    form.value = {
+                        type: 'income',
+                        category: '',
+                        amount: null,
+                        date: new Date().toISOString().split('T')[0],
+                        description: '',
+                        donor: ''
+                    };
+                };
+                
+                const updateCategories = () => {
+                    form.value.category = '';
+                };
+                
+                const saveRecord = () => {
+                    if (!form.value.category || !form.value.amount) {
+                        alert('請填寫必要欄位');
+                        return;
+                    }
+                    
+                    // 預算檢查
+                    if (form.value.type === 'expense') {
+                        const currentMonth = form.value.date.slice(0, 7);
+                        const monthBudgets = budgets.value[currentMonth] || {};
+                        const categoryBudget = monthBudgets[form.value.category] || 0;
+                        
+                        if (categoryBudget > 0) {
+                            const spent = records.value
+                                .filter(r => r.type === 'expense' && r.category === form.value.category && r.date.startsWith(currentMonth))
+                                .reduce((sum, r) => sum + r.amount, 0);
+                            
+                            if (spent + form.value.amount > categoryBudget) {
+                                if (!confirm(`此筆支出將超過 [${form.value.category}] 的預算！\n\n預算: ${formatCurrency(categoryBudget)}\n已用: ${formatCurrency(spent)}\n此筆: ${formatCurrency(form.value.amount)}\n\n確定要繼續嗎？`)) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    
+                    const newRecord = {
+                        id: Date.now(),
+                        type: form.value.type,
+                        category: form.value.category,
+                        amount: form.value.amount,
+                        date: form.value.date,
+                        description: form.value.description || form.value.category,
+                        donor: form.value.donor || '',
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    records.value.push(newRecord);
+                    saveToStorage();
+                    closeAddModal();
+                    
+                    showNotification('記錄已儲存', '收支記錄已成功新增');
+                    
+                    // 更新圖表
+                    if (currentPage.value === 'dashboard') {
+                        nextTick(() => {
+                            initDashboardChart();
+                        });
+                    } else if (currentPage.value === 'analysis') {
+                        nextTick(() => {
+                            initAnalysisCharts();
+                        });
+                    }
+                };
+                
+                const saveReminder = () => {
+                    if (!reminderForm.value.title || !reminderForm.value.dueDate) {
+                        alert('請填寫必要欄位');
+                        return;
+                    }
+                    
+                    if (editingReminder.value) {
+                        const index = reminders.value.findIndex(r => r.id === editingReminder.value.id);
+                        if (index !== -1) {
+                            reminders.value[index] = {
+                                ...reminders.value[index],
+                                ...reminderForm.value,
+                                updatedAt: new Date().toISOString()
+                            };
+                        }
+                    } else {
+                        const newReminder = {
+                            id: Date.now(),
+                            ...reminderForm.value,
+                            completed: false,
+                            createdAt: new Date().toISOString()
+                        };
+                        reminders.value.push(newReminder);
+                    }
+                    
+                    saveToStorage();
+                    closeReminderModal();
+                    
+                    showNotification('提醒已儲存', '提醒設定已成功儲存');
+                };
+                
+                const closeReminderModal = () => {
+                    showReminderModal.value = false;
+                    editingReminder.value = null;
+                    resetReminderForm();
+                };
+                
+                const resetReminderForm = () => {
+                    reminderForm.value = {
+                        title: '',
+                        description: '',
+                        dueDate: '',
+                        repeat: 'none',
+                        advanceDays: 2
+                    };
+                };
+                
+                const editReminder = (reminder) => {
+                    editingReminder.value = reminder;
+                    reminderForm.value = { ...reminder };
+                    showReminderModal.value = true;
+                };
+                
+                const markReminderDone = (id) => {
+                    const reminder = reminders.value.find(r => r.id === id);
+                    if (reminder) {
+                        reminder.completed = true;
+                        reminder.completedAt = new Date().toISOString();
+                        
+                        if (reminder.repeat !== 'none') {
+                            const nextDueDate = new Date(reminder.dueDate);
+                            if (reminder.repeat === 'monthly') {
+                                nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                            } else if (reminder.repeat === 'yearly') {
+                                nextDueDate.setFullYear(nextDueDate.getFullYear() + 1);
+                            }
+                            
+                            const nextReminder = {
+                                ...reminder,
+                                id: Date.now(),
+                                dueDate: nextDueDate.toISOString().split('T')[0],
+                                completed: false,
+                                createdAt: new Date().toISOString()
+                            };
+                            reminders.value.push(nextReminder);
+                        }
+                        
+                        saveToStorage();
+                        showNotification('提醒已完成', '提醒已標記為完成');
+                    }
+                };
+                
+                const snoozeReminder = (id) => {
+                    const reminder = reminders.value.find(r => r.id === id);
+                    if (reminder) {
+                        const newDueDate = new Date(reminder.dueDate);
+                        newDueDate.setDate(newDueDate.getDate() + 1);
+                        reminder.dueDate = newDueDate.toISOString().split('T')[0];
+                        saveToStorage();
+                        showNotification('提醒已延後', '提醒已延後一天');
+                    }
+                };
+                
+                const deleteReminder = (id) => {
+                    if (confirm('確定要刪除此提醒嗎？')) {
+                        const index = reminders.value.findIndex(r => r.id === id);
+                        if (index !== -1) {
+                            reminders.value.splice(index, 1);
+                            saveToStorage();
+                            showNotification('提醒已刪除', '提醒已成功刪除');
+                        }
+                    }
+                };
+                
+                const showNotifications = () => {
+                    if (urgentReminders.value.length > 0) {
+                        switchPage('reminders');
+                    } else {
+                        showNotification('無緊急提醒', '目前沒有需要處理的提醒');
+                    }
+                };
+                
+                const showNotification = (title, message) => {
+                    currentNotification.value = { title, message };
+                    showNotificationPopup.value = true;
+                    setTimeout(() => {
+                        showNotificationPopup.value = false;
+                    }, 3000);
+                };
+                
+                const saveToStorage = () => {
+                    localStorage.setItem('temple-records', JSON.stringify(records.value));
+                    localStorage.setItem('temple-reminders', JSON.stringify(reminders.value));
+                    localStorage.setItem('temple-budgets', JSON.stringify(budgets.value));
+                };
+                
+                const loadFromStorage = () => {
+                    const savedRecords = localStorage.getItem('temple-records');
+                    if (savedRecords) {
+                        records.value = JSON.parse(savedRecords);
+                    }
+                    
+                    const savedReminders = localStorage.getItem('temple-reminders');
+                    if (savedReminders) {
+                        reminders.value = JSON.parse(savedReminders);
+                    }
+                    
+                    const savedBudgets = localStorage.getItem('temple-budgets');
+                    if (savedBudgets) {
+                        budgets.value = JSON.parse(savedBudgets);
+                    }
+                };
+                
+                const openBudgetModal = (category, amount) => {
+                    budgetForm.value.category = category;
+                    budgetForm.value.amount = amount;
+                    showBudgetModal.value = true;
+                };
+                
+                const saveBudget = () => {
+                    const currentMonth = new Date().toISOString().slice(0, 7);
+                    if (!budgets.value[currentMonth]) {
+                        budgets.value[currentMonth] = {};
+                    }
+                    budgets.value[currentMonth][budgetForm.value.category] = budgetForm.value.amount;
+                    saveToStorage();
+                    showBudgetModal.value = false;
+                    showNotification('預算已設定', `${budgetForm.value.category} 的預算已更新`);
+                };
+                
+                const copyLastMonthBudget = () => {
+                    const today = new Date();
+                    const currentMonth = today.toISOString().slice(0, 7);
+                    const lastMonthDate = new Date(today.setMonth(today.getMonth() - 1));
+                    const lastMonth = lastMonthDate.toISOString().slice(0, 7);
+                    
+                    if (budgets.value[lastMonth]) {
+                        if (confirm('確定要將上個月的預算複製到本月嗎？這將會覆蓋本月已設定的預算。')) {
+                            budgets.value[currentMonth] = { ...budgets.value[lastMonth] };
+                            saveToStorage();
+                            showNotification('預算已複製', '已成功複製上個月的預算');
+                        }
+                    } else {
+                        alert('上個月沒有設定預算');
+                    }
+                };
+                
+                const exportData = () => {
+                    if (records.value.length === 0) {
+                        alert('暫無資料可匯出');
+                        return;
+                    }
+                    
+                    const csvContent = [
+                        '日期,類型,類別,金額,說明,捐款人',
+                        ...records.value.map(record => [
+                            record.date,
+                            record.type === 'income' ? '收入' : '支出',
+                            record.category,
+                            record.amount,
+                            record.description,
+                            record.donor || ''
+                        ].join(','))
+                    ].join('\n');
+                    
+                    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `廣清宮記帳資料_${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    showNotification('匯出成功', '資料已匯出為CSV檔案');
+                };
+                
+                const generateTestData = () => {
+                    if (confirm('確定要生成測試資料嗎？這將會新增一些示例記錄。')) {
+                        const testRecords = [];
+                        const today = new Date();
+                        
+                        // 生成過去3個月的測試資料
+                        for (let i = 0; i < 90; i++) {
+                            const date = new Date(today);
+                            date.setDate(date.getDate() - i);
+                            
+                            // 隨機生成收入記錄
+                            if (Math.random() > 0.7) {
+                                const incomeCategory = incomeCategories[Math.floor(Math.random() * incomeCategories.length)];
+                                testRecords.push({
+                                    id: Date.now() + Math.random(),
+                                    type: 'income',
+                                    category: incomeCategory,
+                                    amount: Math.floor(Math.random() * 5000) + 500,
+                                    date: date.toISOString().split('T')[0],
+                                    description: `${incomeCategory}收入`,
+                                    donor: Math.random() > 0.5 ? `信眾${Math.floor(Math.random() * 100)}` : '',
+                                    createdAt: new Date().toISOString()
+                                });
+                            }
+                            
+                            // 隨機生成支出記錄
+                            if (Math.random() > 0.8) {
+                                const expenseCategory = expenseCategories[Math.floor(Math.random() * expenseCategories.length)];
+                                testRecords.push({
+                                    id: Date.now() + Math.random(),
+                                    type: 'expense',
+                                    category: expenseCategory,
+                                    amount: Math.floor(Math.random() * 3000) + 200,
+                                    date: date.toISOString().split('T')[0],
+                                    description: `${expenseCategory}支出`,
+                                    donor: '',
+                                    createdAt: new Date().toISOString()
+                                });
+                            }
+                        }
+                        
+                        records.value.push(...testRecords);
+                        saveToStorage();
+                        showNotification('測試資料已生成', `已新增 ${testRecords.length} 筆測試記錄`);
+                        
+                        // 更新圖表
+                        if (currentPage.value === 'dashboard') {
+                            nextTick(() => {
+                                initDashboardChart();
+                            });
+                        } else if (currentPage.value === 'analysis') {
+                            nextTick(() => {
+                                initAnalysisCharts();
+                            });
+                        }
+                    }
+                };
+                
+                const clearAllData = () => {
+                    if (confirm('確定要清除所有資料嗎？此操作無法復原。')) {
+                        records.value = [];
+                        reminders.value = [];
+                        budgets.value = {};
+                        localStorage.removeItem('temple-records');
+                        localStorage.removeItem('temple-reminders');
+                        localStorage.removeItem('temple-budgets');
+                        showNotification('資料已清除', '所有資料已成功清除');
+                        
+                        // 更新圖表
+                        if (currentPage.value === 'dashboard') {
+                            nextTick(() => {
+                                initDashboardChart();
+                            });
+                        } else if (currentPage.value === 'analysis') {
+                            nextTick(() => {
+                                initAnalysisCharts();
+                            });
+                        }
+                    }
+                };
+                
+                const installApp = () => {
+                    if ('serviceWorker' in navigator) {
+                        showNotification('安裝提示', '請使用瀏覽器的「加到主畫面」功能安裝此應用');
+                    } else {
+                        alert('您的瀏覽器不支援PWA安裝功能');
+                    }
+                };
+                
+                const checkReminders = () => {
+                    if (urgentReminders.value.length > 0) {
+                        const reminder = urgentReminders.value[0];
+                        showNotification('提醒通知', `${reminder.title} - ${formatReminderDate(reminder.dueDate)}`);
+                    }
+                };
+                
+                // 圖表初始化
+                const initDashboardChart = () => {
+                    const chartElement = document.getElementById('dashboardChart');
+                    if (!chartElement) return;
+                    
+                    const chart = echarts.init(chartElement);
+                    
+                    // 準備數據
+                    const last7Days = [];
+                    const incomeData = [];
+                    const expenseData = [];
+                    
+                    for (let i = 6; i >= 0; i--) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+                        const dateStr = date.toISOString().split('T')[0];
+                        last7Days.push(date.getMonth() + 1 + '/' + date.getDate());
+                        
+                        const dayIncome = records.value
+                            .filter(r => r.type === 'income' && r.date === dateStr)
+                            .reduce((sum, r) => sum + r.amount, 0);
+                        const dayExpense = records.value
+                            .filter(r => r.type === 'expense' && r.date === dateStr)
+                            .reduce((sum, r) => sum + r.amount, 0);
+                        
+                        incomeData.push(dayIncome);
+                        expenseData.push(dayExpense);
+                    }
+                    
+                    const option = {
+                        title: {
+                            text: '近7天收支趨勢',
+                            left: 'center'
+                        },
+                        tooltip: {
+                            trigger: 'axis',
+                            formatter: function(params) {
+                                let result = params[0].name + '<br/>';
+                                params.forEach(param => {
+                                    result += param.marker + param.seriesName + ': ' + formatCurrency(param.value) + '<br/>';
+                                });
+                                return result;
+                            }
+                        },
+                        legend: {
+                            data: ['收入', '支出'],
+                            top: 30
+                        },
+                        xAxis: {
+                            type: 'category',
+                            data: last7Days
+                        },
+                        yAxis: {
+                            type: 'value',
+                            axisLabel: {
+                                formatter: function(value) {
+                                    return value >= 1000 ? (value / 1000) + 'K' : value;
+                                }
+                            }
+                        },
+                        series: [
+                            {
+                                name: '收入',
+                                type: 'line',
+                                data: incomeData,
+                                itemStyle: { color: '#67c23a' },
+                                smooth: true
+                            },
+                            {
+                                name: '支出',
+                                type: 'line',
+                                data: expenseData,
+                                itemStyle: { color: '#f56c6c' },
+                                smooth: true
+                            }
+                        ]
+                    };
+                    
+                    chart.setOption(option);
+                    
+                    window.addEventListener('resize', () => {
+                        chart.resize();
+                    });
+                };
+                
+                const initAnalysisCharts = () => {
+                    // 趨勢圖
+                    const trendElement = document.getElementById('trendChart');
+                    if (trendElement) {
+                        const chart = echarts.init(trendElement);
+                        
+                        // 月度數據
+                        const monthlyData = {};
+                        filteredRecords.value.forEach(record => {
+                            const month = new Date(record.date).toISOString().slice(0, 7);
+                            if (!monthlyData[month]) {
+                                monthlyData[month] = { income: 0, expense: 0 };
+                            }
+                            monthlyData[month][record.type] += record.amount;
+                        });
+                        
+                        const months = Object.keys(monthlyData).sort();
+                        const incomeData = months.map(month => monthlyData[month].income);
+                        const expenseData = months.map(month => monthlyData[month].expense);
+                        
+                        const option = {
+                            title: {
+                                text: '月度收支趨勢',
+                                left: 'center'
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                                formatter: function(params) {
+                                    let result = params[0].name + '<br/>';
+                                    params.forEach(param => {
+                                        result += param.marker + param.seriesName + ': ' + formatCurrency(param.value) + '<br/>';
+                                    });
+                                    return result;
+                                }
+                            },
+                            legend: {
+                                data: ['收入', '支出'],
+                                top: 30
+                            },
+                            xAxis: {
+                                type: 'category',
+                                data: months
+                            },
+                            yAxis: {
+                                type: 'value',
+                                axisLabel: {
+                                    formatter: function(value) {
+                                        return value >= 1000 ? (value / 1000) + 'K' : value;
+                                    }
+                                }
+                            },
+                            series: [
+                                {
+                                    name: '收入',
+                                    type: 'bar',
+                                    data: incomeData,
+                                    itemStyle: { color: '#67c23a' }
+                                },
+                                {
+                                    name: '支出',
+                                    type: 'bar',
+                                    data: expenseData,
+                                    itemStyle: { color: '#f56c6c' }
+                                }
+                            ]
+                        };
+                        
+                        chart.setOption(option);
+                    }
+                    
+                    // 類別分析圖
+                    const categoryElement = document.getElementById('categoryChart');
+                    if (categoryElement) {
+                        const chart = echarts.init(categoryElement);
+                        
+                        const categoryStats = {};
+                        filteredRecords.value.filter(r => r.type === 'expense').forEach(record => {
+                            categoryStats[record.category] = (categoryStats[record.category] || 0) + record.amount;
+                        });
+                        
+                        const categoryData = Object.entries(categoryStats).map(([name, value]) => ({
+                            name,
+                            value
+                        }));
+                        
+                        const option = {
+                            title: {
+                                text: '支出類別分布',
+                                left: 'center'
+                            },
+                            tooltip: {
+                                trigger: 'item',
+                                formatter: '{a} <br/>{b}: {c} ({d}%)'
+                            },
+                            series: [
+                                {
+                                    name: '支出類別',
+                                    type: 'pie',
+                                    radius: '50%',
+                                    data: categoryData,
+                                    emphasis: {
+                                        itemStyle: {
+                                            shadowBlur: 10,
+                                            shadowOffsetX: 0,
+                                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                                        }
+                                    }
+                                }
+                            ]
+                        };
+                        
+                        chart.setOption(option);
+                    }
+                    
+                    // 月度對比圖
+                    const monthlyElement = document.getElementById('monthlyChart');
+                    if (monthlyElement) {
+                        const chart = echarts.init(monthlyElement);
+                        
+                        const currentYear = new Date().getFullYear();
+                        const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                        const monthlyIncome = new Array(12).fill(0);
+                        const monthlyExpense = new Array(12).fill(0);
+                        
+                        records.value.forEach(record => {
+                            const recordDate = new Date(record.date);
+                            if (recordDate.getFullYear() === currentYear) {
+                                const month = recordDate.getMonth();
+                                if (record.type === 'income') {
+                                    monthlyIncome[month] += record.amount;
+                                } else {
+                                    monthlyExpense[month] += record.amount;
+                                }
+                            }
+                        });
+                        
+                        const option = {
+                            title: {
+                                text: `${currentYear}年月度收支對比`,
+                                left: 'center'
+                            },
+                            tooltip: {
+                                trigger: 'axis',
+                                formatter: function(params) {
+                                    let result = params[0].name + '<br/>';
+                                    params.forEach(param => {
+                                        result += param.marker + param.seriesName + ': ' + formatCurrency(param.value) + '<br/>';
+                                    });
+                                    return result;
+                                }
+                            },
+                            legend: {
+                                data: ['收入', '支出'],
+                                top: 30
+                            },
+                            xAxis: {
+                                type: 'category',
+                                data: monthNames
+                            },
+                            yAxis: {
+                                type: 'value',
+                                axisLabel: {
+                                    formatter: function(value) {
+                                        return value >= 1000 ? (value / 1000) + 'K' : value;
+                                    }
+                                }
+                            },
+                            series: [
+                                {
+                                    name: '收入',
+                                    type: 'line',
+                                    data: monthlyIncome,
+                                    itemStyle: { color: '#67c23a' },
+                                    smooth: true,
+                                    areaStyle: { opacity: 0.3 }
+                                },
+                                {
+                                    name: '支出',
+                                    type: 'line',
+                                    data: monthlyExpense,
+                                    itemStyle: { color: '#f56c6c' },
+                                    smooth: true,
+                                    areaStyle: { opacity: 0.3 }
+                                }
+                            ]
+                        };
+                        
+                        chart.setOption(option);
+                    }
+                };
+                
+                const updateCharts = () => {
+                    if (currentPage.value === 'analysis') {
+                        nextTick(() => {
+                            initAnalysisCharts();
+                        });
+                    }
+                };
+                
+                // 生命週期
+                onMounted(() => {
+                    loadFromStorage();
+                    
+                    // 註冊 Service Worker
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.register('./service-worker.js')
+                            .then(registration => {
+                                console.log('SW registered: ', registration);
+                            })
+                            .catch(registrationError => {
+                                console.log('SW registration failed: ', registrationError);
+                            });
+                    }
+                    
+                    // 檢查提醒
+                    checkReminders();
+                    
+                    // 每小時檢查一次提醒
+                    setInterval(checkReminders, 60 * 60 * 1000);
+                    
+                    // 初始化圖表
+                    nextTick(() => {
+                        initDashboardChart();
+                    });
+                    
+                    // 添加示例提醒
+                    if (reminders.value.length === 0) {
+                        const today = new Date();
+                        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 25);
+                        
+                        reminders.value.push({
+                            id: Date.now(),
+                            title: '繳房租',
+                            description: '每月25號要繳房租給房東',
+                            dueDate: nextMonth.toISOString().split('T')[0],
+                            repeat: 'monthly',
+                            advanceDays: 2,
+                            completed: false,
+                            createdAt: new Date().toISOString()
+                        });
+                        
+                        saveToStorage();
+                    }
+                });
+                
+                return {
+                    showAddModal,
+                    showReminderModal,
+                    showBudgetModal,
+                    showNotificationPopup,
+                    currentPage,
+                    records,
+                    reminders,
+                    budgets,
+                    form,
+                    reminderForm,
+                    budgetForm,
+                    editingReminder,
+                    currentNotification,
+                    selectedTimeFilter,
+                    timeFilters,
+                    currentCategories,
+                    modalTitle,
+                    reminderModalTitle,
+                    totalIncome,
+                    totalExpense,
+                    totalBalance,
+                    recentRecords,
+                    allReminders,
+                    urgentReminders,
+                    incomeTrend,
+                    expenseTrend,
+                    balanceTrend,
+                    healthScore,
+                    healthStatus,
+                    incomeExpenseRatio,
+                    incomeExpenseAnalysis,
+                    avgDailyIncome,
+                    avgIncomeAnalysis,
+                    topExpenseCategory,
+                    predictedBalance,
+                    balancePrediction,
+                    financialSuggestions,
+                    budgetSummary,
+                    totalBudget,
+                    totalExpenseForMonth,
+                    remainingBudget,
+                    budgetStatus,
+                    formatCurrency,
+                    formatDate,
+                    formatReminderDate,
+                    switchPage,
+                    openAddModal,
+                    closeAddModal,
+                    updateCategories,
+                    saveRecord,
+                    saveReminder,
+                    closeReminderModal,
+                    editReminder,
+                    markReminderDone,
+                    snoozeReminder,
+                    deleteReminder,
+                    showNotifications,
+                    openBudgetModal,
+                    saveBudget,
+                    copyLastMonthBudget,
+                    exportData,
+                    generateTestData,
+                    clearAllData,
+                    installApp,
+                    updateCharts
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
