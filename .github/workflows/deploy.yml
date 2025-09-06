@@ -31,6 +31,9 @@ jobs:
         cp index.html dist/ 2>/dev/null || true
         cp index-enhanced.html dist/ 2>/dev/null || true
         cp cloud-sync-test.html dist/ 2>/dev/null || true
+        cp test-enhanced-sync.html dist/ 2>/dev/null || true
+        cp firebase-config.js dist/ 2>/dev/null || true
+        cp offline-storage.js dist/ 2>/dev/null || true
         
         # 移除不需要的檔案
         rm -rf dist/.git dist/.github dist/node_modules 2>/dev/null || true

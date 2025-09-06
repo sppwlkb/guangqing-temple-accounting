@@ -1,0 +1,264 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-filesystem"
+      ],
+      "env": {}
+    },
+    "context7-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@upstash/context7-mcp",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6",
+        "--profile",
+        "big-stingray-JtPPMF"
+      ],
+      "env": {}
+    },
+    "server-sequential-thinking": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@smithery-ai/server-sequential-thinking",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "game-engine-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@mahecode/game-engine-mcp",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "mcp_generate_images": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@chenyeju295/mcp_generate_images",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "mcp-painter": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@flrngel/mcp-painter",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6",
+        "--profile",
+        "big-stingray-JtPPMF"
+      ],
+      "env": {}
+    },
+    "desktop-commander": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@wonderwhy-er/desktop-commander",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "exa": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "exa",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6",
+        "--profile",
+        "big-stingray-JtPPMF"
+      ],
+      "env": {}
+    },
+    "mcp-server-chart": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@antvis/mcp-server-chart",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "veyrax-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@VeyraX/veyrax-mcp",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6",
+        "--profile",
+        "big-stingray-JtPPMF"
+      ],
+      "env": {}
+    },
+    "mcp-taskmanager": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@kazuph/mcp-taskmanager",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "mcp-playwright": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@adalovu/mcp-playwright",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "clear-thought": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@waldzellai/clear-thought",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6",
+        "--profile",
+        "big-stingray-JtPPMF"
+      ],
+      "env": {}
+    },
+    "time-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@yokingma/time-mcp",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "hi-ai": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@su-record/hi-ai",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    },
+    "mcp-think-tank": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@flight505/mcp-think-tank",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6",
+        "--profile",
+        "big-stingray-JtPPMF"
+      ],
+      "env": {}
+    },
+    "cursor-talk-to-figma-mcp": {
+      "type": "stdio",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@smithery/cli@latest",
+        "run",
+        "@sonnylazuardi/cursor-talk-to-figma-mcp",
+        "--key",
+        "6a26ab1c-cac2-4f5d-8c3f-e90728abcad6"
+      ],
+      "env": {}
+    }
+  }
+}
