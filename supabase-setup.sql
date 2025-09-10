@@ -21,7 +21,10 @@ CREATE INDEX IF NOT EXISTS idx_temple_data_last_modified ON temple_data(last_mod
 ALTER TABLE temple_data ENABLE ROW LEVEL SECURITY;
 
 -- 4. 建立RLS政策 - 允許匿名訪問（因為是宮廟內部使用）
-CREATE POLICY IF NOT EXISTS "Allow all operations for all users" 
+-- 先檢查政策是否存在，如果存在就刪除重建
+DROP POLICY IF EXISTS "Allow all operations for all users" ON temple_data;
+
+CREATE POLICY "Allow all operations for all users" 
 ON temple_data 
 FOR ALL 
 USING (true) 
@@ -57,12 +60,16 @@ CREATE INDEX IF NOT EXISTS idx_temple_users_email ON temple_users(email);
 ALTER TABLE temple_users ENABLE ROW LEVEL SECURITY;
 
 -- 用戶表的RLS政策
-CREATE POLICY IF NOT EXISTS "Users can view own data" 
+-- 先刪除可能存在的舊政策
+DROP POLICY IF EXISTS "Users can view own data" ON temple_users;
+DROP POLICY IF EXISTS "Users can update own data" ON temple_users;
+
+CREATE POLICY "Users can view own data" 
 ON temple_users 
 FOR SELECT 
 USING (auth.uid()::text = id::text);
 
-CREATE POLICY IF NOT EXISTS "Users can update own data" 
+CREATE POLICY "Users can update own data" 
 ON temple_users 
 FOR UPDATE 
 USING (auth.uid()::text = id::text);
