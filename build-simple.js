@@ -5,8 +5,11 @@
  * 直接複製文件到 dist 目錄
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log('🚀 開始簡單建置流程...');
 

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite --host",
-    "build": "node build-simple.js",
+    "build": "node build-simple.cjs",
     "build:vite": "node build-netlify.js && vite build",
     "build:netlify": "node build-netlify.js && vite build",
     "build:local": "vite build",
