@@ -1,0 +1,44 @@
+[build]
+  # 簡單的部署命令 - 不使用 Vite
+  command = "mkdir -p dist && cp *.html dist/ && cp *.js dist/ && cp *.css dist/ && cp *.json dist/ && cp *.ico dist/ 2>/dev/null || true"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# 主頁重定向到增強版
+[[redirects]]
+  from = "/"
+  to = "/index-enhanced.html"
+  status = 200
+
+[[redirects]]
+  from = "/index.html"
+  to = "/index-enhanced.html"
+  status = 301
+
+# 單頁應用路由重定向
+[[redirects]]
+  from = "/*"
+  to = "/index-enhanced.html"
+  status = 200
+
+# 安全頭部
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
