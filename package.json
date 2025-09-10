@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "vite --host",
-    "build": "vite build",
+    "build": "node build-netlify.js && vite build",
+    "build:netlify": "node build-netlify.js && vite build",
+    "build:local": "vite build",
     "preview": "vite preview --host",
     "serve": "vite preview --port 3000",
     "clean": "rimraf dist node_modules/.vite",
@@ -24,7 +26,8 @@
     "element-plus": "^2.4.0",
     "echarts": "^5.4.3",
     "dayjs": "^1.11.10",
-    "@element-plus/icons-vue": "^2.3.0"
+    "@element-plus/icons-vue": "^2.3.0",
+    "@supabase/supabase-js": "^2.44.4"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",

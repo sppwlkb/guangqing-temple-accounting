@@ -1,60 +1,70 @@
 [build]
+  # 構建命令
+  command = "npm run build"
+  # 發布目錄
   publish = "dist"
-  command = "npm run build:prod"
 
 [build.environment]
-  NODE_ENV = "production"
+  # Node.js版本
   NODE_VERSION = "18"
 
+# 主頁重定向到增強版
+[[redirects]]
+  from = "/index.html"
+  to = "/index-enhanced.html"
+  status = 301
+
+# 單頁應用路由重定向到增強版
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/index-enhanced.html"
   status = 200
 
+# 頭部設置
 [[headers]]
   for = "/*"
   [headers.values]
+    # 安全頭部
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    
+    # PWA支援
+    Service-Worker-Allowed = "/"
+    
+    # 緩存控制
+    Cache-Control = "public, max-age=31536000"
+
+# 靜態文件特殊處理
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 [[headers]]
-  for = "/assets/*"
+  for = "*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
 [[headers]]
-  for = "/*.js"
+  for = "*.css"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-[[headers]]
-  for = "/*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# 錯誤頁面
+[[redirects]]
+  from = "/404"
+  to = "/index-enhanced.html"
+  status = 404
 
-[[headers]]
-  for = "/*.woff2"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# API代理（如果需要）
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://your-supabase-url.supabase.co/:splat"
+#   status = 200
+#   force = true
 
-# 預覽部署設定
-[context.deploy-preview]
-  command = "npm run build:staging"
-
-[context.branch-deploy]
-  command = "npm run build:staging"
-
-# 開發分支設定
-[context.dev]
-  command = "npm run build:staging"
-  
-# 表單處理（如果需要）
-# [[forms]]
-#   name = "contact"
-
-# 函數設定（如果需要）
-# [functions]
-#   directory = "functions"
+# 環境變數（將在Netlify面板中設置）
+# SUPABASE_URL = "your-supabase-url"
+# SUPABASE_ANON_KEY = "your-supabase-anon-key"

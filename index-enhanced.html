@@ -33,8 +33,17 @@
     <!-- ECharts -->
     <script src="https://unpkg.com/echarts@5.4.3/dist/echarts.min.js"></script>
 
+    <!-- 環境變數載入器 (必須最先載入) -->
+    <script src="env-loader.js"></script>
+    
+    <!-- Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <!-- 雲端同步服務 -->
     <script src="cloud-sync.js"></script>
+    
+    <!-- Supabase雲端同步服務 -->
+    <script src="supabase-sync.js"></script>
 
     <!-- QR Code生成器 -->
     <script src="qrcode-generator.js"></script>
@@ -393,8 +402,28 @@
         .quick-actions {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 12px;
             margin-bottom: 30px;
+        }
+
+        /* 手機版快速操作優化 */
+        @media (max-width: 768px) {
+            .quick-actions {
+                gap: 10px;
+            }
+            
+            .action-card {
+                padding: 15px 10px;
+            }
+            
+            .action-icon {
+                font-size: 28px;
+                margin-bottom: 8px;
+            }
+            
+            .action-title {
+                font-size: 14px;
+            }
         }
         
         .action-card {
@@ -2781,7 +2810,7 @@
                     </div>
                     
                     <!-- 快速操作 -->
-                    <div class="quick-actions">
+                    <div class="quick-actions" style="grid-template-columns: repeat(2, 1fr); gap: 12px;">
                         <div class="action-card" @click="openAddModal('income')">
                             <div class="action-icon">💰</div>
                             <div class="action-title">新增收入</div>
@@ -2789,6 +2818,19 @@
                         <div class="action-card" @click="openAddModal('expense')">
                             <div class="action-icon">💸</div>
                             <div class="action-title">新增支出</div>
+                        </div>
+                        <div class="action-card" @click="quickSyncToCloud" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; position: relative;">
+                            <div class="action-icon">☁️</div>
+                            <div class="action-title">雲端同步</div>
+                            <div v-if="syncStatus.syncing" style="position: absolute; top: 5px; right: 5px; font-size: 12px;">⏳</div>
+                            <div v-if="syncStatus.lastSyncTime" style="font-size: 10px; margin-top: 4px; opacity: 0.8;">
+                                {{ syncStatus.lastSyncTime }}
+                            </div>
+                        </div>
+                        <div class="action-card" @click="showSyncModal = true" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white;">
+                            <div class="action-icon">📱</div>
+                            <div class="action-title">設備同步</div>
+                            <div style="font-size: 10px; margin-top: 4px; opacity: 0.8;">多設備數據同步</div>
                         </div>
                     </div>
                     
@@ -3603,6 +3645,69 @@
                         </div>
                     </div>
 
+                    <!-- 用戶帳戶 -->
+                    <div class="content-card" style="margin-bottom: 20px;">
+                        <div class="card-title">👤 用戶帳戶</div>
+                        
+                        <div v-if="!currentUser" style="text-align: center; padding: 20px;">
+                            <!-- 手機版雲端同步強調區域 -->
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 15px; margin-bottom: 20px; position: relative; overflow: hidden;">
+                                <!-- 背景裝飾 -->
+                                <div style="position: absolute; top: -10px; right: -10px; font-size: 80px; opacity: 0.1;">☁️</div>
+                                <div style="position: absolute; bottom: -15px; left: -15px; font-size: 60px; opacity: 0.1;">📱</div>
+                                
+                                <div style="position: relative; z-index: 1;">
+                                    <div style="font-size: 36px; margin-bottom: 10px; animation: pulse 2s infinite;">☁️</div>
+                                    <div style="font-weight: bold; font-size: 20px; margin-bottom: 8px;">啟用雲端同步</div>
+                                    <div style="font-size: 14px; opacity: 0.9; line-height: 1.5; margin-bottom: 15px;">
+                                        📱 手機記帳 ↔️ 電腦同步<br>
+                                        🔄 資料永不丟失，隨時隨地存取
+                                    </div>
+                                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center; font-size: 12px; opacity: 0.8;">
+                                        <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 12px;">即時同步</span>
+                                        <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 12px;">多設備</span>
+                                        <span style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 12px;">安全備份</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary" @click="showAuthModal = true" style="width: 100%; padding: 15px; font-size: 16px; font-weight: bold; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+                                🚀 立即登入 / 註冊使用雲端同步
+                            </button>
+                            
+                            <div style="margin-top: 15px; font-size: 12px; color: #666; line-height: 1.4;">
+                                ✅ 免費使用 &nbsp;&nbsp; ✅ 資料加密 &nbsp;&nbsp; ✅ 離線支援
+                            </div>
+                        </div>
+                        
+                        <div v-else>
+                            <div style="background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-weight: bold; margin-bottom: 4px;">✅ 已登入</div>
+                                        <div style="font-size: 14px; opacity: 0.9;">{{ currentUser.email }}</div>
+                                        <div v-if="currentUser.user_metadata?.temple_name" style="font-size: 14px; opacity: 0.9;">
+                                            🏛️ {{ currentUser.user_metadata.temple_name }}
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary" @click="handleLogout" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);">
+                                        登出
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                <div style="font-weight: bold; margin-bottom: 8px; color: #28a745;">🌟 已啟用功能</div>
+                                <ul style="font-size: 14px; color: #666; line-height: 1.6; margin-left: 20px;">
+                                    <li>雲端數據同步</li>
+                                    <li>多設備數據共享</li>
+                                    <li>自動備份保護</li>
+                                    <li>數據安全加密</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 備份與恢復 -->
                     <div class="content-card" style="margin-bottom: 20px;">
                         <div class="card-title">💾 數據備份與恢復</div>
@@ -3781,8 +3886,95 @@
 
                     <!-- 數據同步狀態 -->
                     <div class="content-card">
-                        <div class="card-title">💾 數據同步狀態</div>
-                        <div id="sync-status" style="color: #606266; font-size: 14px; line-height: 1.8;">
+                        <div class="card-title">💾 雲端同步狀態</div>
+                        
+                        <!-- 同步狀態卡片 -->
+                        <div id="sync-status-enhanced" style="margin-bottom: 15px;">
+                            <!-- 網路狀態 -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #28a745;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 20px;">🌐</span>
+                                        <div>
+                                            <div style="font-weight: bold; font-size: 14px;">網路狀態</div>
+                                            <div style="font-size: 12px; color: #666;" id="network-status-enhanced">檢查中...</div>
+                                        </div>
+                                    </div>
+                                    <div id="network-indicator" style="width: 12px; height: 12px; border-radius: 50%; background: #ffc107;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Supabase 連接狀態 -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #667eea;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 20px;">☁️</span>
+                                        <div>
+                                            <div style="font-weight: bold; font-size: 14px;">雲端服務</div>
+                                            <div style="font-size: 12px; color: #666;" id="supabase-status">檢查中...</div>
+                                        </div>
+                                    </div>
+                                    <div id="cloud-indicator" style="width: 12px; height: 12px; border-radius: 50%; background: #ffc107;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- 同步ID -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #17a2b8;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 20px;">🆔</span>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: bold; font-size: 14px;">設備ID</div>
+                                            <div style="font-size: 11px; color: #666; word-break: break-all;" id="sync-id-enhanced">載入中...</div>
+                                        </div>
+                                    </div>
+                                    <button onclick="copyDeviceId()" style="background: #17a2b8; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">複製</button>
+                                </div>
+                            </div>
+                            
+                            <!-- 最後同步時間 -->
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #fd7e14;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 20px;">⏰</span>
+                                        <div>
+                                            <div style="font-weight: bold; font-size: 14px;">最後同步</div>
+                                            <div style="font-size: 12px; color: #666;" id="last-sync-enhanced">從未同步</div>
+                                        </div>
+                                    </div>
+                                    <button onclick="refreshSyncStatus()" style="background: #fd7e14; color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;">更新</button>
+                                </div>
+                            </div>
+                            
+                            <!-- 數據統計 -->
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                    <span style="font-size: 20px;">📊</span>
+                                    <div style="font-weight: bold; font-size: 14px;">本地數據統計</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px;">
+                                    <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; text-align: center;">
+                                        <div id="records-count">0</div>
+                                        <div style="opacity: 0.8;">記帳紀錄</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; text-align: center;">
+                                        <div id="believers-count">0</div>
+                                        <div style="opacity: 0.8;">信眾資料</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; text-align: center;">
+                                        <div id="categories-count">0</div>
+                                        <div style="opacity: 0.8;">自定義類別</div>
+                                    </div>
+                                    <div style="background: rgba(255,255,255,0.1); padding: 8px; border-radius: 6px; text-align: center;">
+                                        <div id="reminders-count">0</div>
+                                        <div style="opacity: 0.8;">提醒事項</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 原始狀態資訊（隱藏，保持相容性） -->
+                        <div id="sync-status" style="display: none; color: #606266; font-size: 14px; line-height: 1.8;">
                             <div>🌐 網路狀態: <span id="network-status">檢查中...</span></div>
                             <div>🆔 同步ID: <span id="sync-id">載入中...</span></div>
                             <div>⏰ 最後備份: <span id="last-sync">從未備份</span></div>
@@ -5322,6 +5514,187 @@
             </div>
         </div>
 
+        <!-- 用戶認證模態框 -->
+        <div v-if="showAuthModal" class="modal" @click.self="showAuthModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        🔐 {{ authMode === 'login' ? '用戶登入' : '用戶註冊' }}
+                    </div>
+                    <button class="close-btn" @click="showAuthModal = false">&times;</button>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <!-- 登入/註冊切換 -->
+                    <div style="display: flex; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 2px solid #e0e0e0;">
+                        <button 
+                            :class="['btn', authMode === 'login' ? 'btn-primary' : 'btn-secondary']" 
+                            @click="authMode = 'login'"
+                            style="flex: 1; border-radius: 0;"
+                        >
+                            登入
+                        </button>
+                        <button 
+                            :class="['btn', authMode === 'register' ? 'btn-primary' : 'btn-secondary']" 
+                            @click="authMode = 'register'"
+                            style="flex: 1; border-radius: 0;"
+                        >
+                            註冊
+                        </button>
+                    </div>
+                    
+                    <!-- 註冊表單 -->
+                    <div v-if="authMode === 'register'">
+                        <div class="form-group">
+                            <label class="form-label">宮廟名稱</label>
+                            <input
+                                v-model="authForm.templeName"
+                                type="text"
+                                class="form-input"
+                                placeholder="請輸入宮廟名稱"
+                                required
+                            >
+                        </div>
+                    </div>
+                    
+                    <!-- 共通表單 -->
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input
+                            v-model="authForm.email"
+                            type="email"
+                            class="form-input"
+                            placeholder="請輸入電子郵件"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">密碼</label>
+                        <input
+                            v-model="authForm.password"
+                            type="password"
+                            class="form-input"
+                            placeholder="請輸入密碼"
+                            required
+                        >
+                    </div>
+                    
+                    <!-- 註冊時的確認密碼 -->
+                    <div v-if="authMode === 'register'" class="form-group">
+                        <label class="form-label">確認密碼</label>
+                        <input
+                            v-model="authForm.confirmPassword"
+                            type="password"
+                            class="form-input"
+                            placeholder="請再次輸入密碼"
+                            required
+                        >
+                    </div>
+                    
+                    <!-- 雲端同步功能強調 -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">☁️</div>
+                        <div style="font-weight: bold; font-size: 18px; margin-bottom: 8px;">
+                            {{ authMode === 'login' ? '登入啟用雲端同步' : '註冊開啟雲端服務' }}
+                        </div>
+                        <div style="font-size: 14px; opacity: 0.9; line-height: 1.5;">
+                            <div v-if="authMode === 'login'">
+                                🔐 登入後可在手機、電腦間即時同步記帳數據<br>
+                                📱 支援多設備使用，數據永不丟失
+                            </div>
+                            <div v-else>
+                                🚀 註冊後立即享有雲端備份功能<br>
+                                🔄 自動同步，無需手動備份
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 說明文字 -->
+                    <div style="background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-weight: bold; margin-bottom: 8px; color: #17a2b8;">
+                            💡 {{ authMode === 'login' ? '登入說明' : '註冊說明' }}
+                        </div>
+                        <div style="font-size: 14px; color: #666; line-height: 1.5;">
+                            <div v-if="authMode === 'login'">
+                                • 使用您的帳戶登入以啟用雲端同步功能<br>
+                                • 登入後可在多個設備間同步數據<br>
+                                • 支援離線使用，連網時自動同步
+                            </div>
+                            <div v-else>
+                                • 註冊後即可使用雲端同步功能<br>
+                                • 每個宮廟需要獨立的帳戶<br>
+                                • 註冊完成後會自動登入
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: right;">
+                    <button class="btn btn-secondary" @click="showAuthModal = false" :disabled="authLoading">
+                        取消
+                    </button>
+                    <button class="btn btn-primary" @click="handleAuth" :disabled="authLoading" style="margin-left: 10px;">
+                        {{ authLoading ? '處理中...' : (authMode === 'login' ? '登入' : '註冊') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 設備同步模態框 -->
+        <div v-if="showSyncModal" class="modal" @click.self="showSyncModal = false">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">📱 設備同步管理</div>
+                    <button class="close-btn" @click="showSyncModal = false">&times;</button>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <div style="font-weight: bold; margin-bottom: 8px;">☁️ 同步狀態</div>
+                        <div style="font-size: 14px; opacity: 0.9;">
+                            <div>設備ID: {{ syncStatus.syncId || '未設定' }}</div>
+                            <div>最後同步: {{ syncStatus.lastSyncTime || '從未同步' }}</div>
+                            <div>狀態: {{ syncStatus.syncing ? '同步中...' : '就緒' }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-actions" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 20px;">
+                        <div class="action-card" @click="quickSyncToCloud" :style="{opacity: syncStatus.syncing ? 0.6 : 1}">
+                            <div class="action-icon">☁️</div>
+                            <div class="action-title">{{ syncStatus.syncing ? '同步中...' : '立即同步' }}</div>
+                        </div>
+                        <div class="action-card" @click="generateQRCode">
+                            <div class="action-icon">📱</div>
+                            <div class="action-title">生成QR碼</div>
+                        </div>
+                        <div class="action-card" @click="exportAllData">
+                            <div class="action-icon">📤</div>
+                            <div class="action-title">匯出數據</div>
+                        </div>
+                        <div class="action-card" @click="importData">
+                            <div class="action-icon">📂</div>
+                            <div class="action-title">匯入數據</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #17a2b8;">💡 使用說明</div>
+                        <ul style="font-size: 14px; color: #666; line-height: 1.6; margin-left: 20px;">
+                            <li><strong>立即同步</strong>：將當前設備數據備份到雲端</li>
+                            <li><strong>生成QR碼</strong>：讓其他設備掃描同步數據</li>
+                            <li><strong>匯出數據</strong>：下載數據文件備份</li>
+                            <li><strong>匯入數據</strong>：從文件恢復數據</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="text-align: right;">
+                    <button class="btn btn-secondary" @click="showSyncModal = false">關閉</button>
+                </div>
+            </div>
+        </div>
+
         <!-- 列印內容區域 (隱藏) -->
         <div class="print-content" id="print-content">
             <!-- 動態生成的列印內容會插入這裡 -->
@@ -5412,6 +5785,27 @@
                 const autoBackupInterval = ref(24); // 小時
                 const maxBackupCount = ref(10);
                 const fileInput = ref(null);
+
+                // 雲端同步相關變數
+                const showSyncModal = ref(false);
+                const syncStatus = ref({
+                    syncing: false,
+                    lastSyncTime: null,
+                    deviceCount: 1,
+                    syncId: null
+                });
+
+                // 用戶認證相關變數
+                const showAuthModal = ref(false);
+                const authMode = ref('login'); // 'login' or 'register'
+                const authForm = ref({
+                    email: '',
+                    password: '',
+                    confirmPassword: '',
+                    templeName: ''
+                });
+                const currentUser = ref(null);
+                const authLoading = ref(false);
 
                 // 宮廟基本資料
                 const templeInfo = ref({
@@ -6217,6 +6611,9 @@
                     closeAddModal();
                     
                     showNotification('記錄已儲存', '收支記錄已成功新增');
+                    
+                    // 觸發自動同步
+                    triggerAutoSync();
                 };
                 
                 const saveReminder = () => {
@@ -6350,6 +6747,14 @@
                     localStorage.setItem('temple-stock-movements', JSON.stringify(stockMovements.value));
                     localStorage.setItem('temple-events', JSON.stringify(events.value));
                     localStorage.setItem('temple-event-categories', JSON.stringify(eventCategories.value));
+                    
+                    // 標記最後修改時間，供自動同步使用
+                    localStorage.setItem('temple-last-modified', Date.now().toString());
+                    
+                    // 如果用戶已登入，觸發自動同步
+                    if (currentUser.value) {
+                        triggerAutoSync();
+                    }
                 };
 
                 const loadFromStorage = () => {
@@ -8745,24 +9150,277 @@
                     }
                 };
 
+                // 用戶認證處理
+                const handleAuth = async () => {
+                    // 基本驗證
+                    if (!authForm.value.email || !authForm.value.password) {
+                        showNotification('錯誤', '請填寫完整的登入資訊');
+                        return;
+                    }
+                    
+                    if (authMode.value === 'register') {
+                        if (!authForm.value.templeName) {
+                            showNotification('錯誤', '請填寫宮廟名稱');
+                            return;
+                        }
+                        if (authForm.value.password !== authForm.value.confirmPassword) {
+                            showNotification('錯誤', '密碼與確認密碼不一致');
+                            return;
+                        }
+                        if (authForm.value.password.length < 6) {
+                            showNotification('錯誤', '密碼長度至少需要6個字元');
+                            return;
+                        }
+                    }
+                    
+                    authLoading.value = true;
+                    
+                    try {
+                        const syncService = window.supabaseSync;
+                        
+                        if (syncService && syncService.supabase) {
+                            // 使用Supabase認證
+                            let result;
+                            
+                            if (authMode.value === 'register') {
+                                const { data, error } = await syncService.supabase.auth.signUp({
+                                    email: authForm.value.email,
+                                    password: authForm.value.password,
+                                    options: {
+                                        data: {
+                                            temple_name: authForm.value.templeName
+                                        }
+                                    }
+                                });
+                                
+                                if (error) throw error;
+                                result = data;
+                                
+                                showNotification('註冊成功', '請檢查您的電子郵件以驗證帳戶');
+                            } else {
+                                const { data, error } = await syncService.supabase.auth.signInWithPassword({
+                                    email: authForm.value.email,
+                                    password: authForm.value.password
+                                });
+                                
+                                if (error) throw error;
+                                result = data;
+                                
+                                showNotification('登入成功', '歡迎回來！');
+                            }
+                            
+                            if (result.user) {
+                                currentUser.value = result.user;
+                                localStorage.setItem('temple-user', JSON.stringify(result.user));
+                                showAuthModal.value = false;
+                                
+                                // 清空表單
+                                authForm.value = {
+                                    email: '',
+                                    password: '',
+                                    confirmPassword: '',
+                                    templeName: ''
+                                };
+                                
+                                // 觸發自動同步
+                                setTimeout(() => quickSyncToCloud(), 2000);
+                            }
+                        } else {
+                            // 簡易本地認證（演示用）
+                            const userData = {
+                                id: Date.now(),
+                                email: authForm.value.email,
+                                temple_name: authForm.value.templeName || '廣清宮',
+                                created_at: new Date().toISOString()
+                            };
+                            
+                            currentUser.value = userData;
+                            localStorage.setItem('temple-user', JSON.stringify(userData));
+                            showAuthModal.value = false;
+                            
+                            showNotification('登入成功', `歡迎使用，${userData.temple_name}！`);
+                            
+                            // 清空表單
+                            authForm.value = {
+                                email: '',
+                                password: '',
+                                confirmPassword: '',
+                                templeName: ''
+                            };
+                        }
+                    } catch (error) {
+                        console.error('認證錯誤:', error);
+                        showNotification('認證失敗', error.message || '請檢查您的登入資訊');
+                    } finally {
+                        authLoading.value = false;
+                    }
+                };
+                
+                // 用戶登出
+                const handleLogout = async () => {
+                    try {
+                        const syncService = window.supabaseSync;
+                        
+                        if (syncService && syncService.supabase) {
+                            await syncService.supabase.auth.signOut();
+                        }
+                        
+                        currentUser.value = null;
+                        localStorage.removeItem('temple-user');
+                        showNotification('登出成功', '謝謝使用！');
+                    } catch (error) {
+                        console.error('登出錯誤:', error);
+                    }
+                };
+
+                // 自動同步機制
+                let autoSyncTimer = null;
+                
+                const triggerAutoSync = () => {
+                    // 如果用戶已登入且有網路連接，則觸發自動同步
+                    if (!currentUser.value || !navigator.onLine) {
+                        return;
+                    }
+                    
+                    // 取消之前的定時器
+                    if (autoSyncTimer) {
+                        clearTimeout(autoSyncTimer);
+                    }
+                    
+                    // 延遲5秒後執行同步，避免頻繁同步
+                    autoSyncTimer = setTimeout(async () => {
+                        try {
+                            const syncService = window.supabaseSync || window.cloudSync;
+                            if (syncService && !syncStatus.value.syncing) {
+                                console.log('觸發自動同步...');
+                                await syncService.syncToCloud();
+                                console.log('自動同步完成');
+                                
+                                // 更新同步狀態
+                                const now = new Date();
+                                syncStatus.value.lastSyncTime = now.toLocaleTimeString('zh-TW', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            }
+                        } catch (error) {
+                            console.warn('自動同步失敗:', error);
+                        }
+                    }, 5000);
+                };
+
+                // 生成QR碼用於設備同步
+                const generateQRCode = () => {
+                    const syncService = window.supabaseSync || window.cloudSync;
+                    
+                    if (typeof window.qrGenerator !== 'undefined' && syncService) {
+                        const qrData = syncService.generateQRData();
+                        window.qrGenerator.generateSyncQR(qrData);
+                    } else {
+                        // 簡易QR碼顯示
+                        const syncUrl = window.location.href;
+                        const deviceId = syncService?.deviceId || syncService?.syncId || 'unknown';
+                        const provider = syncService?.supabase ? 'Supabase雲端' : '本地存儲';
+                        const message = `📱 廣清宮記帳 - 設備同步\n\n🔗 同步連結:\n${syncUrl}\n\n🆔 設備ID: ${deviceId}\n☁️ 服務提供: ${provider}\n\n請在其他設備上打開此連結進行數據同步。`;
+                        
+                        if (navigator.share) {
+                            navigator.share({
+                                title: '廣清宮記帳 - 設備同步',
+                                text: message,
+                                url: syncUrl
+                            });
+                        } else {
+                            // 複製到剪貼板
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(message).then(() => {
+                                    showNotification('已複製', '同步連結已複製到剪貼板');
+                                });
+                            } else {
+                                alert(message);
+                            }
+                        }
+                    }
+                };
+
                 // 本地備份功能
+                // 快速同步到雲端 - 優先使用Supabase
+                const quickSyncToCloud = async () => {
+                    const syncService = window.supabaseSync || window.cloudSync;
+                    
+                    if (!syncService) {
+                        showNotification('同步錯誤', '雲端服務未載入');
+                        return;
+                    }
+
+                    syncStatus.value.syncing = true;
+                    
+                    try {
+                        const result = await syncService.syncToCloud();
+                        
+                        if (result.success) {
+                            syncStatus.value.lastSyncTime = '剛剛';
+                            syncStatus.value.syncId = result.deviceId || result.syncId;
+                            
+                            const provider = result.provider || 'Cloud';
+                            showNotification('同步成功', `數據已同步到${provider}雲端`);
+                            
+                            // 5秒後更新同步時間顯示
+                            setTimeout(() => {
+                                const now = new Date();
+                                syncStatus.value.lastSyncTime = now.toLocaleTimeString('zh-TW', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            }, 5000);
+                            
+                            // 重新載入數據以反映更新
+                            loadFromStorage();
+                        } else {
+                            showNotification('同步失敗', result.message);
+                        }
+                    } catch (error) {
+                        // 處理衝突情況
+                        if (error.message === 'SYNC_CONFLICT_LOAD_CLOUD') {
+                            try {
+                                const loadResult = await syncService.syncFromCloud();
+                                if (loadResult.success) {
+                                    showNotification('數據已更新', '已載入雲端的最新數據');
+                                    loadFromStorage();
+                                } else {
+                                    showNotification('載入失敗', loadResult.message);
+                                }
+                            } catch (loadError) {
+                                showNotification('載入失敗', loadError.message);
+                            }
+                        } else {
+                            showNotification('同步失敗', error.message || '同步過程發生錯誤');
+                        }
+                        console.error('同步錯誤:', error);
+                    } finally {
+                        syncStatus.value.syncing = false;
+                    }
+                };
+
                 const syncToCloud = async () => {
-                    if (typeof window.cloudSync === 'undefined') {
+                    const syncService = window.supabaseSync || window.cloudSync;
+                    
+                    if (!syncService) {
                         alert('同步服務未載入');
                         return;
                     }
 
                     try {
-                        showNotification('備份中', '正在備份數據到本地存儲...');
-                        const result = await window.cloudSync.syncToCloud();
+                        const provider = syncService.supabase ? 'Supabase雲端' : '本地存儲';
+                        showNotification('備份中', `正在備份數據到${provider}...`);
+                        const result = await syncService.syncToCloud();
 
                         if (result.success) {
-                            showNotification('備份成功', `數據已成功備份到本地\n備份時間: ${result.syncTime}`);
+                            showNotification('備份成功', `數據已成功備份到${result.provider || provider}\n備份時間: ${result.syncTime}`);
                         } else {
                             showNotification('備份失敗', result.message);
                         }
                     } catch (error) {
-                        showNotification('備份失敗', '備份過程發生錯誤，請稍後再試');
+                        showNotification('備份失敗', error.message || '備份過程發生錯誤，請稍後再試');
                         console.error('備份錯誤:', error);
                     }
                 };
@@ -8982,9 +9640,13 @@
                 // 生命週期
                 // 更新同步狀態顯示
                 const updateSyncStatus = () => {
-                    if (typeof window.cloudSync !== 'undefined') {
-                        const status = window.cloudSync.getSyncStatus();
+                    // 使用優先順序：supabaseSync > cloudSync
+                    const syncService = window.supabaseSync || window.cloudSync;
+                    
+                    if (syncService) {
+                        const status = syncService.getSyncStatus();
 
+                        // 原始狀態更新（保持向後相容）
                         const networkStatus = document.getElementById('network-status');
                         const syncId = document.getElementById('sync-id');
                         const lastSync = document.getElementById('last-sync');
@@ -8996,18 +9658,85 @@
                         }
 
                         if (syncId) {
-                            syncId.textContent = status.syncId || '未設定';
+                            syncId.textContent = status.deviceId || status.syncId || '未設定';
                         }
 
                         if (lastSync) {
-                            lastSync.textContent = status.lastSyncTime;
+                            lastSync.textContent = status.lastSyncTime || '從未同步';
                         }
 
                         if (cloudDataStatus) {
-                            cloudDataStatus.textContent = status.hasCloudData ? '✅ 有備份' : '❌ 無備份';
-                            cloudDataStatus.style.color = status.hasCloudData ? '#4CAF50' : '#f44336';
+                            const recordsCount = JSON.parse(localStorage.getItem('temple-records') || '[]').length;
+                            const believersCount = JSON.parse(localStorage.getItem('temple-believers') || '[]').length;
+                            cloudDataStatus.textContent = `記錄 ${recordsCount} 筆，信眾 ${believersCount} 人`;
+                        }
+
+                        // 增強版狀態更新
+                        updateEnhancedSyncStatus(status, syncService);
+                    }
+                };
+
+                // 更新增強版同步狀態顯示
+                const updateEnhancedSyncStatus = (status, syncService) => {
+                    // 網路狀態
+                    const networkStatusEnhanced = document.getElementById('network-status-enhanced');
+                    const networkIndicator = document.getElementById('network-indicator');
+                    if (networkStatusEnhanced && networkIndicator) {
+                        networkStatusEnhanced.textContent = status.isOnline ? '已連線，可進行同步' : '離線模式，本地使用';
+                        networkIndicator.style.background = status.isOnline ? '#28a745' : '#dc3545';
+                    }
+
+                    // Supabase連接狀態
+                    const supabaseStatus = document.getElementById('supabase-status');
+                    const cloudIndicator = document.getElementById('cloud-indicator');
+                    if (supabaseStatus && cloudIndicator) {
+                        const isSupabase = syncService === window.supabaseSync;
+                        const hasSupabase = typeof window.supabaseSync !== 'undefined' && window.supabaseSync.supabase;
+                        
+                        if (isSupabase && hasSupabase) {
+                            supabaseStatus.textContent = 'Supabase 雲端服務已連接';
+                            cloudIndicator.style.background = '#28a745';
+                        } else if (isSupabase && !hasSupabase) {
+                            supabaseStatus.textContent = '等待 Supabase 初始化...';
+                            cloudIndicator.style.background = '#ffc107';
+                        } else {
+                            supabaseStatus.textContent = '使用本地儲存模式';
+                            cloudIndicator.style.background = '#17a2b8';
                         }
                     }
+
+                    // 設備ID
+                    const syncIdEnhanced = document.getElementById('sync-id-enhanced');
+                    if (syncIdEnhanced) {
+                        syncIdEnhanced.textContent = status.deviceId || status.syncId || '未設定';
+                    }
+
+                    // 最後同步時間
+                    const lastSyncEnhanced = document.getElementById('last-sync-enhanced');
+                    if (lastSyncEnhanced) {
+                        lastSyncEnhanced.textContent = status.lastSyncTime || '從未同步';
+                    }
+
+                    // 數據統計
+                    updateDataCounts();
+                };
+
+                // 更新數據統計
+                const updateDataCounts = () => {
+                    const recordsCount = JSON.parse(localStorage.getItem('temple-records') || '[]').length;
+                    const believersCount = JSON.parse(localStorage.getItem('temple-believers') || '[]').length;
+                    const categoriesCount = JSON.parse(localStorage.getItem('temple-custom-categories') || '[]').length;
+                    const remindersCount = JSON.parse(localStorage.getItem('temple-reminders') || '[]').length;
+
+                    const recordsEl = document.getElementById('records-count');
+                    const believersEl = document.getElementById('believers-count');
+                    const categoriesEl = document.getElementById('categories-count');
+                    const remindersEl = document.getElementById('reminders-count');
+
+                    if (recordsEl) recordsEl.textContent = recordsCount;
+                    if (believersEl) believersEl.textContent = believersCount;
+                    if (categoriesEl) categoriesEl.textContent = categoriesCount;
+                    if (remindersEl) remindersEl.textContent = remindersCount;
                 };
 
                 onMounted(() => {
@@ -9036,6 +9765,43 @@
 
                     // 每30秒更新一次同步狀態
                     setInterval(updateSyncStatus, 30000);
+
+                    // 初始化雲端同步狀態 - 優先使用Supabase
+                    setTimeout(() => {
+                        const syncService = window.supabaseSync || window.cloudSync;
+                        if (syncService) {
+                            const status = syncService.getSyncStatus();
+                            syncStatus.value.syncId = status.deviceId || status.syncId;
+                            syncStatus.value.lastSyncTime = status.lastSyncTime !== '從未同步' ? 
+                                status.lastSyncTime.split(' ')[1] : null; // 只顯示時間部分
+                            
+                            console.log('同步服務已初始化:', status.provider || 'Unknown');
+                        }
+                        
+                        // 檢查用戶登入狀態
+                        const savedUser = localStorage.getItem('temple-user');
+                        if (savedUser) {
+                            try {
+                                currentUser.value = JSON.parse(savedUser);
+                            } catch (error) {
+                                console.error('載入用戶資訊失敗:', error);
+                                localStorage.removeItem('temple-user');
+                            }
+                        }
+                        
+                        // 如果有Supabase，檢查認證狀態
+                        if (window.supabaseSync?.supabase) {
+                            window.supabaseSync.supabase.auth.onAuthStateChange((event, session) => {
+                                if (event === 'SIGNED_IN' && session) {
+                                    currentUser.value = session.user;
+                                    localStorage.setItem('temple-user', JSON.stringify(session.user));
+                                } else if (event === 'SIGNED_OUT') {
+                                    currentUser.value = null;
+                                    localStorage.removeItem('temple-user');
+                                }
+                            });
+                        }
+                    }, 1000);
                     
                     // 添加一些示例提醒
                     if (reminders.value.length === 0) {
@@ -9318,10 +10084,96 @@
                     updateYearComparison,
                     updateYearlyChart,
                     updateTrendChart,
-                    updateComparisonChart
+                    updateComparisonChart,
+                    // 雲端同步相關
+                    showSyncModal,
+                    syncStatus,
+                    quickSyncToCloud,
+                    generateQRCode,
+                    triggerAutoSync,
+                    // 用戶認證相關
+                    showAuthModal,
+                    authMode,
+                    authForm,
+                    currentUser,
+                    authLoading,
+                    handleAuth,
+                    handleLogout
                 };
             }
         }).mount('#app');
+
+        // 全域函數支援增強版同步狀態功能
+        window.copyDeviceId = function() {
+            const syncService = window.supabaseSync || window.cloudSync;
+            if (syncService) {
+                const status = syncService.getSyncStatus();
+                const deviceId = status.deviceId || status.syncId || '未設定';
+                
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(deviceId).then(() => {
+                        alert('設備ID已複製到剪貼簿');
+                    }).catch(() => {
+                        // 降級到舊方法
+                        fallbackCopy(deviceId);
+                    });
+                } else {
+                    fallbackCopy(deviceId);
+                }
+            }
+        };
+
+        window.refreshSyncStatus = function() {
+            const syncService = window.supabaseSync || window.cloudSync;
+            if (syncService) {
+                // 呼叫更新函數
+                setTimeout(() => {
+                    const status = syncService.getSyncStatus();
+                    
+                    // 更新增強版狀態顯示
+                    const networkStatusEnhanced = document.getElementById('network-status-enhanced');
+                    const networkIndicator = document.getElementById('network-indicator');
+                    if (networkStatusEnhanced && networkIndicator) {
+                        networkStatusEnhanced.textContent = status.isOnline ? '已連線，可進行同步' : '離線模式，本地使用';
+                        networkIndicator.style.background = status.isOnline ? '#28a745' : '#dc3545';
+                    }
+
+                    // 更新數據統計
+                    const recordsCount = JSON.parse(localStorage.getItem('temple-records') || '[]').length;
+                    const believersCount = JSON.parse(localStorage.getItem('temple-believers') || '[]').length;
+                    const categoriesCount = JSON.parse(localStorage.getItem('temple-custom-categories') || '[]').length;
+                    const remindersCount = JSON.parse(localStorage.getItem('temple-reminders') || '[]').length;
+
+                    const recordsEl = document.getElementById('records-count');
+                    const believersEl = document.getElementById('believers-count');
+                    const categoriesEl = document.getElementById('categories-count');
+                    const remindersEl = document.getElementById('reminders-count');
+
+                    if (recordsEl) recordsEl.textContent = recordsCount;
+                    if (believersEl) believersEl.textContent = believersCount;
+                    if (categoriesEl) categoriesEl.textContent = categoriesCount;
+                    if (remindersEl) remindersEl.textContent = remindersCount;
+                    
+                    alert('同步狀態已更新');
+                }, 100);
+            }
+        };
+
+        // 降級複製功能
+        function fallbackCopy(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('設備ID已複製到剪貼簿');
+            } catch (err) {
+                console.error('複製失敗:', err);
+                alert('複製失敗，設備ID: ' + text);
+            }
+            document.body.removeChild(textArea);
+        }
     </script>
 </body>
 </html>

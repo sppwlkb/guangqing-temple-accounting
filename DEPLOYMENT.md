@@ -1,262 +1,146 @@
-# 🚀 廣清宮財務管理系統 - 部署指南
+# 廣清宮快速記帳軟體 - 部署指南
 
-本指南將協助您將廣清宮財務管理系統部署到各種平台。
+## 🚀 快速部署到 Netlify
 
-## 📋 部署前準備
+### 方法一：直接拖拽部署
+1. 打包整個專案資料夾為ZIP檔案
+2. 前往 [Netlify](https://www.netlify.com/)
+3. 拖拽ZIP檔案到Netlify Dashboard
+4. 等待部署完成
 
-### 1. 環境需求
-- Node.js 18.0.0 或更高版本
-- npm 9.0.0 或更高版本
-- Git
+### 方法二：Git連接自動部署
+1. 將代碼推送到GitHub倉庫
+2. 在Netlify中選擇「New site from Git」
+3. 連接GitHub倉庫
+4. 設置構建參數：
+   - Build command: `echo 'No build needed'`
+   - Publish directory: `.`
+5. 點擊「Deploy site」
 
-### 2. 安裝依賴
-```bash
-npm install
+## 🔧 Supabase雲端數據庫設置
+
+### 1. 創建Supabase專案
+1. 前往 [Supabase](https://supabase.com/)
+2. 點擊「Start your project」
+3. 創建新組織和專案
+4. 等待數據庫初始化完成
+
+### 2. 創建數據表
+在Supabase SQL編輯器中執行以下SQL：
+
+```sql
+-- 創建temple_data表
+CREATE TABLE temple_data (
+    id BIGSERIAL PRIMARY KEY,
+    device_id TEXT NOT NULL,
+    data JSONB NOT NULL,
+    last_modified BIGINT NOT NULL,
+    version TEXT DEFAULT '2.0',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 創建索引
+CREATE INDEX temple_data_device_id_idx ON temple_data(device_id);
+CREATE INDEX temple_data_updated_at_idx ON temple_data(updated_at DESC);
+
+-- 設置RLS (Row Level Security)
+ALTER TABLE temple_data ENABLE ROW LEVEL SECURITY;
+
+-- 創建策略：用戶只能訪問自己設備的數據
+CREATE POLICY "Users can access own device data" ON temple_data
+    FOR ALL USING (auth.uid()::text = device_id OR device_id LIKE 'device_%');
 ```
 
-### 3. 建置專案
-```bash
-# 生產環境建置
-npm run build:prod
+### 3. 獲取API金鑰
+1. 在Supabase Dashboard中，前往「Settings」→「API」
+2. 複製「Project URL」和「anon public」金鑰
 
-# 測試環境建置
-npm run build:staging
+### 4. 配置應用
+修改 `supabase-sync.js` 檔案中的配置：
+
+```javascript
+const SUPABASE_CONFIG = {
+    url: 'https://your-project.supabase.co', // 替換為您的Project URL
+    key: 'your-anon-key', // 替換為您的anon key
+    tableName: 'temple_data'
+};
 ```
 
-## 🌐 部署選項
+## 🌐 環境變數設置
 
-### 選項 1: Vercel (推薦 - 免費)
+### Netlify環境變數
+在Netlify Dashboard中設置以下環境變數：
+- `SUPABASE_URL`: 您的Supabase專案URL
+- `SUPABASE_ANON_KEY`: 您的Supabase anon金鑰
 
-Vercel 是最簡單的部署方式，提供免費的靜態網站託管。
+### GitHub Actions自動部署
+如果使用GitHub Actions，需要在GitHub Repository的Secrets中設置：
+- `NETLIFY_AUTH_TOKEN`: Netlify個人訪問令牌
+- `NETLIFY_SITE_ID`: Netlify站點ID
 
-#### 方法 A: 使用 Vercel CLI
-```bash
-# 安裝 Vercel CLI
-npm install -g vercel
+## 📱 PWA功能
 
-# 登入 Vercel
-vercel login
+應用已配置為PWA（漸進式Web應用），用戶可以：
+1. 在手機瀏覽器中打開網站
+2. 點擊瀏覽器的「加到主螢幕」
+3. 像原生應用一樣使用
 
-# 部署
-npm run deploy:vercel
-```
+## 🔐 安全設置
 
-#### 方法 B: 使用 GitHub 整合
-1. 將專案推送到 GitHub
-2. 前往 [Vercel](https://vercel.com)
-3. 點擊 "New Project"
-4. 選擇您的 GitHub 倉庫
-5. Vercel 會自動偵測設定並部署
+### HTTPS
+- Netlify自動提供HTTPS
+- 確保所有外部API調用使用HTTPS
 
-#### Vercel 設定
-- 建置命令: `npm run build:prod`
-- 輸出目錄: `dist`
-- Node.js 版本: 18.x
+### CORS設置
+如果使用自定義API，確保正確設置CORS策略。
 
-### 選項 2: Netlify (免費)
+### 敏感資訊
+- 不要在前端代碼中存放敏感資訊
+- 使用環境變數管理API金鑰
+- Supabase的anon key是安全的，可以在前端使用
 
-Netlify 提供優秀的靜態網站託管服務。
-
-#### 方法 A: 使用 Netlify CLI
-```bash
-# 安裝 Netlify CLI
-npm install -g netlify-cli
-
-# 登入 Netlify
-netlify login
-
-# 部署
-npm run deploy:netlify
-```
-
-#### 方法 B: 拖放部署
-1. 執行 `npm run build:prod`
-2. 前往 [Netlify](https://netlify.com)
-3. 將 `dist` 資料夾拖放到部署區域
-
-#### 方法 C: GitHub 整合
-1. 將專案推送到 GitHub
-2. 在 Netlify 中連接 GitHub 倉庫
-3. 設定建置命令和發布目錄
-
-### 選項 3: GitHub Pages (免費)
-
-適合開源專案或個人使用。
-
-```bash
-# 使用腳本部署
-./scripts/deploy-github.sh
-
-# 或在 Windows
-scripts\deploy-github.bat
-
-# 或使用 npm 腳本
-npm run deploy:github
-```
-
-#### 手動設定 GitHub Pages
-1. 將專案推送到 GitHub
-2. 前往倉庫設定 > Pages
-3. 選擇 `gh-pages` 分支作為來源
-4. 儲存設定
-
-### 選項 4: Surge.sh (免費)
-
-簡單快速的靜態網站部署。
-
-```bash
-# 安裝 Surge
-npm install -g surge
-
-# 部署
-npm run deploy:surge
-```
-
-### 選項 5: Firebase Hosting (免費額度)
-
-Google 的靜態網站託管服務。
-
-```bash
-# 安裝 Firebase CLI
-npm install -g firebase-tools
-
-# 登入 Firebase
-firebase login
-
-# 初始化專案
-firebase init hosting
-
-# 部署
-firebase deploy
-```
-
-## 🔧 環境變數設定
-
-### 生產環境 (.env.production)
-```env
-VITE_APP_TITLE=廣清宮財務管理系統
-VITE_API_BASE_URL=https://api.your-domain.com
-VITE_ENABLE_CONSOLE=false
-VITE_ENABLE_DEVTOOLS=false
-```
-
-### 測試環境 (.env.staging)
-```env
-VITE_APP_TITLE=廣清宮財務管理系統 (測試版)
-VITE_API_BASE_URL=https://staging-api.your-domain.com
-VITE_ENABLE_CONSOLE=true
-VITE_ENABLE_DEVTOOLS=true
-```
-
-## 🛡️ 安全設定
-
-### 1. 環境變數
-- 不要在前端暴露敏感資訊
-- 使用 `VITE_` 前綴的環境變數
-- 在部署平台設定環境變數
-
-### 2. HTTP 標頭
-已在配置檔案中設定安全標頭：
-- X-Frame-Options
-- X-XSS-Protection
-- X-Content-Type-Options
-- Referrer-Policy
-
-### 3. HTTPS
-- 所有部署平台都支援免費 SSL
-- 確保啟用 HTTPS 重定向
-
-## 📊 效能優化
-
-### 1. 建置優化
-- 代碼分割
-- 樹搖優化
-- 資源壓縮
-- 快取策略
-
-### 2. CDN 設定
-大部分平台都提供全球 CDN：
-- Vercel: 自動啟用
-- Netlify: 自動啟用
-- GitHub Pages: 透過 CloudFlare
-
-## 🔍 監控設定
-
-### 1. 錯誤追蹤
-建議整合 Sentry 或類似服務：
-```env
-VITE_SENTRY_DSN=your-sentry-dsn
-```
-
-### 2. 分析工具
-整合 Google Analytics：
-```env
-VITE_GOOGLE_ANALYTICS_ID=your-ga-id
-```
-
-## 🚨 故障排除
+## 🐛 故障排除
 
 ### 常見問題
+1. **同步功能不工作**
+   - 檢查Supabase配置是否正確
+   - 確認網路連接
+   - 檢查瀏覽器控制台錯誤訊息
 
-#### 1. 路由問題
-確保設定 SPA 重定向：
-- Vercel: 已在 `vercel.json` 設定
-- Netlify: 已在 `netlify.toml` 設定
-- GitHub Pages: 需要 404.html 重定向
+2. **PWA安裝失敗**
+   - 確認HTTPS連接
+   - 檢查manifest.json檔案
+   - 驗證Service Worker註冊
 
-#### 2. 環境變數未生效
-- 檢查變數名稱是否有 `VITE_` 前綴
-- 重新建置專案
-- 檢查部署平台的環境變數設定
+3. **資料不同步**
+   - 檢查用戶是否已登入
+   - 確認自動同步機制是否啟動
+   - 查看同步狀態顯示
 
-#### 3. 建置失敗
-```bash
-# 清除快取
-npm run clean
-rm -rf node_modules
-npm install
+### 除錯步驟
+1. 打開瀏覽器開發者工具
+2. 查看Console選項卡的錯誤訊息
+3. 檢查Network選項卡的網路請求
+4. 確認Application選項卡的localStorage內容
 
-# 重新建置
-npm run build:prod
-```
+## 📞 技術支援
 
-#### 4. 靜態資源載入失敗
-檢查 `vite.config.js` 中的 `base` 設定：
-```js
-export default defineConfig({
-  base: '/your-repo-name/', // GitHub Pages
-  // 或
-  base: '/', // 其他平台
-})
-```
+如遇到部署問題，請檢查：
+1. 瀏覽器控制台錯誤訊息
+2. Netlify部署日誌
+3. Supabase Dashboard錯誤記錄
 
-## 📝 部署檢查清單
+## 🔄 更新部署
 
-- [ ] 環境變數設定完成
-- [ ] 建置成功無錯誤
-- [ ] 路由正常運作
-- [ ] 靜態資源載入正常
-- [ ] HTTPS 啟用
-- [ ] 安全標頭設定
-- [ ] 效能測試通過
-- [ ] 錯誤追蹤設定
-- [ ] 監控工具設定
-- [ ] 備份策略確認
+### 自動更新（推薦）
+如果使用Git連接部署，每次推送代碼到main分支都會自動觸發重新部署。
 
-## 🔄 持續部署
-
-建議設定自動部署：
-1. 推送到 main 分支自動部署到生產環境
-2. 推送到 develop 分支自動部署到測試環境
-3. Pull Request 自動建立預覽部署
-
-## 📞 支援
-
-如果遇到部署問題，請：
-1. 檢查本指南的故障排除章節
-2. 查看部署平台的文檔
-3. 聯繫開發團隊
+### 手動更新
+1. 下載最新版本的檔案
+2. 拖拽到Netlify Dashboard進行更新
+3. 等待部署完成
 
 ---
 
-**祝您部署順利！** 🎉
+**注意**: 首次設置時，建議先在本地測試所有功能，確認無誤後再進行線上部署。

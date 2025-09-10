@@ -1,0 +1,9 @@
+# Netlify重導向規則
+# SPA重導向 - 所有路由都指向index-enhanced.html
+/*    /index-enhanced.html   200
+
+# 舊路由重導向到新版本
+/index.html   /index-enhanced.html   301
+
+# API路由（如果有的話）
+/api/*   /api/:splat   200

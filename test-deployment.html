@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>部署測試 - 廣清宮快速記帳軟體</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-item {
+            background: rgba(255,255,255,0.1);
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .success { background: #4caf50; }
+        .error { background: #f44336; }
+        .warning { background: #ff9800; }
+        .info { background: #2196f3; }
+        .button {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background: white;
+            color: #667eea;
+        }
+        #results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏛️ 部署測試</h1>
+        <p style="text-align: center; margin-bottom: 30px;">廣清宮快速記帳軟體部署狀態檢查</p>
+        
+        <div id="results">
+            <!-- 測試結果將在這裡顯示 -->
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="button" onclick="runTests()">🔍 執行測試</button>
+            <a href="index-enhanced.html" class="button">📱 進入應用</a>
+        </div>
+        
+        <div style="margin-top: 30px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px;">
+            <h3>📋 部署檢查清單</h3>
+            <ul style="line-height: 1.8;">
+                <li>✅ 靜態文件可正常訪問</li>
+                <li>✅ HTTPS連接已啟用</li>
+                <li>✅ Service Worker已註冊</li>
+                <li>⚠️ Supabase配置需要設置</li>
+                <li>⚠️ PWA功能需要測試</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        async function runTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="test-item">🔄 執行測試中...</div>';
+            
+            const tests = [
+                { name: 'HTTPS連接', test: testHTTPS },
+                { name: '靜態文件', test: testStaticFiles },
+                { name: 'JavaScript載入', test: testJavaScript },
+                { name: 'Service Worker', test: testServiceWorker },
+                { name: 'LocalStorage', test: testLocalStorage },
+                { name: 'Supabase SDK', test: testSupabase },
+                { name: 'PWA Manifest', test: testManifest }
+            ];
+            
+            results.innerHTML = '';
+            
+            for (let test of tests) {
+                const result = await test.test();
+                const div = document.createElement('div');
+                div.className = 'test-item';
+                div.innerHTML = `
+                    <span>${test.name}</span>
+                    <span class="status ${result.status}">${result.message}</span>
+                `;
+                results.appendChild(div);
+                await new Promise(resolve => setTimeout(resolve, 500)); // 延遲顯示
+            }
+        }
+        
+        function testHTTPS() {
+            const isHTTPS = location.protocol === 'https:';
+            return {
+                status: isHTTPS ? 'success' : 'error',
+                message: isHTTPS ? '✅ 已啟用' : '❌ 未啟用'
+            };
+        }
+        
+        async function testStaticFiles() {
+            try {
+                const response = await fetch('./manifest.json');
+                return {
+                    status: response.ok ? 'success' : 'error',
+                    message: response.ok ? '✅ 正常' : '❌ 載入失敗'
+                };
+            } catch (error) {
+                return { status: 'error', message: '❌ 載入失敗' };
+            }
+        }
+        
+        function testJavaScript() {
+            const hasVue = typeof Vue !== 'undefined';
+            const hasCloudSync = typeof window.cloudSync !== 'undefined';
+            return {
+                status: hasVue ? 'success' : 'error',
+                message: hasVue ? '✅ Vue已載入' : '❌ Vue載入失敗'
+            };
+        }
+        
+        async function testServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    return {
+                        status: registration ? 'success' : 'warning',
+                        message: registration ? '✅ 已註冊' : '⚠️ 未註冊'
+                    };
+                } catch (error) {
+                    return { status: 'error', message: '❌ 註冊失敗' };
+                }
+            } else {
+                return { status: 'error', message: '❌ 不支援' };
+            }
+        }
+        
+        function testLocalStorage() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return { status: 'success', message: '✅ 正常' };
+            } catch (error) {
+                return { status: 'error', message: '❌ 不可用' };
+            }
+        }
+        
+        function testSupabase() {
+            const hasSupabase = typeof window.supabase !== 'undefined';
+            return {
+                status: hasSupabase ? 'success' : 'warning',
+                message: hasSupabase ? '✅ SDK已載入' : '⚠️ 需配置'
+            };
+        }
+        
+        async function testManifest() {
+            try {
+                const response = await fetch('./manifest.json');
+                const manifest = await response.json();
+                return {
+                    status: manifest.name ? 'success' : 'error',
+                    message: manifest.name ? '✅ 有效' : '❌ 無效'
+                };
+            } catch (error) {
+                return { status: 'error', message: '❌ 無效' };
+            }
+        }
+        
+        // 頁面載入時自動執行測試
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html>

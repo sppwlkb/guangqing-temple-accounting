@@ -5,7 +5,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/guangqing-temple-accounting/' : '/',
+  base: '/',
   plugins: [vue()],
   resolve: {
     alias: {

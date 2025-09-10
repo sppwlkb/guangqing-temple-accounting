@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設置嚮導 - 廣清宮快速記帳軟體</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .wizard-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .step-number {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            line-height: 50px;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .step-title {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        
+        .step-description {
+            font-size: 1.1em;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 16px;
+        }
+        
+        .form-input::placeholder, .form-textarea::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .code-block {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn-primary:hover {
+            background: white;
+            color: #667eea;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #2196f3);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .checklist {
+            text-align: left;
+            margin: 20px 0;
+        }
+        
+        .checklist-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .checklist-item:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .checklist-item input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .success {
+            text-align: center;
+            font-size: 1.2em;
+            line-height: 1.8;
+        }
+        
+        .success .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        a {
+            color: #87ceeb;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏛️ 設置嚮導</h1>
+        
+        <div class="wizard-card">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 25%"></div>
+            </div>
+            
+            <!-- 步驟1: 歡迎 -->
+            <div class="step active" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div class="step-title">歡迎使用設置嚮導</div>
+                    <div class="step-description">
+                        此嚮導將協助您設置廣清宮快速記帳軟體的雲端同步功能。<br>
+                        整個過程大約需要10-15分鐘。
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <div style="font-size: 3em; margin-bottom: 20px;">🚀</div>
+                    <p>準備好開始了嗎？讓我們建立您的雲端同步服務！</p>
+                </div>
+            </div>
+            
+            <!-- 步驟2: 創建Supabase帳戶 -->
+            <div class="step" id="step2">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div class="step-title">創建Supabase帳戶</div>
+                    <div class="step-description">
+                        Supabase是我們使用的雲端數據庫服務，安全、快速且免費。
+                    </div>
+                </div>
+                
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check1">
+                        <label for="check1">前往 <a href="https://supabase.com/" target="_blank">Supabase官網</a></label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check2">
+                        <label for="check2">點擊「Start your project」</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check3">
+                        <label for="check3">使用GitHub或Google帳戶登入</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check4">
+                        <label for="check4">創建新組織（如：廣清宮）</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check5">
+                        <label for="check5">創建新專案（如：廣清宮記帳系統）</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check6">
+                        <label for="check6">等待數據庫初始化完成（約2-3分鐘）</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步驟3: 設置數據庫 -->
+            <div class="step" id="step3">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div class="step-title">設置數據庫</div>
+                    <div class="step-description">
+                        在Supabase中創建記帳軟體需要的數據表。
+                    </div>
+                </div>
+                
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check7">
+                        <label for="check7">在Supabase Dashboard中點擊「SQL Editor」</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check8">
+                        <label for="check8">複製並執行以下SQL代碼：</label>
+                    </div>
+                </div>
+                
+                <div class="code-block">CREATE TABLE temple_data (
+    id BIGSERIAL PRIMARY KEY,
+    device_id TEXT NOT NULL,
+    data JSONB NOT NULL,
+    last_modified BIGINT NOT NULL,
+    version TEXT DEFAULT '2.0',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX temple_data_device_id_idx ON temple_data(device_id);
+CREATE INDEX temple_data_updated_at_idx ON temple_data(updated_at DESC);
+
+ALTER TABLE temple_data ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can access own device data" ON temple_data
+    FOR ALL USING (auth.uid()::text = device_id OR device_id LIKE 'device_%');</div>
+                
+                <div class="checklist">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check9">
+                        <label for="check9">點擊「Run」執行SQL</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check10">
+                        <label for="check10">確認執行成功（無錯誤訊息）</label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 步驟4: 獲取API金鑰 -->
+            <div class="step" id="step4">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <div class="step-title">獲取API金鑰</div>
+                    <div class="step-description">
+                        複製Supabase的API金鑰到記帳軟體中。
+                    </div>
+                </div>
+                
+                <div class="checklist" style="margin-bottom: 20px;">
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check11">
+                        <label for="check11">在Supabase Dashboard中點擊「Settings」→「API」</label>
+                    </div>
+                    <div class="checklist-item">
+                        <input type="checkbox" id="check12">
+                        <label for="check12">複製「Project URL」和「anon public」金鑰</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Project URL:</label>
+                    <input type="text" class="form-input" id="supabaseUrl" placeholder="https://your-project.supabase.co">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Anon Key:</label>
+                    <textarea class="form-textarea" id="supabaseKey" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."></textarea>
+                </div>
+            </div>
+            
+            <!-- 步驟5: 完成設置 -->
+            <div class="step" id="step5">
+                <div class="step-header">
+                    <div class="step-number">5</div>
+                    <div class="step-title">完成設置</div>
+                    <div class="step-description">
+                        最後一步：更新設置並測試連接。
+                    </div>
+                </div>
+                
+                <div id="configOutput" style="display: none;">
+                    <p><strong>請在 supabase-sync.js 檔案中更新以下配置：</strong></p>
+                    <div class="code-block" id="configCode"></div>
+                </div>
+                
+                <div class="success">
+                    <span class="icon">🎉</span>
+                    <div>
+                        <strong>恭喜！雲端同步服務設置完成</strong><br><br>
+                        現在您可以：<br>
+                        ✅ 在多個設備間同步數據<br>
+                        ✅ 自動備份到雲端<br>
+                        ✅ 安全的用戶認證<br>
+                        ✅ 智能衝突解決<br><br>
+                        <a href="index-enhanced.html" style="font-size: 1.2em;">🚀 立即開始使用</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn btn-secondary" id="prevBtn" onclick="changeStep(-1)" style="display: none;">上一步</button>
+                <button class="btn btn-primary" id="nextBtn" onclick="changeStep(1)">下一步</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+        
+        function changeStep(direction) {
+            const currentStepEl = document.getElementById(`step${currentStep}`);
+            
+            if (direction === 1 && currentStep < totalSteps) {
+                // 驗證當前步驟
+                if (!validateStep(currentStep)) {
+                    return;
+                }
+                
+                currentStepEl.classList.remove('active');
+                currentStep++;
+                document.getElementById(`step${currentStep}`).classList.add('active');
+            } else if (direction === -1 && currentStep > 1) {
+                currentStepEl.classList.remove('active');
+                currentStep--;
+                document.getElementById(`step${currentStep}`).classList.add('active');
+            }
+            
+            updateUI();
+        }
+        
+        function updateUI() {
+            // 更新進度條
+            const progress = (currentStep / totalSteps) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+            
+            // 更新按鈕
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.style.display = currentStep > 1 ? 'inline-block' : 'none';
+            
+            if (currentStep === totalSteps) {
+                nextBtn.textContent = '完成設置';
+                nextBtn.onclick = () => generateConfig();
+            } else {
+                nextBtn.textContent = '下一步';
+                nextBtn.onclick = () => changeStep(1);
+            }
+        }
+        
+        function validateStep(step) {
+            if (step === 2) {
+                const checkboxes = document.querySelectorAll('#step2 input[type="checkbox"]');
+                const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+                if (checkedCount < 6) {
+                    alert('請完成所有步驟後再繼續。');
+                    return false;
+                }
+            }
+            
+            if (step === 3) {
+                const checkboxes = document.querySelectorAll('#step3 input[type="checkbox"]');
+                const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+                if (checkedCount < 4) {
+                    alert('請完成數據庫設置後再繼續。');
+                    return false;
+                }
+            }
+            
+            if (step === 4) {
+                const url = document.getElementById('supabaseUrl').value;
+                const key = document.getElementById('supabaseKey').value;
+                if (!url || !key) {
+                    alert('請填入Supabase URL和API金鑰。');
+                    return false;
+                }
+                if (!url.includes('supabase.co')) {
+                    alert('請輸入正確的Supabase URL格式。');
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function generateConfig() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            const config = `const SUPABASE_CONFIG = {
+    url: '${url}',
+    key: '${key}',
+    tableName: 'temple_data'
+};`;
+            
+            document.getElementById('configCode').textContent = config;
+            document.getElementById('configOutput').style.display = 'block';
+            
+            // 隱藏按鈕
+            document.querySelector('.buttons').style.display = 'none';
+        }
+        
+        // 初始化
+        updateUI();
+    </script>
+</body>
+</html>
