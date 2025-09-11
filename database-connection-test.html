@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資料庫連接測試 - 廣清宮記帳軟體</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .success {
+            background-color: #e8f5e8;
+            border-color: #4CAF50;
+        }
+        .error {
+            background-color: #ffeaea;
+            border-color: #f44336;
+        }
+        .warning {
+            background-color: #fff8e1;
+            border-color: #ff9800;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #667eea;
+            color: white;
+        }
+        button:hover {
+            background-color: #5a6fd8;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .online { background-color: #4CAF50; }
+        .offline { background-color: #f44336; }
+        .unknown { background-color: #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 廣清宮記帳軟體 - 資料庫連接診斷</h1>
+        
+        <div class="test-section" id="environment-check">
+            <h2>📋 環境變數檢查</h2>
+            <div id="env-results">檢查中...</div>
+            <button onclick="checkEnvironment()">🔄 重新檢查環境</button>
+        </div>
+
+        <div class="test-section" id="supabase-check">
+            <h2>🗄️ Supabase 連接測試</h2>
+            <div id="supabase-results">檢查中...</div>
+            <button onclick="testSupabaseConnection()">🔗 測試 Supabase 連接</button>
+        </div>
+
+        <div class="test-section" id="sync-service-check">
+            <h2>☁️ 同步服務檢查</h2>
+            <div id="sync-results">檢查中...</div>
+            <button onclick="testSyncService()">🔄 測試同步服務</button>
+        </div>
+
+        <div class="test-section" id="network-check">
+            <h2>🌐 網路狀態檢查</h2>
+            <div id="network-results">
+                <span class="status-indicator" id="network-indicator"></span>
+                <span id="network-status">檢查中...</span>
+            </div>
+            <button onclick="checkNetworkStatus()">📶 檢查網路狀態</button>
+        </div>
+
+        <div class="test-section" id="local-data-check">
+            <h2>💾 本地資料檢查</h2>
+            <div id="local-results">檢查中...</div>
+            <button onclick="checkLocalData()">📊 檢查本地資料</button>
+        </div>
+
+        <div class="test-section" id="test-actions">
+            <h2>🧪 測試操作</h2>
+            <button onclick="performFullTest()">🚀 執行完整測試</button>
+            <button onclick="clearAllData()">🗑️ 清除所有測試資料</button>
+            <button onclick="generateTestData()">🎲 生成測試資料</button>
+        </div>
+
+        <div class="test-section" id="logs">
+            <h2>📝 測試日誌</h2>
+            <pre id="log-output"></pre>
+            <button onclick="clearLogs()">🧹 清除日誌</button>
+        </div>
+    </div>
+
+    <!-- 載入必要的腳本 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="env-loader.js"></script>
+    <script src="supabase-sync.js"></script>
+
+    <script>
+        let logOutput = document.getElementById('log-output');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleString('zh-TW');
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logOutput.textContent += logMessage;
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logOutput.textContent = '';
+        }
+
+        function updateSectionStatus(sectionId, isSuccess, message) {
+            const section = document.getElementById(sectionId);
+            section.className = 'test-section ' + (isSuccess ? 'success' : 'error');
+            section.querySelector('div:first-of-type').innerHTML = message;
+        }
+
+        // 檢查環境變數
+        function checkEnvironment() {
+            log('開始檢查環境變數...');
+            
+            try {
+                // 檢查全域環境變數
+                const envCheck = window.checkEnvironment ? window.checkEnvironment() : null;
+                
+                let results = '<h3>環境變數檢查結果：</h3>';
+                
+                if (envCheck) {
+                    results += `<p><strong>配置狀態：</strong> ${envCheck.ready ? '✅ 已配置' : '❌ 未配置'}</p>`;
+                    results += `<p><strong>Supabase URL：</strong> ${envCheck.config.supabaseUrl || '未設定'}</p>`;
+                    results += `<p><strong>Supabase Key：</strong> ${envCheck.config.supabaseKey ? envCheck.config.supabaseKey.substring(0, 20) + '...' : '未設定'}</p>`;
+                    results += `<p><strong>環境：</strong> ${envCheck.config.environment || '未知'}</p>`;
+                    
+                    if (envCheck.warnings.length > 0) {
+                        results += `<p><strong>警告：</strong></p><ul>`;
+                        envCheck.warnings.forEach(warning => {
+                            results += `<li>⚠️ ${warning}</li>`;
+                        });
+                        results += `</ul>`;
+                    }
+                } else {
+                    results += `<p>❌ 無法載入環境檢查工具</p>`;
+                }
+                
+                // 檢查程序環境變數
+                results += `<h4>程序環境變數：</h4>`;
+                results += `<p>NEXT_PUBLIC_SUPABASE_URL: ${process.env ? (process.env.NEXT_PUBLIC_SUPABASE_URL || '未設定') : '無 process.env'}</p>`;
+                results += `<p>NEXT_PUBLIC_SUPABASE_ANON_KEY: ${process.env ? (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.substring(0, 20) + '...' : '未設定') : '無 process.env'}</p>`;
+                
+                updateSectionStatus('environment-check', envCheck && envCheck.ready, results);
+                log(envCheck && envCheck.ready ? '環境變數檢查通過' : '環境變數檢查失敗');
+                
+            } catch (error) {
+                const errorMsg = `環境檢查失敗：${error.message}`;
+                updateSectionStatus('environment-check', false, `<p>❌ ${errorMsg}</p>`);
+                log(errorMsg);
+            }
+        }
+
+        // 測試 Supabase 連接
+        async function testSupabaseConnection() {
+            log('開始測試 Supabase 連接...');
+            
+            try {
+                // 檢查 Supabase 是否已載入
+                if (typeof window.supabase === 'undefined') {
+                    throw new Error('Supabase SDK 未載入');
+                }
+
+                // 從環境變數獲取配置
+                const envConfig = window.getEnvConfig ? window.getEnvConfig() : null;
+                if (!envConfig || !envConfig.supabaseUrl || !envConfig.supabaseKey) {
+                    throw new Error('Supabase 配置未正確載入');
+                }
+
+                // 創建 Supabase 客戶端
+                const supabaseClient = window.supabase.createClient(
+                    envConfig.supabaseUrl,
+                    envConfig.supabaseKey
+                );
+
+                // 測試連接 - 嘗試查詢資料表
+                log('正在測試資料表連接...');
+                const { data, error } = await supabaseClient
+                    .from('temple_data')
+                    .select('count')
+                    .limit(1);
+
+                let results = '<h3>Supabase 連接測試結果：</h3>';
+                
+                if (error) {
+                    results += `<p>❌ 連接失敗：${error.message}</p>`;
+                    results += `<p>錯誤詳情：${error.details || '無詳情'}</p>`;
+                    results += `<p>提示：${error.hint || '檢查資料表是否存在且權限設定正確'}</p>`;
+                    updateSectionStatus('supabase-check', false, results);
+                    log(`Supabase 連接失敗：${error.message}`);
+                } else {
+                    results += `<p>✅ 連接成功！</p>`;
+                    results += `<p>資料表：temple_data 可存取</p>`;
+                    results += `<p>查詢結果：${JSON.stringify(data)}</p>`;
+                    updateSectionStatus('supabase-check', true, results);
+                    log('Supabase 連接測試成功');
+                }
+                
+            } catch (error) {
+                const errorMsg = `Supabase 連接測試失敗：${error.message}`;
+                updateSectionStatus('supabase-check', false, `<p>❌ ${errorMsg}</p>`);
+                log(errorMsg);
+            }
+        }
+
+        // 測試同步服務
+        async function testSyncService() {
+            log('開始測試同步服務...');
+            
+            try {
+                let results = '<h3>同步服務測試結果：</h3>';
+                
+                // 檢查同步服務是否載入
+                if (typeof window.supabaseSync !== 'undefined') {
+                    results += `<p>✅ Supabase 同步服務已載入</p>`;
+                    
+                    // 獲取同步狀態
+                    const status = window.supabaseSync.getSyncStatus();
+                    results += `<p>設備 ID：${status.deviceId}</p>`;
+                    results += `<p>網路狀態：${status.isOnline ? '✅ 線上' : '❌ 離線'}</p>`;
+                    results += `<p>最後同步：${status.lastSyncTime}</p>`;
+                    results += `<p>提供商：${status.provider}</p>`;
+                    results += `<p>同步進行中：${status.syncInProgress ? '是' : '否'}</p>`;
+                    
+                } else if (typeof window.cloudSync !== 'undefined') {
+                    results += `<p>⚠️ 使用傳統雲端同步服務</p>`;
+                } else {
+                    results += `<p>❌ 沒有可用的同步服務</p>`;
+                }
+                
+                updateSectionStatus('sync-service-check', typeof window.supabaseSync !== 'undefined', results);
+                log('同步服務檢查完成');
+                
+            } catch (error) {
+                const errorMsg = `同步服務測試失敗：${error.message}`;
+                updateSectionStatus('sync-service-check', false, `<p>❌ ${errorMsg}</p>`);
+                log(errorMsg);
+            }
+        }
+
+        // 檢查網路狀態
+        function checkNetworkStatus() {
+            log('檢查網路狀態...');
+            
+            const isOnline = navigator.onLine;
+            const indicator = document.getElementById('network-indicator');
+            const status = document.getElementById('network-status');
+            
+            if (isOnline) {
+                indicator.className = 'status-indicator online';
+                status.textContent = '線上';
+                updateSectionStatus('network-check', true, `
+                    <span class="status-indicator online"></span>
+                    <span>✅ 網路連接正常</span>
+                `);
+                log('網路狀態：線上');
+            } else {
+                indicator.className = 'status-indicator offline';
+                status.textContent = '離線';
+                updateSectionStatus('network-check', false, `
+                    <span class="status-indicator offline"></span>
+                    <span>❌ 網路連接中斷</span>
+                `);
+                log('網路狀態：離線');
+            }
+        }
+
+        // 檢查本地資料
+        function checkLocalData() {
+            log('檢查本地資料...');
+            
+            try {
+                const records = JSON.parse(localStorage.getItem('temple-records') || '[]');
+                const believers = JSON.parse(localStorage.getItem('temple-believers') || '[]');
+                const reminders = JSON.parse(localStorage.getItem('temple-reminders') || '[]');
+                const inventory = JSON.parse(localStorage.getItem('temple-inventory') || '[]');
+                
+                const results = `
+                    <h3>本地資料統計：</h3>
+                    <p>📊 記帳記錄：${records.length} 筆</p>
+                    <p>👥 信眾資料：${believers.length} 筆</p>
+                    <p>⏰ 提醒事項：${reminders.length} 筆</p>
+                    <p>📦 庫存項目：${inventory.length} 筆</p>
+                    <p>💾 總資料量：${JSON.stringify({records, believers, reminders, inventory}).length} 字元</p>
+                `;
+                
+                updateSectionStatus('local-data-check', true, results);
+                log(`本地資料檢查完成：記錄${records.length}筆，信眾${believers.length}筆`);
+                
+            } catch (error) {
+                const errorMsg = `本地資料檢查失敗：${error.message}`;
+                updateSectionStatus('local-data-check', false, `<p>❌ ${errorMsg}</p>`);
+                log(errorMsg);
+            }
+        }
+
+        // 生成測試資料
+        function generateTestData() {
+            log('生成測試資料...');
+            
+            const testRecord = {
+                id: Date.now().toString(),
+                date: new Date().toISOString().split('T')[0],
+                type: '收入',
+                category: '香油錢',
+                amount: Math.floor(Math.random() * 10000) + 100,
+                description: '測試資料 - 自動生成',
+                timestamp: Date.now()
+            };
+            
+            const existingRecords = JSON.parse(localStorage.getItem('temple-records') || '[]');
+            existingRecords.push(testRecord);
+            localStorage.setItem('temple-records', JSON.stringify(existingRecords));
+            localStorage.setItem('temple-last-modified', Date.now().toString());
+            
+            log(`已生成測試記錄：${testRecord.category} ${testRecord.amount}元`);
+            checkLocalData(); // 重新檢查本地資料
+        }
+
+        // 清除所有測試資料
+        function clearAllData() {
+            if (confirm('確定要清除所有測試資料嗎？這個操作無法復原！')) {
+                localStorage.removeItem('temple-records');
+                localStorage.removeItem('temple-believers');
+                localStorage.removeItem('temple-reminders');
+                localStorage.removeItem('temple-inventory');
+                localStorage.removeItem('temple-last-modified');
+                log('已清除所有測試資料');
+                checkLocalData(); // 重新檢查本地資料
+            }
+        }
+
+        // 執行完整測試
+        async function performFullTest() {
+            log('=== 開始執行完整測試 ===');
+            
+            checkEnvironment();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testSupabaseConnection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            testSyncService();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            checkNetworkStatus();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            checkLocalData();
+            
+            log('=== 完整測試執行完成 ===');
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            log('資料庫連接測試工具已載入');
+            
+            // 監聽網路狀態變化
+            window.addEventListener('online', () => {
+                log('網路狀態變更：已連接');
+                checkNetworkStatus();
+            });
+            
+            window.addEventListener('offline', () => {
+                log('網路狀態變更：已斷線');
+                checkNetworkStatus();
+            });
+            
+            // 自動執行初始檢查
+            setTimeout(performFullTest, 1000);
+        });
+    </script>
+</body>
+</html>

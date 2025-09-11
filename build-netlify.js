@@ -11,8 +11,8 @@ const path = require('path');
 console.log('🚀 開始Netlify建置流程...');
 
 // 獲取環境變數
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://nfncwofzfjdvyhdfjbzw.supabase.co';
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mbmN3b2Z6ZmpkdnloZGZqYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MjM0MDcsImV4cCI6MjA3MzA5OTQwN30.ZyLtV91pG618utDhJhGJbZpbFPZ_IEx2mBPc7GVfkH4';
 
 console.log('環境變數:', {
     SUPABASE_URL: SUPABASE_URL.substring(0, 30) + '...',

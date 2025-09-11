@@ -10,8 +10,8 @@ const isNetlify = window.location.hostname.includes('netlify.app') ||
 
 // 開發環境配置
 const DEV_CONFIG = {
-    SUPABASE_URL: 'https://your-project.supabase.co',
-    SUPABASE_ANON_KEY: 'your-anon-key',
+    SUPABASE_URL: 'https://nfncwofzfjdvyhdfjbzw.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mbmN3b2Z6ZmpkdnloZGZqYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MjM0MDcsImV4cCI6MjA3MzA5OTQwN30.ZyLtV91pG618utDhJhGJbZpbFPZ_IEx2mBPc7GVfkH4',
     APP_ENV: 'development'
 };
 
@@ -49,6 +49,18 @@ function loadEnvironmentVariables() {
             console.log('開發環境：使用本地配置');
             Object.assign(window, DEV_CONFIG);
         }
+        
+        // 強制設定實際的環境變數（如果還是預設值的話）
+        if (window.SUPABASE_URL.includes('your-project')) {
+            window.SUPABASE_URL = DEV_CONFIG.SUPABASE_URL;
+        }
+        if (window.SUPABASE_ANON_KEY.includes('your-anon-key')) {
+            window.SUPABASE_ANON_KEY = DEV_CONFIG.SUPABASE_ANON_KEY;
+        }
+        
+        // 設定給 Vue/其他框架使用的全域變數
+        window.NEXT_PUBLIC_SUPABASE_URL = window.SUPABASE_URL;
+        window.NEXT_PUBLIC_SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
         
         // 驗證必要的環境變數
         if (!window.SUPABASE_URL || window.SUPABASE_URL.includes('your-project')) {

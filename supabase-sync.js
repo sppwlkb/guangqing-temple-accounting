@@ -6,22 +6,28 @@
 // Supabase配置 - 支援環境變數和多重來源
 const SUPABASE_CONFIG = {
     url: (() => {
-        // 優先順序：Vite環境變數 > 全域變數 > 預設值
-        if (typeof import !== 'undefined' && import.meta && import.meta.env) {
-            return import.meta.env.VITE_SUPABASE_URL;
+        // 優先順序：全域變數 > 實際環境變數 > 預設值
+        if (window.SUPABASE_URL && !window.SUPABASE_URL.includes('your-project')) {
+            return window.SUPABASE_URL;
         }
-        return window.SUPABASE_URL || window.location.hostname === 'localhost' 
-            ? 'https://your-project.supabase.co' 
-            : 'https://your-project.supabase.co';
+        // 檢查全域環境變數
+        if (typeof window !== 'undefined' && window.NEXT_PUBLIC_SUPABASE_URL) {
+            return window.NEXT_PUBLIC_SUPABASE_URL;
+        }
+        // 最後使用預設的實際 URL（從登入時獲得）
+        return 'https://nfncwofzfjdvyhdfjbzw.supabase.co';
     })(),
     key: (() => {
-        // 優先順序：Vite環境變數 > 全域變數 > 預設值
-        if (typeof import !== 'undefined' && import.meta && import.meta.env) {
-            return import.meta.env.VITE_SUPABASE_ANON_KEY;
+        // 優先順序：全域變數 > 實際環境變數 > 預設值
+        if (window.SUPABASE_ANON_KEY && !window.SUPABASE_ANON_KEY.includes('your-anon-key')) {
+            return window.SUPABASE_ANON_KEY;
         }
-        return window.SUPABASE_ANON_KEY || window.location.hostname === 'localhost'
-            ? 'your-anon-key'
-            : 'your-anon-key';
+        // 檢查全域環境變數
+        if (typeof window !== 'undefined' && window.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+            return window.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        }
+        // 最後使用預設的實際 Key（從登入時獲得）
+        return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mbmN3b2Z6ZmpkdnloZGZqYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MjM0MDcsImV4cCI6MjA3MzA5OTQwN30.ZyLtV91pG618utDhJhGJbZpbFPZ_IEx2mBPc7GVfkH4';
     })(),
     tableName: 'temple_data'
 };

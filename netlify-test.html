@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlify 部署測試 - 廣清宮記帳軟體</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .test-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #5a6fd8; }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .online { background: #28a745; }
+        .offline { background: #dc3545; }
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Netlify 部署狀態檢查</h1>
+        <p>這個頁面會檢查你的 Netlify 部署是否正確配置了 Supabase 連接。</p>
+        
+        <div class="test-card" id="env-check">
+            <h3>📋 環境變數檢查</h3>
+            <div id="env-results">檢查中...</div>
+        </div>
+        
+        <div class="test-card" id="supabase-check">
+            <h3>🗄️ Supabase 連接測試</h3>
+            <div id="supabase-results">檢查中...</div>
+        </div>
+        
+        <div class="test-card" id="sync-test">
+            <h3>☁️ 同步功能測試</h3>
+            <div id="sync-results">檢查中...</div>
+            <button class="btn" onclick="testSync()">🔄 測試同步</button>
+        </div>
+        
+        <div class="test-card">
+            <h3>🛠️ 除錯資訊</h3>
+            <pre id="debug-info">載入中...</pre>
+        </div>
+        
+        <div class="test-card">
+            <h3>📖 解決方案</h3>
+            <div id="solutions">
+                <p>如果發現問題，請檢查：</p>
+                <ol>
+                    <li>Netlify 環境變數是否正確設定</li>
+                    <li>Supabase 資料表是否已建立</li>
+                    <li>RLS 政策是否正確配置</li>
+                    <li>網路連接是否正常</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入必要腳本 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="env-loader.js"></script>
+    <script src="supabase-sync.js"></script>
+
+    <script>
+        function updateCard(cardId, className, content) {
+            const card = document.getElementById(cardId);
+            card.className = `test-card ${className}`;
+            const results = card.querySelector('div[id$="results"]');
+            if (results) results.innerHTML = content;
+        }
+
+        function log(message) {
+            console.log(message);
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+        }
+
+        // 檢查環境變數
+        function checkEnvironment() {
+            log('檢查環境變數...');
+            
+            try {
+                const envCheck = window.checkEnvironment ? window.checkEnvironment() : null;
+                
+                let content = '';
+                if (envCheck) {
+                    content += `<div><strong>狀態:</strong> ${envCheck.ready ? '✅ 已配置' : '❌ 未配置'}</div>`;
+                    content += `<div><strong>URL:</strong> ${envCheck.config.supabaseUrl || '未設定'}</div>`;
+                    content += `<div><strong>Key:</strong> ${envCheck.config.supabaseKey ? '✅ 已設定' : '❌ 未設定'}</div>`;
+                    content += `<div><strong>環境:</strong> ${envCheck.config.environment}</div>`;
+                    
+                    if (envCheck.warnings.length > 0) {
+                        content += `<div><strong>警告:</strong></div><ul>`;
+                        envCheck.warnings.forEach(w => content += `<li>${w}</li>`);
+                        content += `</ul>`;
+                    }
+                } else {
+                    content = '❌ 環境檢查工具載入失敗';
+                }
+                
+                updateCard('env-check', envCheck && envCheck.ready ? 'success' : 'error', content);
+                log(envCheck && envCheck.ready ? '環境變數檢查通過' : '環境變數檢查失敗');
+                
+                return envCheck && envCheck.ready;
+            } catch (error) {
+                log('環境檢查錯誤: ' + error.message);
+                updateCard('env-check', 'error', '❌ ' + error.message);
+                return false;
+            }
+        }
+
+        // 測試 Supabase 連接
+        async function testSupabase() {
+            log('測試 Supabase 連接...');
+            
+            try {
+                if (!window.supabase) {
+                    throw new Error('Supabase SDK 未載入');
+                }
+
+                const envConfig = window.getEnvConfig ? window.getEnvConfig() : null;
+                if (!envConfig || !envConfig.supabaseUrl || !envConfig.supabaseKey) {
+                    throw new Error('Supabase 配置未載入');
+                }
+
+                const client = window.supabase.createClient(envConfig.supabaseUrl, envConfig.supabaseKey);
+                
+                log('嘗試連接到資料表...');
+                const { data, error } = await client
+                    .from('temple_data')
+                    .select('count')
+                    .limit(1);
+
+                let content = '';
+                if (error) {
+                    content = `❌ 連接失敗<br>錯誤: ${error.message}<br>提示: ${error.hint || '檢查資料表是否存在'}`;
+                    updateCard('supabase-check', 'error', content);
+                    log('Supabase 連接失敗: ' + error.message);
+                    return false;
+                } else {
+                    content = `✅ 連接成功<br>資料表: temple_data 可存取<br>結果: ${JSON.stringify(data)}`;
+                    updateCard('supabase-check', 'success', content);
+                    log('Supabase 連接成功');
+                    return true;
+                }
+            } catch (error) {
+                log('Supabase 測試錯誤: ' + error.message);
+                updateCard('supabase-check', 'error', '❌ ' + error.message);
+                return false;
+            }
+        }
+
+        // 測試同步功能
+        async function testSync() {
+            log('測試同步功能...');
+            
+            try {
+                if (!window.supabaseSync && !window.cloudSync) {
+                    throw new Error('同步服務未載入');
+                }
+
+                const syncService = window.supabaseSync || window.cloudSync;
+                const provider = syncService.supabase ? 'Supabase' : 'LocalStorage';
+                
+                log('開始測試同步...');
+                updateCard('sync-test', 'warning', '🔄 正在測試同步...');
+                
+                const result = await syncService.syncToCloud();
+                
+                if (result.success) {
+                    const content = `✅ 同步測試成功<br>提供商: ${result.provider || provider}<br>時間: ${result.syncTime}`;
+                    updateCard('sync-test', 'success', content);
+                    log('同步測試成功');
+                } else {
+                    updateCard('sync-test', 'error', '❌ 同步失敗: ' + result.message);
+                    log('同步測試失敗: ' + result.message);
+                }
+            } catch (error) {
+                log('同步測試錯誤: ' + error.message);
+                updateCard('sync-test', 'error', '❌ ' + error.message);
+            }
+        }
+
+        // 初始化測試
+        document.addEventListener('DOMContentLoaded', async function() {
+            log('開始 Netlify 部署測試...');
+            log('當前域名: ' + window.location.hostname);
+            log('是否為 Netlify: ' + (window.location.hostname.includes('netlify')));
+            
+            // 等待腳本載入
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const envOk = checkEnvironment();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (envOk) {
+                const supabaseOk = await testSupabase();
+                if (supabaseOk) {
+                    updateCard('sync-test', 'success', '✅ 準備就緒，可以測試同步');
+                } else {
+                    updateCard('sync-test', 'warning', '⚠️ Supabase 連接失敗，同步可能無法正常工作');
+                }
+            } else {
+                updateCard('sync-test', 'error', '❌ 環境變數未正確配置');
+            }
+            
+            log('測試完成');
+        });
+    </script>
+</body>
+</html>
