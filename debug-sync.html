@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雲端同步診斷工具</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .step {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #5a6fd8; }
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🩺 雲端同步診斷工具</h1>
+        <p>這個工具會逐步檢查你的雲端同步配置，找出問題所在。</p>
+        
+        <button class="btn" onclick="runFullDiagnosis()">🚀 開始完整診斷</button>
+        <button class="btn" onclick="clearResults()">🧹 清除結果</button>
+        
+        <div id="results"></div>
+        
+        <div class="step">
+            <h3>📝 診斷日誌</h3>
+            <pre id="debug-log">點擊「開始完整診斷」來檢查問題...</pre>
+        </div>
+    </div>
+
+    <!-- 載入必要腳本 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="env-loader.js"></script>
+    <script src="supabase-sync.js"></script>
+
+    <script>
+        let results = document.getElementById('results');
+        let debugLog = document.getElementById('debug-log');
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+
+        function addStep(title, status, content, details = '') {
+            const step = document.createElement('div');
+            step.className = `step ${status}`;
+            
+            const icon = status === 'success' ? '✅' : status === 'error' ? '❌' : '⚠️';
+            step.innerHTML = `
+                <h3>${icon} ${title}</h3>
+                <div>${content}</div>
+                ${details ? `<details><summary>詳細資訊</summary><pre>${details}</pre></details>` : ''}
+            `;
+            
+            results.appendChild(step);
+        }
+
+        function clearResults() {
+            results.innerHTML = '';
+            debugLog.textContent = '診斷結果已清除，準備重新檢查...\n';
+        }
+
+        async function runFullDiagnosis() {
+            clearResults();
+            log('開始完整診斷...');
+            
+            // 步驟 1: 檢查基礎環境
+            await checkEnvironment();
+            
+            // 步驟 2: 檢查 Supabase SDK
+            await checkSupabaseSDK();
+            
+            // 步驟 3: 檢查環境變數
+            await checkEnvironmentVariables();
+            
+            // 步驟 4: 測試 Supabase 連接
+            await testSupabaseConnection();
+            
+            // 步驟 5: 檢查同步服務
+            await checkSyncService();
+            
+            // 步驟 6: 測試實際同步
+            await testActualSync();
+            
+            log('診斷完成！');
+        }
+
+        async function checkEnvironment() {
+            log('步驟 1: 檢查基礎環境...');
+            
+            try {
+                const info = {
+                    'User Agent': navigator.userAgent,
+                    '當前域名': window.location.hostname,
+                    '是否為 Netlify': window.location.hostname.includes('netlify'),
+                    '網路狀態': navigator.onLine ? '線上' : '離線',
+                    '本地存儲可用': typeof(Storage) !== 'undefined'
+                };
+                
+                addStep('基礎環境檢查', 'success', 
+                    '瀏覽器環境正常', 
+                    Object.entries(info).map(([k,v]) => `${k}: ${v}`).join('\n')
+                );
+                
+                log('✅ 基礎環境檢查通過');
+            } catch (error) {
+                addStep('基礎環境檢查', 'error', `環境檢查失敗: ${error.message}`);
+                log('❌ 基礎環境檢查失敗: ' + error.message);
+            }
+        }
+
+        async function checkSupabaseSDK() {
+            log('步驟 2: 檢查 Supabase SDK...');
+            
+            try {
+                if (typeof window.supabase === 'undefined') {
+                    throw new Error('Supabase SDK 未載入');
+                }
+                
+                if (typeof window.supabase.createClient !== 'function') {
+                    throw new Error('Supabase createClient 方法不可用');
+                }
+                
+                addStep('Supabase SDK', 'success', 'SDK 已正確載入');
+                log('✅ Supabase SDK 檢查通過');
+            } catch (error) {
+                addStep('Supabase SDK', 'error', `SDK 載入失敗: ${error.message}`);
+                log('❌ Supabase SDK 檢查失敗: ' + error.message);
+            }
+        }
+
+        async function checkEnvironmentVariables() {
+            log('步驟 3: 檢查環境變數...');
+            
+            try {
+                // 等待 env-loader 載入
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const envConfig = window.getEnvConfig ? window.getEnvConfig() : null;
+                
+                if (!envConfig) {
+                    throw new Error('環境配置函數未載入');
+                }
+                
+                const details = {
+                    'Supabase URL': envConfig.supabaseUrl || '未設定',
+                    'Supabase Key': envConfig.supabaseKey ? '已設定 (長度: ' + envConfig.supabaseKey.length + ')' : '未設定',
+                    '環境模式': envConfig.environment || '未知',
+                    '是否生產環境': envConfig.isProduction ? '是' : '否'
+                };
+                
+                const isValid = envConfig.supabaseUrl && 
+                               envConfig.supabaseKey && 
+                               !envConfig.supabaseUrl.includes('your-project') &&
+                               !envConfig.supabaseKey.includes('your-anon-key');
+                
+                if (isValid) {
+                    addStep('環境變數配置', 'success', 
+                        '環境變數已正確設定', 
+                        Object.entries(details).map(([k,v]) => `${k}: ${v}`).join('\n')
+                    );
+                    log('✅ 環境變數檢查通過');
+                } else {
+                    addStep('環境變數配置', 'error', 
+                        '環境變數配置有問題', 
+                        Object.entries(details).map(([k,v]) => `${k}: ${v}`).join('\n')
+                    );
+                    log('❌ 環境變數配置有問題');
+                }
+            } catch (error) {
+                addStep('環境變數配置', 'error', `檢查失敗: ${error.message}`);
+                log('❌ 環境變數檢查失敗: ' + error.message);
+            }
+        }
+
+        async function testSupabaseConnection() {
+            log('步驟 4: 測試 Supabase 連接...');
+            
+            try {
+                const envConfig = window.getEnvConfig();
+                if (!envConfig.supabaseUrl || !envConfig.supabaseKey) {
+                    throw new Error('環境變數未正確設定');
+                }
+                
+                const client = window.supabase.createClient(envConfig.supabaseUrl, envConfig.supabaseKey);
+                log('正在連接 Supabase...');
+                
+                // 測試連接到 temple_data 資料表
+                const { data, error } = await client
+                    .from('temple_data')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    const details = `錯誤代碼: ${error.code || '無'}
+錯誤訊息: ${error.message}
+錯誤詳情: ${error.details || '無'}
+提示: ${error.hint || '無'}`;
+                    
+                    addStep('Supabase 連接測試', 'error', 
+                        `連接失敗: ${error.message}`, 
+                        details
+                    );
+                    log('❌ Supabase 連接失敗: ' + error.message);
+                } else {
+                    addStep('Supabase 連接測試', 'success', 
+                        '成功連接到資料庫', 
+                        `查詢結果: ${JSON.stringify(data, null, 2)}`
+                    );
+                    log('✅ Supabase 連接測試通過');
+                }
+            } catch (error) {
+                addStep('Supabase 連接測試', 'error', `測試失敗: ${error.message}`);
+                log('❌ Supabase 連接測試失敗: ' + error.message);
+            }
+        }
+
+        async function checkSyncService() {
+            log('步驟 5: 檢查同步服務...');
+            
+            try {
+                if (!window.supabaseSync) {
+                    throw new Error('SupabaseSync 服務未初始化');
+                }
+                
+                const status = window.supabaseSync.getSyncStatus();
+                
+                const details = {
+                    '設備 ID': status.deviceId,
+                    '網路狀態': status.isOnline ? '線上' : '離線',
+                    '最後同步時間': status.lastSyncTime,
+                    '服務提供商': status.provider,
+                    '同步進行中': status.syncInProgress ? '是' : '否'
+                };
+                
+                addStep('同步服務檢查', 'success', 
+                    '同步服務已正確載入', 
+                    Object.entries(details).map(([k,v]) => `${k}: ${v}`).join('\n')
+                );
+                log('✅ 同步服務檢查通過');
+            } catch (error) {
+                addStep('同步服務檢查', 'error', `檢查失敗: ${error.message}`);
+                log('❌ 同步服務檢查失敗: ' + error.message);
+            }
+        }
+
+        async function testActualSync() {
+            log('步驟 6: 測試實際同步功能...');
+            
+            try {
+                if (!window.supabaseSync) {
+                    throw new Error('同步服務不可用');
+                }
+                
+                log('正在生成測試資料...');
+                
+                // 生成一筆測試資料
+                const testRecord = {
+                    id: 'test_' + Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    type: '收入',
+                    category: '測試資料',
+                    amount: 100,
+                    description: '診斷工具測試資料',
+                    timestamp: Date.now()
+                };
+                
+                // 儲存到本地
+                const existingRecords = JSON.parse(localStorage.getItem('temple-records') || '[]');
+                existingRecords.push(testRecord);
+                localStorage.setItem('temple-records', JSON.stringify(existingRecords));
+                localStorage.setItem('temple-last-modified', Date.now().toString());
+                
+                log('正在測試上傳到雲端...');
+                
+                const syncResult = await window.supabaseSync.syncToCloud();
+                
+                if (syncResult.success) {
+                    addStep('實際同步測試', 'success', 
+                        '同步測試成功！', 
+                        `提供商: ${syncResult.provider}
+同步時間: ${syncResult.syncTime}
+設備 ID: ${syncResult.deviceId || '無'}
+訊息: ${syncResult.message}`
+                    );
+                    log('✅ 實際同步測試成功');
+                    
+                    // 清理測試資料
+                    const cleanRecords = existingRecords.filter(r => r.id !== testRecord.id);
+                    localStorage.setItem('temple-records', JSON.stringify(cleanRecords));
+                    log('🧹 測試資料已清理');
+                    
+                } else {
+                    addStep('實際同步測試', 'error', 
+                        `同步失敗: ${syncResult.message}`, 
+                        JSON.stringify(syncResult, null, 2)
+                    );
+                    log('❌ 實際同步測試失敗: ' + syncResult.message);
+                }
+            } catch (error) {
+                addStep('實際同步測試', 'error', 
+                    `測試失敗: ${error.message}`, 
+                    error.stack || '無堆疊資訊'
+                );
+                log('❌ 實際同步測試失敗: ' + error.message);
+            }
+        }
+
+        // 自動開始診斷
+        document.addEventListener('DOMContentLoaded', function() {
+            log('診斷工具已載入');
+            setTimeout(() => {
+                log('3秒後自動開始診斷...');
+                setTimeout(runFullDiagnosis, 3000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
