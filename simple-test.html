@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡單同步測試</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .warning { border-left: 4px solid #ffc107; }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { opacity: 0.8; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔧 簡單同步測試</h1>
+        <p>這是一個獨立的測試工具，不依賴其他腳本。</p>
+        <button class="btn" onclick="runTest()">開始測試</button>
+        <button class="btn" onclick="clearCache()">清除快取</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const card = document.createElement('div');
+            card.className = `card ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            card.innerHTML = `
+                <strong>[${timestamp}] ${type.toUpperCase()}</strong><br>
+                ${message}
+            `;
+            
+            results.appendChild(card);
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearCache() {
+            // 清除各種快取
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                });
+            }
+            
+            // 清除本地存儲中的同步相關項目
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.includes('temple-')) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+            
+            log('快取已清除，建議重新整理頁面', 'success');
+        }
+
+        async function runTest() {
+            document.getElementById('results').innerHTML = '';
+            log('開始獨立測試...');
+
+            // 測試 1: 基本環境
+            log('✓ 瀏覽器：' + navigator.userAgent.substring(0, 50) + '...');
+            log('✓ 域名：' + window.location.hostname);
+            log('✓ 網路：' + (navigator.onLine ? '線上' : '離線'));
+
+            // 測試 2: Supabase SDK
+            try {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@supabase/supabase-js@2';
+                document.head.appendChild(script);
+                
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    setTimeout(reject, 10000); // 10秒超時
+                });
+                
+                if (typeof window.supabase !== 'undefined') {
+                    log('✓ Supabase SDK 載入成功', 'success');
+                } else {
+                    log('✗ Supabase SDK 載入失敗', 'error');
+                    return;
+                }
+            } catch (error) {
+                log('✗ 無法載入 Supabase SDK: ' + error.message, 'error');
+                return;
+            }
+
+            // 測試 3: 直接連接 Supabase
+            try {
+                const supabaseUrl = 'https://nfncwofzfjdvyhdfjbzw.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mbmN3b2Z6ZmpkdnloZGZqYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MjM0MDcsImV4cCI6MjA3MzA5OTQwN30.ZyLtV91pG618utDhJhGJbZpbFPZ_IEx2mBPc7GVfkH4';
+                
+                const client = window.supabase.createClient(supabaseUrl, supabaseKey);
+                log('✓ Supabase 客戶端建立成功', 'success');
+
+                // 測試資料表連接
+                log('正在測試資料表連接...');
+                const { data, error } = await client
+                    .from('temple_data')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    log(`✗ 資料表連接失敗: ${error.message}`, 'error');
+                    log(`錯誤詳情: ${JSON.stringify(error)}`, 'warning');
+                    
+                    if (error.message.includes('relation') && error.message.includes('does not exist')) {
+                        log('⚠️ 問題診斷：資料表 temple_data 不存在！', 'warning');
+                        log('解決方案：需要在 Supabase 控制台執行建表 SQL', 'warning');
+                    } else if (error.message.includes('permission') || error.message.includes('policy')) {
+                        log('⚠️ 問題診斷：權限政策問題！', 'warning');
+                        log('解決方案：需要設定正確的 RLS 政策', 'warning');
+                    }
+                } else {
+                    log('✓ 資料表連接成功！', 'success');
+                    log(`查詢結果: ${JSON.stringify(data)}`, 'success');
+
+                    // 測試插入數據
+                    try {
+                        const testData = {
+                            device_id: 'test_' + Date.now(),
+                            data: { test: true, timestamp: Date.now() },
+                            last_modified: Date.now(),
+                            version: '2.0'
+                        };
+
+                        log('正在測試數據插入...');
+                        const { data: insertData, error: insertError } = await client
+                            .from('temple_data')
+                            .insert([testData]);
+
+                        if (insertError) {
+                            log(`✗ 數據插入失敗: ${insertError.message}`, 'error');
+                        } else {
+                            log('✓ 數據插入成功！雲端同步功能正常！', 'success');
+                            
+                            // 清理測試數據
+                            await client
+                                .from('temple_data')
+                                .delete()
+                                .eq('device_id', testData.device_id);
+                            log('✓ 測試數據已清理', 'success');
+                        }
+                    } catch (insertError) {
+                        log(`✗ 插入測試失敗: ${insertError.message}`, 'error');
+                    }
+                }
+            } catch (error) {
+                log(`✗ Supabase 測試失敗: ${error.message}`, 'error');
+            }
+
+            // 測試完成
+            log('=== 測試完成 ===');
+        }
+
+        // 頁面載入時自動測試
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('頁面載入完成，5秒後自動開始測試...');
+                setTimeout(runTest, 5000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
