@@ -1,7 +1,6 @@
 /**
  * 廣清宮記帳軟體 - Supabase雲端同步服務
  * 提供真正的雲端數據庫同步功能
- * 清理版本 - 移除所有 ES6 模組語法
  */
 
 // Supabase配置 - 支援環境變數和多重來源
@@ -113,7 +112,7 @@ class SupabaseSyncService {
             this.syncToCloud = () => window.cloudSync.syncToCloud();
             this.syncFromCloud = () => window.cloudSync.syncFromCloud();
             this.exportData = () => window.cloudSync.exportData();
-            this.loadDataFromFile = () => window.cloudSync.loadDataFromFile();
+            this.importData = () => window.cloudSync.importData();
         }
     }
     
@@ -427,9 +426,9 @@ class SupabaseSyncService {
     }
     
     /**
-     * 載入數據文件
+     * 匯入數據
      */
-    async loadDataFromFile() {
+    async importData() {
         return new Promise((resolve, reject) => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -445,25 +444,25 @@ class SupabaseSyncService {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const loadedData = JSON.parse(e.target.result);
+                        const importedData = JSON.parse(e.target.result);
                         
                         // 備份現有數據
                         this.backupLocalData();
                         
                         // 更新本地數據
-                        localStorage.setItem('temple-records', JSON.stringify(loadedData.records || []));
-                        localStorage.setItem('temple-believers', JSON.stringify(loadedData.believers || []));
-                        localStorage.setItem('temple-reminders', JSON.stringify(loadedData.reminders || []));
-                        localStorage.setItem('temple-inventory', JSON.stringify(loadedData.inventory || []));
-                        localStorage.setItem('temple-stock-movements', JSON.stringify(loadedData.stockMovements || []));
-                        localStorage.setItem('temple-events', JSON.stringify(loadedData.events || []));
-                        localStorage.setItem('temple-custom-categories', JSON.stringify(loadedData.customCategories || []));
+                        localStorage.setItem('temple-records', JSON.stringify(importedData.records || []));
+                        localStorage.setItem('temple-believers', JSON.stringify(importedData.believers || []));
+                        localStorage.setItem('temple-reminders', JSON.stringify(importedData.reminders || []));
+                        localStorage.setItem('temple-inventory', JSON.stringify(importedData.inventory || []));
+                        localStorage.setItem('temple-stock-movements', JSON.stringify(importedData.stockMovements || []));
+                        localStorage.setItem('temple-events', JSON.stringify(importedData.events || []));
+                        localStorage.setItem('temple-custom-categories', JSON.stringify(importedData.customCategories || []));
                         
                         resolve({
                             success: true,
-                            message: '數據已成功載入',
-                            recordsCount: loadedData.records?.length || 0,
-                            believersCount: loadedData.believers?.length || 0
+                            message: '數據已成功匯入',
+                            recordsCount: importedData.records?.length || 0,
+                            believersCount: importedData.believers?.length || 0
                         });
                     } catch (error) {
                         reject(new Error('文件格式錯誤'));
