@@ -346,6 +346,43 @@ class SupabaseSyncServiceFinal {
         }
     }
     
+    // 檢查雲端資料狀態
+    async checkCloudData() {
+        try {
+            const { data, error } = await this.supabase
+                .from(SUPABASE_CONFIG_FINAL.tableName)
+                .select('data, last_modified, device_id, updated_at')
+                .order('last_modified', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            if (data && data.length > 0) {
+                const cloudData = data[0];
+                const parsedData = cloudData.data;
+                
+                return {
+                    hasData: true,
+                    lastModified: cloudData.last_modified,
+                    deviceId: cloudData.device_id,
+                    updatedAt: cloudData.updated_at,
+                    recordsCount: parsedData.records?.length || 0,
+                    believersCount: parsedData.believers?.length || 0,
+                    remindersCount: parsedData.reminders?.length || 0,
+                    eventsCount: parsedData.events?.length || 0
+                };
+            } else {
+                return {
+                    hasData: false,
+                    message: '雲端暫無資料'
+                };
+            }
+        } catch (error) {
+            console.error('檢查雲端資料錯誤:', error);
+            throw new Error('檢查雲端資料失敗: ' + error.message);
+        }
+    }
+    
     async retryOperation(operation, maxRetries = SUPABASE_CONFIG_FINAL.retryAttempts) {
         let lastError;
         

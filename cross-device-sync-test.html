@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跨裝置同步測試工具 - 廣清宮記帳軟體</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-step {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4facfe;
+        }
+        .button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .status.success { background: rgba(76, 175, 80, 0.3); }
+        .status.error { background: rgba(244, 67, 54, 0.3); }
+        .status.info { background: rgba(33, 150, 243, 0.3); }
+        .log {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .device-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .device-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .device-id {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            background: rgba(0,0,0,0.2);
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 跨裝置同步測試工具</h1>
+            <p>測試多個裝置間的資料同步功能</p>
+        </div>
+
+        <!-- 當前裝置資訊 -->
+        <div class="test-card">
+            <h3>📱 當前裝置資訊</h3>
+            <div class="device-info">
+                <div class="device-card">
+                    <div><strong>裝置類型</strong></div>
+                    <div id="device-type">檢測中...</div>
+                    <div class="device-id" id="device-id">載入中...</div>
+                </div>
+                <div class="device-card">
+                    <div><strong>網路狀態</strong></div>
+                    <div id="network-status">檢測中...</div>
+                    <div><strong>同步服務</strong></div>
+                    <div id="sync-service-status">載入中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 本地資料統計 -->
+        <div class="test-card">
+            <h3>💾 本地資料統計</h3>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="local-records">0</div>
+                    <div class="stat-label">記帳記錄</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="local-believers">0</div>
+                    <div class="stat-label">信眾資料</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="local-reminders">0</div>
+                    <div class="stat-label">提醒事項</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="local-categories">0</div>
+                    <div class="stat-label">自訂分類</div>
+                </div>
+            </div>
+            <div class="status" id="local-data-status">準備檢查本地資料</div>
+        </div>
+
+        <!-- 雲端資料統計 -->
+        <div class="test-card">
+            <h3>☁️ 雲端資料統計</h3>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="cloud-records">-</div>
+                    <div class="stat-label">記帳記錄</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="cloud-believers">-</div>
+                    <div class="stat-label">信眾資料</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="cloud-reminders">-</div>
+                    <div class="stat-label">提醒事項</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="cloud-events">-</div>
+                    <div class="stat-label">活動事件</div>
+                </div>
+            </div>
+            <div class="status" id="cloud-data-status">準備檢查雲端資料</div>
+            <button class="button" onclick="checkCloudData()">🔍 檢查雲端資料</button>
+        </div>
+
+        <!-- 測試操作 -->
+        <div class="test-card">
+            <h3>🧪 測試操作</h3>
+            
+            <div class="test-step">
+                <h4>步驟 1: 創建測試資料</h4>
+                <p>在本地創建一些測試記錄</p>
+                <button class="button" onclick="createTestData()">➕ 創建測試資料</button>
+                <button class="button" onclick="clearTestData()">🗑️ 清除測試資料</button>
+            </div>
+
+            <div class="test-step">
+                <h4>步驟 2: 上傳到雲端</h4>
+                <p>將本地資料同步到雲端</p>
+                <button class="button" onclick="uploadToCloud()" id="upload-btn">📤 上傳到雲端</button>
+                <div id="upload-status" class="status" style="display: none;"></div>
+            </div>
+
+            <div class="test-step">
+                <h4>步驟 3: 模擬其他裝置下載</h4>
+                <p>清除本地資料並從雲端下載</p>
+                <button class="button" onclick="simulateOtherDevice()" id="simulate-btn">📱 模擬其他裝置</button>
+                <button class="button download-btn" onclick="downloadFromCloud()" id="download-btn">📥 從雲端下載</button>
+                <div id="download-status" class="status" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- 測試結果 -->
+        <div class="test-card">
+            <h3>📊 測試結果</h3>
+            <div id="test-results" class="log">等待測試結果...</div>
+        </div>
+
+        <!-- 操作日誌 -->
+        <div class="test-card">
+            <h3>📝 操作日誌</h3>
+            <div id="operation-log" class="log">初始化中...</div>
+            <button class="button" onclick="clearLog()">🧹 清除日誌</button>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="test-card">
+            <h3>⚡ 快速操作</h3>
+            <button class="button" onclick="quickSyncTest()">🚀 快速同步測試</button>
+            <button class="button" onclick="fullSyncTest()">🔄 完整同步測試</button>
+            <button class="button" onclick="location.href='index-enhanced.html'">🏠 返回主應用</button>
+        </div>
+    </div>
+
+    <!-- 載入必要的腳本 -->
+    <script src="env-loader.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-sync-final.js"></script>
+
+    <script>
+        let syncService = null;
+        let testResults = [];
+
+        // 日誌函數
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString('zh-TW');
+            const logElement = document.getElementById('operation-log');
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('operation-log').innerHTML = '';
+        }
+
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `status ${type}`;
+                element.style.display = 'block';
+            }
+        }
+
+        // 初始化
+        async function init() {
+            log('🚀 初始化跨裝置同步測試工具...');
+            
+            // 檢測裝置類型
+            const deviceType = /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? '📱 手機/平板' : '💻 電腦';
+            document.getElementById('device-type').textContent = deviceType;
+            
+            // 檢測網路狀態
+            document.getElementById('network-status').textContent = navigator.onLine ? '🟢 已連線' : '🔴 離線';
+            
+            // 等待同步服務載入
+            let retries = 0;
+            while (!window.supabaseSync && retries < 10) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                retries++;
+            }
+            
+            if (window.supabaseSync) {
+                syncService = window.supabaseSync;
+                document.getElementById('sync-service-status').textContent = '🟢 Supabase 已連接';
+                document.getElementById('device-id').textContent = syncService.deviceId;
+                log('✅ 同步服務已載入');
+            } else {
+                document.getElementById('sync-service-status').textContent = '🔴 服務未載入';
+                log('❌ 同步服務載入失敗');
+            }
+            
+            // 更新本地資料統計
+            updateLocalDataStats();
+            
+            log('✅ 初始化完成');
+        }
+
+        // 更新本地資料統計
+        function updateLocalDataStats() {
+            const records = JSON.parse(localStorage.getItem('temple-records') || '[]');
+            const believers = JSON.parse(localStorage.getItem('temple-believers') || '[]');
+            const reminders = JSON.parse(localStorage.getItem('temple-reminders') || '[]');
+            const categories = JSON.parse(localStorage.getItem('temple-custom-categories') || '[]');
+            
+            document.getElementById('local-records').textContent = records.length;
+            document.getElementById('local-believers').textContent = believers.length;
+            document.getElementById('local-reminders').textContent = reminders.length;
+            document.getElementById('local-categories').textContent = categories.length;
+            
+            updateStatus('local-data-status', `本地資料已載入 (共 ${records.length + believers.length + reminders.length + categories.length} 筆)`, 'success');
+        }
+
+        // 檢查雲端資料
+        async function checkCloudData() {
+            if (!syncService) {
+                updateStatus('cloud-data-status', '同步服務未載入', 'error');
+                return;
+            }
+
+            try {
+                log('🔍 檢查雲端資料...');
+                const result = await syncService.checkCloudData();
+                
+                if (result.hasData) {
+                    document.getElementById('cloud-records').textContent = result.recordsCount || 0;
+                    document.getElementById('cloud-believers').textContent = result.believersCount || 0;
+                    document.getElementById('cloud-reminders').textContent = result.remindersCount || 0;
+                    document.getElementById('cloud-events').textContent = result.eventsCount || 0;
+                    
+                    const updateTime = new Date(result.lastModified).toLocaleString('zh-TW');
+                    updateStatus('cloud-data-status', `雲端資料已載入 (更新時間: ${updateTime})`, 'success');
+                    log('✅ 雲端資料檢查完成');
+                } else {
+                    updateStatus('cloud-data-status', '雲端暫無資料', 'info');
+                    log('ℹ️ 雲端暫無資料');
+                }
+            } catch (error) {
+                updateStatus('cloud-data-status', `檢查失敗: ${error.message}`, 'error');
+                log(`❌ 雲端資料檢查失敗: ${error.message}`);
+            }
+        }
+
+        // 創建測試資料
+        function createTestData() {
+            const timestamp = Date.now();
+            
+            // 創建測試記錄
+            const testRecords = [
+                {
+                    id: `test_record_${timestamp}_1`,
+                    date: new Date().toISOString().split('T')[0],
+                    type: '收入',
+                    category: '測試分類',
+                    amount: 1000,
+                    description: '跨裝置同步測試 - 收入記錄',
+                    timestamp: timestamp
+                },
+                {
+                    id: `test_record_${timestamp}_2`,
+                    date: new Date().toISOString().split('T')[0],
+                    type: '支出',
+                    category: '測試分類',
+                    amount: 500,
+                    description: '跨裝置同步測試 - 支出記錄',
+                    timestamp: timestamp + 1
+                }
+            ];
+            
+            // 創建測試信眾
+            const testBelievers = [
+                {
+                    id: `test_believer_${timestamp}`,
+                    name: '測試信眾',
+                    phone: '0912345678',
+                    address: '測試地址',
+                    notes: '跨裝置同步測試',
+                    timestamp: timestamp
+                }
+            ];
+            
+            // 保存到本地存儲
+            const existingRecords = JSON.parse(localStorage.getItem('temple-records') || '[]');
+            const existingBelievers = JSON.parse(localStorage.getItem('temple-believers') || '[]');
+            
+            localStorage.setItem('temple-records', JSON.stringify([...existingRecords, ...testRecords]));
+            localStorage.setItem('temple-believers', JSON.stringify([...existingBelievers, ...testBelievers]));
+            localStorage.setItem('temple-last-modified', timestamp.toString());
+            
+            log(`✅ 已創建測試資料: ${testRecords.length} 筆記錄, ${testBelievers.length} 筆信眾`);
+            updateLocalDataStats();
+        }
+
+        // 清除測試資料
+        function clearTestData() {
+            const keys = ['temple-records', 'temple-believers', 'temple-reminders', 'temple-custom-categories'];
+            keys.forEach(key => {
+                const data = JSON.parse(localStorage.getItem(key) || '[]');
+                const filtered = data.filter(item => !item.id || !item.id.includes('test_'));
+                localStorage.setItem(key, JSON.stringify(filtered));
+            });
+            
+            log('🗑️ 已清除測試資料');
+            updateLocalDataStats();
+        }
+
+        // 上傳到雲端
+        async function uploadToCloud() {
+            if (!syncService) {
+                updateStatus('upload-status', '同步服務未載入', 'error');
+                return;
+            }
+
+            try {
+                log('📤 開始上傳到雲端...');
+                document.getElementById('upload-btn').disabled = true;
+                
+                const result = await syncService.syncToCloud();
+                
+                if (result.success) {
+                    updateStatus('upload-status', `上傳成功! 記錄數: ${result.recordsCount}, 信眾數: ${result.believersCount}`, 'success');
+                    log(`✅ 上傳成功: ${result.message}`);
+                    testResults.push({
+                        action: '上傳',
+                        status: 'success',
+                        details: result
+                    });
+                } else {
+                    updateStatus('upload-status', `上傳失敗: ${result.message}`, 'error');
+                    log(`❌ 上傳失敗: ${result.message}`);
+                }
+            } catch (error) {
+                updateStatus('upload-status', `上傳錯誤: ${error.message}`, 'error');
+                log(`❌ 上傳錯誤: ${error.message}`);
+            } finally {
+                document.getElementById('upload-btn').disabled = false;
+            }
+        }
+
+        // 模擬其他裝置 (清除本地資料)
+        function simulateOtherDevice() {
+            if (confirm('⚠️ 這將清除所有本地資料來模擬其他裝置\n\n確定要繼續嗎？')) {
+                const keys = ['temple-records', 'temple-believers', 'temple-reminders', 'temple-custom-categories', 'temple-last-modified'];
+                keys.forEach(key => localStorage.removeItem(key));
+                
+                log('📱 已模擬其他裝置 (清除本地資料)');
+                updateLocalDataStats();
+            }
+        }
+
+        // 從雲端下載
+        async function downloadFromCloud() {
+            if (!syncService) {
+                updateStatus('download-status', '同步服務未載入', 'error');
+                return;
+            }
+
+            try {
+                log('📥 開始從雲端下載...');
+                document.getElementById('download-btn').disabled = true;
+                
+                const result = await syncService.syncFromCloud();
+                
+                if (result.success) {
+                    updateStatus('download-status', `下載成功! 記錄數: ${result.recordsCount}, 信眾數: ${result.believersCount}`, 'success');
+                    log(`✅ 下載成功: ${result.message}`);
+                    updateLocalDataStats();
+                    testResults.push({
+                        action: '下載',
+                        status: 'success',
+                        details: result
+                    });
+                } else {
+                    updateStatus('download-status', `下載失敗: ${result.message}`, 'error');
+                    log(`❌ 下載失敗: ${result.message}`);
+                }
+            } catch (error) {
+                updateStatus('download-status', `下載錯誤: ${error.message}`, 'error');
+                log(`❌ 下載錯誤: ${error.message}`);
+            } finally {
+                document.getElementById('download-btn').disabled = false;
+            }
+        }
+
+        // 快速同步測試
+        async function quickSyncTest() {
+            log('🚀 開始快速同步測試...');
+            
+            // 1. 創建測試資料
+            createTestData();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 2. 上傳到雲端
+            await uploadToCloud();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 3. 檢查雲端資料
+            await checkCloudData();
+            
+            log('✅ 快速同步測試完成');
+            updateTestResults();
+        }
+
+        // 完整同步測試
+        async function fullSyncTest() {
+            log('🔄 開始完整同步測試...');
+            
+            // 1. 創建測試資料
+            createTestData();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 2. 上傳到雲端
+            await uploadToCloud();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 3. 模擬其他裝置
+            simulateOtherDevice();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 4. 從雲端下載
+            await downloadFromCloud();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 5. 檢查雲端資料
+            await checkCloudData();
+            
+            log('✅ 完整同步測試完成');
+            updateTestResults();
+        }
+
+        // 更新測試結果
+        function updateTestResults() {
+            const resultsElement = document.getElementById('test-results');
+            if (testResults.length === 0) {
+                resultsElement.innerHTML = '等待測試結果...';
+                return;
+            }
+            
+            let resultsHtml = '';
+            testResults.forEach((result, index) => {
+                resultsHtml += `測試 ${index + 1}: ${result.action} - ${result.status}\n`;
+                if (result.details) {
+                    resultsHtml += `  詳情: ${JSON.stringify(result.details, null, 2)}\n`;
+                }
+                resultsHtml += '\n';
+            });
+            
+            resultsElement.innerHTML = resultsHtml;
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('load', init);
+        
+        // 網路狀態變化監聽
+        window.addEventListener('online', () => {
+            document.getElementById('network-status').textContent = '🟢 已連線';
+            log('📶 網路已恢復');
+        });
+        
+        window.addEventListener('offline', () => {
+            document.getElementById('network-status').textContent = '🔴 離線';
+            log('📵 網路已斷開');
+        });
+    </script>
+</body>
+</html>
