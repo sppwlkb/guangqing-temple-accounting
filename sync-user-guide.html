@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跨裝置同步使用指南 - 廣清宮記帳軟體</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .guide-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(10px);
+        }
+        .step {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #4facfe;
+        }
+        .step h4 {
+            margin: 0 0 10px 0;
+            color: #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .scenario {
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #00f2fe;
+        }
+        .important {
+            background: rgba(255, 193, 7, 0.2);
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .warning {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid #f44336;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .button {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button.secondary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .device-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .device-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .device-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .sync-flow {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .sync-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            flex: 1;
+            margin: 5px;
+            min-width: 120px;
+        }
+        .sync-arrow {
+            font-size: 24px;
+            color: #4facfe;
+            margin: 0 10px;
+        }
+        .faq {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .faq-question {
+            font-weight: bold;
+            color: #4facfe;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .faq-answer {
+            padding-left: 20px;
+            line-height: 1.6;
+        }
+        .code {
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+            padding: 2px 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱💻 跨裝置同步使用指南</h1>
+            <p>讓您的記帳資料在所有裝置間保持同步</p>
+        </div>
+
+        <!-- 快速開始 -->
+        <div class="guide-card">
+            <h2>🚀 快速開始</h2>
+            <div class="success">
+                <h3>✅ 您的同步功能已經就緒！</h3>
+                <p>所有必要的設定都已完成，您現在就可以開始使用跨裝置同步功能。</p>
+            </div>
+
+            <div class="sync-flow">
+                <div class="sync-item">
+                    <div style="font-size: 24px;">💻</div>
+                    <div><strong>電腦</strong></div>
+                    <div>新增記帳資料</div>
+                </div>
+                <div class="sync-arrow">➡️</div>
+                <div class="sync-item">
+                    <div style="font-size: 24px;">☁️</div>
+                    <div><strong>雲端</strong></div>
+                    <div>自動上傳</div>
+                </div>
+                <div class="sync-arrow">➡️</div>
+                <div class="sync-item">
+                    <div style="font-size: 24px;">📱</div>
+                    <div><strong>手機</strong></div>
+                    <div>自動下載</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 基本操作 -->
+        <div class="guide-card">
+            <h2>📋 基本操作</h2>
+            
+            <div class="step">
+                <h4><span>📤</span> 上傳資料到雲端</h4>
+                <p>將本地資料備份到雲端，讓其他裝置可以存取：</p>
+                <ol>
+                    <li>在主畫面找到「多裝置同步」區域</li>
+                    <li>點擊 <span class="code">📤 上傳</span> 按鈕</li>
+                    <li>等待上傳完成提示</li>
+                </ol>
+                <div class="important">
+                    <strong>💡 提示：</strong> 每次新增或修改資料後，系統會自動上傳，您也可以手動上傳確保最新。
+                </div>
+            </div>
+
+            <div class="step">
+                <h4><span>📥</span> 下載雲端資料</h4>
+                <p>從雲端獲取最新資料到本地裝置：</p>
+                <ol>
+                    <li>在主畫面找到「多裝置同步」區域</li>
+                    <li>點擊 <span class="code">📥 下載</span> 按鈕</li>
+                    <li>確認是否要覆蓋本地資料</li>
+                    <li>等待下載完成</li>
+                </ol>
+                <div class="warning">
+                    <strong>⚠️ 注意：</strong> 下載會覆蓋本地資料，請確認您想要雲端的版本。
+                </div>
+            </div>
+        </div>
+
+        <!-- 使用情境 -->
+        <div class="guide-card">
+            <h2>🎯 常見使用情境</h2>
+            
+            <div class="scenario">
+                <h4>情境一：新手機首次使用</h4>
+                <ol>
+                    <li>用手機開啟網址：<span class="code">https://sppwlkb.github.io/guangqing-temple-accounting/</span></li>
+                    <li>系統會自動檢查雲端是否有資料</li>
+                    <li>如有資料會詢問是否下載</li>
+                    <li>點擊「確定」即可獲取所有記帳資料</li>
+                </ol>
+                <div class="success">
+                    <strong>✅ 結果：</strong> 手機立即擁有與電腦相同的所有記帳資料
+                </div>
+            </div>
+
+            <div class="scenario">
+                <h4>情境二：在外用手機記帳</h4>
+                <ol>
+                    <li>用手機新增收支記錄</li>
+                    <li>點擊「📤 上傳」按鈕將資料備份到雲端</li>
+                    <li>回到電腦時，點擊「📥 下載」獲取手機新增的資料</li>
+                </ol>
+                <div class="success">
+                    <strong>✅ 結果：</strong> 電腦和手機的資料完全同步，不會遺失任何記錄
+                </div>
+            </div>
+
+            <div class="scenario">
+                <h4>情境三：多人共同管理</h4>
+                <ol>
+                    <li>第一人用電腦新增資料並上傳</li>
+                    <li>第二人開啟應用程式會自動提示下載新資料</li>
+                    <li>下載後即可看到第一人新增的所有記錄</li>
+                    <li>第二人的修改也會自動上傳供第一人下載</li>
+                </ol>
+                <div class="success">
+                    <strong>✅ 結果：</strong> 多人可以協同管理同一份記帳資料
+                </div>
+            </div>
+        </div>
+
+        <!-- 裝置支援 -->
+        <div class="guide-card">
+            <h2>📱💻 支援的裝置</h2>
+            <div class="device-grid">
+                <div class="device-card">
+                    <div class="device-icon">💻</div>
+                    <h4>電腦</h4>
+                    <p>Windows、Mac、Linux<br>支援所有現代瀏覽器</p>
+                </div>
+                <div class="device-card">
+                    <div class="device-icon">📱</div>
+                    <h4>手機/平板</h4>
+                    <p>iPhone、Android、iPad<br>支援 Safari、Chrome</p>
+                </div>
+            </div>
+            <div class="important">
+                <strong>💡 跨平台同步：</strong> 不論您使用 iPhone、Android、Windows 或 Mac，資料都能完美同步！
+            </div>
+        </div>
+
+        <!-- 同步狀態說明 -->
+        <div class="guide-card">
+            <h2>📊 同步狀態說明</h2>
+            
+            <div class="step">
+                <h4><span>🟢</span> 「已同步」狀態</h4>
+                <p>顯示最後同步時間，表示資料已成功上傳或下載</p>
+            </div>
+
+            <div class="step">
+                <h4><span>⏳</span> 「同步中」狀態</h4>
+                <p>正在進行上傳或下載，請稍等不要關閉應用程式</p>
+            </div>
+
+            <div class="step">
+                <h4><span>⚠️</span> 「等待同步」狀態</h4>
+                <p>有新資料尚未同步，建議手動執行同步操作</p>
+            </div>
+        </div>
+
+        <!-- 常見問題 -->
+        <div class="guide-card">
+            <h2>❓ 常見問題</h2>
+            
+            <div class="faq">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Q: 我在手機上看不到電腦的資料怎麼辦？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer" style="display: none;">
+                    <strong>解決步驟：</strong>
+                    <ol>
+                        <li>確認電腦已經點擊「📤 上傳」上傳資料</li>
+                        <li>在手機上點擊「📥 下載」下載雲端資料</li>
+                        <li>如果仍然有問題，請使用測試工具檢查連接狀態</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="faq">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Q: 下載資料會覆蓋我現有的記錄嗎？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer" style="display: none;">
+                    <strong>是的</strong>，下載會用雲端資料完全覆蓋本地資料。<br>
+                    <strong>建議：</strong> 如果本地有重要資料，請先上傳到雲端再下載。
+                </div>
+            </div>
+
+            <div class="faq">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Q: 可以同時在多個裝置上使用嗎？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer" style="display: none;">
+                    <strong>可以</strong>，但建議的使用方式：
+                    <ol>
+                        <li>在一個裝置修改後立即上傳</li>
+                        <li>在其他裝置使用前先下載最新資料</li>
+                        <li>避免同時在多個裝置修改相同資料</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="faq">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Q: 沒有網路時可以使用嗎？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer" style="display: none;">
+                    <strong>可以</strong>，應用程式支援離線使用：
+                    <ul>
+                        <li>所有記帳功能都能正常使用</li>
+                        <li>資料會暫存在本地</li>
+                        <li>有網路時會提示您進行同步</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="faq">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    <span>Q: 資料安全性如何？</span>
+                    <span>▼</span>
+                </div>
+                <div class="faq-answer" style="display: none;">
+                    <strong>我們重視您的資料安全：</strong>
+                    <ul>
+                        <li>使用 Supabase 企業級雲端服務</li>
+                        <li>資料傳輸採用 HTTPS 加密</li>
+                        <li>每個裝置有獨特的裝置 ID</li>
+                        <li>資料僅供您的裝置存取</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 測試工具 -->
+        <div class="guide-card">
+            <h2>🧪 測試工具</h2>
+            <p>如果遇到同步問題，可以使用我們提供的測試工具進行診斷：</p>
+            
+            <div style="text-align: center; margin: 20px 0;">
+                <a href="cross-device-sync-test.html" class="button">🔧 開啟測試工具</a>
+                <a href="test-cloud-sync-complete.html" class="button secondary">📊 完整診斷工具</a>
+            </div>
+            
+            <div class="important">
+                <strong>測試工具功能：</strong>
+                <ul>
+                    <li>檢查網路連接和服務狀態</li>
+                    <li>測試上傳下載功能</li>
+                    <li>模擬跨裝置同步情境</li>
+                    <li>提供詳細的錯誤診斷</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 聯絡支援 -->
+        <div class="guide-card">
+            <h2>📞 需要協助？</h2>
+            <p>如果您在使用過程中遇到任何問題，我們提供以下協助管道：</p>
+            
+            <div class="step">
+                <h4><span>🔧</span> 自助解決</h4>
+                <ul>
+                    <li>使用上述測試工具進行診斷</li>
+                    <li>查看瀏覽器控制台的錯誤訊息</li>
+                    <li>嘗試重新整理頁面</li>
+                </ul>
+            </div>
+
+            <div class="step">
+                <h4><span>📋</span> 問題回報</h4>
+                <p>回報問題時請提供：</p>
+                <ul>
+                    <li>使用的裝置類型 (手機/電腦)</li>
+                    <li>瀏覽器版本</li>
+                    <li>具體的錯誤訊息</li>
+                    <li>測試工具的診斷結果</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 返回按鈕 -->
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="index-enhanced.html" class="button">🏠 返回主應用</a>
+            <a href="cross-device-sync-test.html" class="button secondary">🧪 測試同步功能</a>
+        </div>
+    </div>
+
+    <script>
+        function toggleFaq(element) {
+            const answer = element.nextElementSibling;
+            const arrow = element.querySelector('span:last-child');
+            
+            if (answer.style.display === 'none') {
+                answer.style.display = 'block';
+                arrow.textContent = '▲';
+            } else {
+                answer.style.display = 'none';
+                arrow.textContent = '▼';
+            }
+        }
+    </script>
+</body>
+</html>
