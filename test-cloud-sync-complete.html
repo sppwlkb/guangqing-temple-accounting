@@ -361,6 +361,12 @@
                 document.getElementById(id).disabled = true;
             });
 
+            // 重置同步狀態
+            if (window.supabaseSync && window.supabaseSync.syncInProgress) {
+                log('重置同步狀態...');
+                window.supabaseSync.syncInProgress = false;
+            }
+
             try {
                 // 測試 1: 網路狀態 (10%)
                 await testNetworkStatus();
@@ -612,6 +618,13 @@
             try {
                 if (!window.supabaseSync) {
                     throw new Error('同步服務不可用');
+                }
+                
+                // 重置同步狀態
+                if (window.supabaseSync.syncInProgress) {
+                    log('重置同步狀態...');
+                    window.supabaseSync.syncInProgress = false;
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
                 
                 // 生成測試數據
