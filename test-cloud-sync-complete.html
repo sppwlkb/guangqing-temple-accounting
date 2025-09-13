@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雲端同步完整測試 - 廣清宮記帳軟體</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        .test-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .test-section.success { border-left-color: #28a745; background: linear-gradient(135deg, #d4edda, #c3e6cb); }
+        .test-section.error { border-left-color: #dc3545; background: linear-gradient(135deg, #f8d7da, #f5c6cb); }
+        .test-section.warning { border-left-color: #ffc107; background: linear-gradient(135deg, #fff3cd, #ffeeba); }
+        .test-section.info { border-left-color: #17a2b8; background: linear-gradient(135deg, #d1ecf1, #bee5eb); }
+        .test-section.running { border-left-color: #6f42c1; background: linear-gradient(135deg, #e2d9f3, #d4cce8); }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 8px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn:hover:not(:disabled) { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+        .btn-success:hover:not(:disabled) {
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+        }
+        
+        h1 { 
+            text-align: center; 
+            color: #2c3e50; 
+            margin-bottom: 10px; 
+        }
+        h3 { 
+            margin-top: 0; 
+            display: flex; 
+            align-items: center; 
+        }
+        .icon { 
+            font-size: 1.5em; 
+            margin-right: 10px; 
+        }
+        
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .status-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            color: white;
+            margin-top: 5px;
+        }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        .status-loading { background: #ffc107; color: #000; }
+        .status-success { background: #17a2b8; }
+        
+        .results-container {
+            max-height: 600px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        
+        .test-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 20px; }
+            .test-controls { flex-direction: column; align-items: center; }
+            .btn { margin: 5px 0; width: 200px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 雲端同步完整測試工具</h1>
+            <p>廣清宮記帳軟體 - Supabase 雲端同步功能檢測</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+        </div>
+        
+        <div class="status-grid">
+            <div class="status-item">
+                <strong>網路狀態</strong>
+                <div class="status-badge status-loading" id="network-status">檢查中</div>
+            </div>
+            <div class="status-item">
+                <strong>Supabase SDK</strong>
+                <div class="status-badge status-loading" id="sdk-status">載入中</div>
+            </div>
+            <div class="status-item">
+                <strong>資料庫連接</strong>
+                <div class="status-badge status-loading" id="db-status">測試中</div>
+            </div>
+            <div class="status-item">
+                <strong>同步服務</strong>
+                <div class="status-badge status-loading" id="sync-status">初始化中</div>
+            </div>
+        </div>
+        
+        <div class="test-controls">
+            <button class="btn" onclick="runFullTest()" id="fullTestBtn">🔍 完整診斷</button>
+            <button class="btn btn-success" onclick="testUpload()" id="uploadBtn" disabled>📤 測試上傳</button>
+            <button class="btn btn-success" onclick="testDownload()" id="downloadBtn" disabled>📥 測試下載</button>
+            <button class="btn btn-warning" onclick="stressTest()" id="stressBtn" disabled>⚡ 壓力測試</button>
+            <button class="btn btn-danger" onclick="clearResults()">🧹 清除結果</button>
+        </div>
+        
+        <div class="stats-display" id="statsDisplay" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="testCount">0</div>
+                <div class="stat-label">已執行測試</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="successCount">0</div>
+                <div class="stat-label">成功次數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="errorCount">0</div>
+                <div class="stat-label">錯誤次數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgTime">0ms</div>
+                <div class="stat-label">平均時間</div>
+            </div>
+        </div>
+        
+        <div class="results-container">
+            <div id="results"></div>
+        </div>
+        
+        <div class="test-section info">
+            <h3><span class="icon">📝</span> 測試日誌</h3>
+            <pre id="debug-log">等待測試開始...</pre>
+        </div>
+    </div>
+
+    <!-- 載入必要腳本 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="env-loader.js"></script>
+    <script src="supabase-sync-final.js"></script>
+
+    <script>
+        let results = document.getElementById('results');
+        let debugLog = document.getElementById('debug-log');
+        let progress = document.getElementById('progress');
+        let currentProgress = 0;
+        
+        // 統計變數
+        let testStats = {
+            total: 0,
+            success: 0,
+            error: 0,
+            times: []
+        };
+
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.textContent += `[${timestamp}] ${message}\n`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+
+        function updateProgress(percent) {
+            currentProgress = Math.min(100, Math.max(0, percent));
+            progress.style.width = currentProgress + '%';
+        }
+
+        function updateStatus(element, status, text) {
+            const statusElement = document.getElementById(element);
+            statusElement.className = `status-badge status-${status}`;
+            statusElement.textContent = text;
+        }
+
+        function addTestResult(title, status, content, details = '', duration = null) {
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'warning': '⚠️',
+                'info': 'ℹ️',
+                'running': '⏳'
+            };
+            
+            const section = document.createElement('div');
+            section.className = `test-section ${status}`;
+            
+            const durationText = duration ? ` (${duration}ms)` : '';
+            section.innerHTML = `
+                <h3><span class="icon">${icons[status]}</span> ${title}${durationText}</h3>
+                <div>${content}</div>
+                ${details ? `<details style="margin-top: 10px;"><summary style="cursor: pointer;">詳細資訊</summary><pre style="margin-top: 10px;">${details}</pre></details>` : ''}
+            `;
+            
+            results.appendChild(section);
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // 更新統計
+            testStats.total++;
+            if (status === 'success') testStats.success++;
+            if (status === 'error') testStats.error++;
+            if (duration) testStats.times.push(duration);
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('testCount').textContent = testStats.total;
+            document.getElementById('successCount').textContent = testStats.success;
+            document.getElementById('errorCount').textContent = testStats.error;
+            
+            if (testStats.times.length > 0) {
+                const avgTime = Math.round(testStats.times.reduce((a, b) => a + b, 0) / testStats.times.length);
+                document.getElementById('avgTime').textContent = avgTime + 'ms';
+            }
+            
+            document.getElementById('statsDisplay').style.display = 'grid';
+        }
+
+        function clearResults() {
+            results.innerHTML = '';
+            debugLog.textContent = '結果已清除，準備重新測試...\n';
+            updateProgress(0);
+            testStats = { total: 0, success: 0, error: 0, times: [] };
+            updateStats();
+        }
+
+        async function runFullTest() {
+            clearResults();
+            log('🚀 開始完整診斷測試...');
+            updateProgress(0);
+            
+            // 重置按鈕狀態
+            ['uploadBtn', 'downloadBtn', 'stressBtn'].forEach(id => {
+                document.getElementById(id).disabled = true;
+            });
+
+            try {
+                // 測試 1: 網路狀態 (10%)
+                await testNetworkStatus();
+                updateProgress(10);
+
+                // 測試 2: SDK 載入 (25%)
+                await testSDKLoading();
+                updateProgress(25);
+
+                // 測試 3: 環境變數 (40%)
+                await testEnvironmentConfig();
+                updateProgress(40);
+
+                // 測試 4: 資料庫連接 (60%)
+                await testDatabaseConnection();
+                updateProgress(60);
+
+                // 測試 5: 同步服務 (80%)
+                await testSyncService();
+                updateProgress(80);
+
+                // 測試 6: 完整功能 (100%)
+                await testCompleteFunctionality();
+                updateProgress(100);
+
+                // 啟用功能按鈕
+                if (window.supabaseSync && window.supabaseSync.getSyncStatus().initialized) {
+                    ['uploadBtn', 'downloadBtn', 'stressBtn'].forEach(id => {
+                        document.getElementById(id).disabled = false;
+                    });
+                }
+
+                log('🎉 完整診斷測試完成！');
+                addTestResult('診斷完成', 'success', '所有測試已執行完畢，請查看各項結果');
+
+            } catch (error) {
+                log('❌ 診斷測試失敗: ' + error.message);
+                addTestResult('診斷失敗', 'error', `測試過程中發生錯誤: ${error.message}`);
+            }
+        }
+
+        async function testNetworkStatus() {
+            const startTime = Date.now();
+            log('步驟 1/6: 檢查網路狀態...');
+            
+            try {
+                const isOnline = navigator.onLine;
+                updateStatus('network-status', isOnline ? 'online' : 'offline', isOnline ? '線上' : '離線');
+                
+                // 測試實際網路連接
+                const response = await fetch('https://httpbin.org/get', { 
+                    method: 'GET',
+                    signal: AbortSignal.timeout(5000)
+                });
+                
+                const duration = Date.now() - startTime;
+                if (response.ok) {
+                    addTestResult('網路連接測試', 'success', '網路連接正常，可以進行雲端同步', '', duration);
+                    log('✅ 網路狀態檢查通過');
+                } else {
+                    throw new Error('網路連接異常');
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                updateStatus('network-status', 'offline', '離線');
+                addTestResult('網路連接測試', 'error', `網路連接失敗: ${error.message}`, '', duration);
+                log('❌ 網路狀態檢查失敗: ' + error.message);
+                throw error;
+            }
+        }
+
+        async function testSDKLoading() {
+            const startTime = Date.now();
+            log('步驟 2/6: 檢查 Supabase SDK...');
+            
+            try {
+                // 等待 SDK 載入
+                let attempts = 0;
+                while (!window.supabase && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                const duration = Date.now() - startTime;
+                if (typeof window.supabase !== 'undefined' && typeof window.supabase.createClient === 'function') {
+                    updateStatus('sdk-status', 'success', '已載入');
+                    addTestResult('Supabase SDK', 'success', 'SDK 載入成功，版本正確', '', duration);
+                    log('✅ Supabase SDK 檢查通過');
+                } else {
+                    throw new Error('SDK 載入失敗或版本不相容');
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                updateStatus('sdk-status', 'offline', '載入失敗');
+                addTestResult('Supabase SDK', 'error', `SDK 載入失敗: ${error.message}`, '', duration);
+                log('❌ Supabase SDK 檢查失敗: ' + error.message);
+                throw error;
+            }
+        }
+
+        async function testEnvironmentConfig() {
+            const startTime = Date.now();
+            log('步驟 3/6: 檢查環境配置...');
+            
+            try {
+                const envCheck = window.checkEnvironment();
+                const duration = Date.now() - startTime;
+                
+                if (envCheck.ready) {
+                    addTestResult(
+                        '環境配置檢查', 
+                        'success', 
+                        '環境變數配置正確',
+                        `URL: ${envCheck.config.supabaseUrl}\nKey: 已設定 (${envCheck.config.supabaseKey.length} 字元)\n環境: ${envCheck.config.environment}`,
+                        duration
+                    );
+                    log('✅ 環境配置檢查通過');
+                } else {
+                    addTestResult(
+                        '環境配置檢查', 
+                        'warning', 
+                        '環境配置有問題，但可能仍能運作',
+                        `警告: ${envCheck.warnings.join(', ')}`,
+                        duration
+                    );
+                    log('⚠️ 環境配置有警告: ' + envCheck.warnings.join(', '));
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                addTestResult('環境配置檢查', 'error', `配置檢查失敗: ${error.message}`, '', duration);
+                log('❌ 環境配置檢查失敗: ' + error.message);
+            }
+        }
+
+        async function testDatabaseConnection() {
+            const startTime = Date.now();
+            log('步驟 4/6: 測試資料庫連接...');
+            
+            try {
+                const client = window.supabase.createClient(
+                    'https://nfncwofzfjdvyhdfjbzw.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mbmN3b2Z6ZmpkdnloZGZqYnp3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MjM0MDcsImV4cCI6MjA3MzA5OTQwN30.ZyLtV91pG618utDhJhGJbZpbFPZ_IEx2mBPc7GVfkH4'
+                );
+
+                const { data, error } = await Promise.race([
+                    client.from('temple_data').select('count').limit(1),
+                    new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('連接超時')), 10000)
+                    )
+                ]);
+
+                const duration = Date.now() - startTime;
+                if (error) {
+                    updateStatus('db-status', 'offline', '連接失敗');
+                    
+                    let errorMessage = error.message;
+                    let suggestion = '';
+                    
+                    if (error.message.includes('relation') && error.message.includes('does not exist')) {
+                        suggestion = '請在 Supabase 控制台執行 supabase-setup-optimized.sql 腳本建立資料表';
+                        errorMessage = '資料表 temple_data 不存在';
+                    } else if (error.message.includes('permission') || error.message.includes('policy')) {
+                        suggestion = '請檢查 RLS 權限政策設定';
+                        errorMessage = '權限政策問題';
+                    }
+                    
+                    addTestResult(
+                        '資料庫連接測試', 
+                        'error', 
+                        errorMessage,
+                        `錯誤詳情: ${JSON.stringify(error, null, 2)}\n\n解決建議: ${suggestion}`,
+                        duration
+                    );
+                    log('❌ 資料庫連接失敗: ' + errorMessage);
+                } else {
+                    updateStatus('db-status', 'success', '連接成功');
+                    addTestResult(
+                        '資料庫連接測試', 
+                        'success', 
+                        '成功連接到 Supabase 資料庫',
+                        `查詢結果: ${JSON.stringify(data, null, 2)}`,
+                        duration
+                    );
+                    log('✅ 資料庫連接測試通過');
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                updateStatus('db-status', 'offline', '測試失敗');
+                addTestResult('資料庫連接測試', 'error', `連接測試失敗: ${error.message}`, '', duration);
+                log('❌ 資料庫連接測試失敗: ' + error.message);
+            }
+        }
+
+        async function testSyncService() {
+            const startTime = Date.now();
+            log('步驟 5/6: 檢查同步服務...');
+            
+            try {
+                // 等待同步服務初始化
+                let attempts = 0;
+                while (!window.supabaseSync && attempts < 100) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (!window.supabaseSync) {
+                    throw new Error('同步服務未載入');
+                }
+                
+                // 等待服務初始化完成
+                await window.supabaseSync.initPromise;
+                
+                const status = window.supabaseSync.getSyncStatus();
+                const duration = Date.now() - startTime;
+                
+                if (status.initialized) {
+                    updateStatus('sync-status', 'success', '服務正常');
+                    addTestResult(
+                        '同步服務檢查', 
+                        'success', 
+                        '同步服務載入並初始化成功',
+                        `設備 ID: ${status.deviceId}\n網路狀態: ${status.isOnline ? '線上' : '離線'}\n提供商: ${status.provider}\n最後同步: ${status.lastSyncTime}`,
+                        duration
+                    );
+                    log('✅ 同步服務檢查通過');
+                } else {
+                    updateStatus('sync-status', 'offline', '初始化失敗');
+                    addTestResult(
+                        '同步服務檢查', 
+                        'warning', 
+                        '同步服務載入但初始化可能有問題',
+                        `狀態詳情: ${JSON.stringify(status, null, 2)}`,
+                        duration
+                    );
+                    log('⚠️ 同步服務可能有問題');
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                updateStatus('sync-status', 'offline', '載入失敗');
+                addTestResult('同步服務檢查', 'error', `服務檢查失敗: ${error.message}`, '', duration);
+                log('❌ 同步服務檢查失敗: ' + error.message);
+            }
+        }
+
+        async function testCompleteFunctionality() {
+            const startTime = Date.now();
+            log('步驟 6/6: 測試完整功能...');
+            
+            try {
+                if (!window.supabaseSync) {
+                    throw new Error('同步服務不可用');
+                }
+                
+                // 生成測試數據
+                const testRecord = {
+                    id: 'complete_test_' + Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    type: '收入',
+                    category: '完整測試',
+                    amount: 888,
+                    description: '完整功能測試數據',
+                    timestamp: Date.now()
+                };
+                
+                // 添加到本地存儲
+                const records = JSON.parse(localStorage.getItem('temple-records') || '[]');
+                records.push(testRecord);
+                localStorage.setItem('temple-records', JSON.stringify(records));
+                localStorage.setItem('temple-last-modified', Date.now().toString());
+                
+                log('正在執行上傳同步測試...');
+                const syncResult = await window.supabaseSync.syncToCloud();
+                
+                const duration = Date.now() - startTime;
+                if (syncResult.success) {
+                    addTestResult(
+                        '完整功能測試', 
+                        'success', 
+                        '🎉 雲端同步功能完全正常！',
+                        `測試結果:\n• 提供商: ${syncResult.provider}\n• 同步時間: ${syncResult.syncTime}\n• 記錄數: ${syncResult.recordsCount}\n• 信眾數: ${syncResult.believersCount}\n• 設備 ID: ${syncResult.deviceId}\n• 操作: ${syncResult.action || '同步'}\n• 訊息: ${syncResult.message}`,
+                        duration
+                    );
+                    log('🎉 完整功能測試成功！');
+                    
+                    // 清理測試數據
+                    const cleanRecords = records.filter(r => r.id !== testRecord.id);
+                    localStorage.setItem('temple-records', JSON.stringify(cleanRecords));
+                    log('🧹 測試數據已清理');
+                } else {
+                    addTestResult(
+                        '完整功能測試', 
+                        'error', 
+                        `功能測試失敗: ${syncResult.message}`,
+                        JSON.stringify(syncResult, null, 2),
+                        duration
+                    );
+                    log('❌ 完整功能測試失敗: ' + syncResult.message);
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                addTestResult(
+                    '完整功能測試', 
+                    'error', 
+                    `測試失敗: ${error.message}`,
+                    error.stack || '無堆疊資訊',
+                    duration
+                );
+                log('❌ 完整功能測試失敗: ' + error.message);
+            }
+        }
+
+        async function testUpload() {
+            if (!window.supabaseSync) {
+                alert('❌ 同步服務不可用');
+                return;
+            }
+            
+            const startTime = Date.now();
+            log('📤 開始上傳測試...');
+            
+            try {
+                const result = await window.supabaseSync.syncToCloud();
+                const duration = Date.now() - startTime;
+                
+                if (result.success) {
+                    addTestResult(
+                        '上傳測試',
+                        'success',
+                        '上傳成功！',
+                        JSON.stringify(result, null, 2),
+                        duration
+                    );
+                    alert('✅ 上傳測試成功！');
+                } else {
+                    addTestResult('上傳測試', 'error', `上傳失敗: ${result.message}`, '', duration);
+                    alert('❌ 上傳測試失敗: ' + result.message);
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                addTestResult('上傳測試', 'error', `上傳失敗: ${error.message}`, '', duration);
+                alert('❌ 上傳測試失敗: ' + error.message);
+            }
+        }
+
+        async function testDownload() {
+            if (!window.supabaseSync) {
+                alert('❌ 同步服務不可用');
+                return;
+            }
+            
+            const startTime = Date.now();
+            log('📥 開始下載測試...');
+            
+            try {
+                const result = await window.supabaseSync.syncFromCloud();
+                const duration = Date.now() - startTime;
+                
+                if (result.success) {
+                    addTestResult(
+                        '下載測試',
+                        'success',
+                        '下載成功！',
+                        JSON.stringify(result, null, 2),
+                        duration
+                    );
+                    alert('✅ 下載測試成功！');
+                } else {
+                    addTestResult('下載測試', 'error', `下載失敗: ${result.message}`, '', duration);
+                    alert('❌ 下載測試失敗: ' + result.message);
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                addTestResult('下載測試', 'error', `下載失敗: ${error.message}`, '', duration);
+                alert('❌ 下載測試失敗: ' + error.message);
+            }
+        }
+
+        async function stressTest() {
+            if (!window.supabaseSync) {
+                alert('❌ 同步服務不可用');
+                return;
+            }
+            
+            const iterations = 5;
+            log(`⚡ 開始壓力測試 (${iterations} 次)...`);
+            
+            let successCount = 0;
+            let failCount = 0;
+            const times = [];
+            
+            for (let i = 1; i <= iterations; i++) {
+                try {
+                    const startTime = Date.now();
+                    log(`執行第 ${i}/${iterations} 次測試...`);
+                    
+                    const result = await window.supabaseSync.syncToCloud();
+                    const duration = Date.now() - startTime;
+                    times.push(duration);
+                    
+                    if (result.success) {
+                        successCount++;
+                        log(`✅ 第 ${i} 次測試成功 (${duration}ms)`);
+                    } else {
+                        failCount++;
+                        log(`❌ 第 ${i} 次測試失敗: ${result.message}`);
+                    }
+                    
+                    // 短暫延遲避免過度頻繁請求
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    failCount++;
+                    log(`❌ 第 ${i} 次測試異常: ${error.message}`);
+                }
+            }
+            
+            const avgTime = times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0;
+            const successRate = Math.round((successCount / iterations) * 100);
+            
+            addTestResult(
+                '壓力測試',
+                successRate >= 80 ? 'success' : successRate >= 60 ? 'warning' : 'error',
+                `壓力測試完成！成功率: ${successRate}%`,
+                `總測試次數: ${iterations}\n成功次數: ${successCount}\n失敗次數: ${failCount}\n平均時間: ${avgTime}ms\n成功率: ${successRate}%`
+            );
+            
+            alert(`⚡ 壓力測試完成！\n成功率: ${successRate}%\n平均時間: ${avgTime}ms`);
+        }
+
+        // 頁面載入完成後自動開始測試
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🔧 測試工具已載入');
+            
+            // 檢查基本網路狀態
+            updateStatus('network-status', navigator.onLine ? 'online' : 'offline', 
+                        navigator.onLine ? '線上' : '離線');
+            
+            // 3秒後自動開始完整測試
+            setTimeout(() => {
+                log('⏰ 3秒後自動開始完整測試...');
+                setTimeout(runFullTest, 3000);
+            }, 1000);
+        });
+
+        // 監聽網路狀態變化
+        window.addEventListener('online', () => {
+            log('🌐 網路已連接');
+            updateStatus('network-status', 'online', '線上');
+        });
+        
+        window.addEventListener('offline', () => {
+            log('📴 網路已斷線');
+            updateStatus('network-status', 'offline', '離線');
+        });
+    </script>
+</body>
+</html>
